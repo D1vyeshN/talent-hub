@@ -1,11 +1,10 @@
-"use client"
+"use client";
 import { useState } from "react";
 import { Briefcase, CheckCircle, Eye, EyeOff, Lock, Mail, User } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { useAppDispatch } from "@/store/hooks";
-import { setUser } from "@/store/slices/authSlice";
-import { MOCK_CANDIDATE, MOCK_RECRUITER } from "@/lib/mockData";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { login, register } from "@/features/auth/store/authSlice";
 import { redirect } from "next/navigation";
 
 interface AuthPageProps {
@@ -14,41 +13,53 @@ interface AuthPageProps {
 
 export default function AuthPage({ mode }: AuthPageProps) {
   const dispatch = useAppDispatch();
+  const { isLoading, error } = useAppSelector((s) => s.auth);
+
+  // Start in the mode the URL dictates; user can toggle between them
   const [isLogin, setIsLogin] = useState(mode === "login");
   const [role, setRole] = useState<"candidate" | "recruiter">("candidate");
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    name: "", email: "", password: "",
+    name: "",
+    email: "",
+    password: "",
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    await new Promise((r) => setTimeout(r, 1200));
 
-    // Mock auth: log in as candidate or recruiter based on role
-    if (role === "recruiter") {
-      dispatch(setUser(MOCK_RECRUITER));
-      redirect("recruiter-dashboard");
+    if (isLogin) {
+      const result = await dispatch(
+        login({ email: formData.email, password: formData.password })
+      );
+      if (login.fulfilled.match(result)) {
+        redirect("jobs");
+      }
     } else {
-      dispatch(setUser(MOCK_CANDIDATE));
-      redirect("candidate-dashboard");
+      const result = await dispatch(
+        register({
+          name: formData.name,
+          email: formData.email,
+          password: formData.password,
+          role,
+        })
+      );
+      if (register.fulfilled.match(result)) {
+        redirect(role === "recruiter" ? "recruiter-dashboard" : "candidate-dashboard");
+      }
     }
-    setLoading(false);
   };
 
   const handleDemoLogin = async (demoRole: "candidate" | "recruiter") => {
-    setLoading(true);
-    await new Promise((r) => setTimeout(r, 800));
+    // Demo login — uses mock data directly (works without backend)
+    const { setUser } = await import("@/store/slices/authSlice");
+    const { MOCK_CANDIDATE, MOCK_RECRUITER } = await import("@/lib/mockData");
     if (demoRole === "recruiter") {
       dispatch(setUser(MOCK_RECRUITER));
-      redirect("recruiter-dashboard");
     } else {
       dispatch(setUser(MOCK_CANDIDATE));
-      redirect("candidate-dashboard");
     }
-    setLoading(false);
+    redirect(demoRole === "recruiter" ? "recruiter-dashboard" : "candidate-dashboard");
   };
 
   const BENEFITS = [
@@ -129,6 +140,13 @@ export default function AuthPage({ mode }: AuthPageProps) {
             </p>
           </div>
 
+          {/* Error Banner */}
+          {error && (
+            <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
+              {error}
+            </div>
+          )}
+
           {/* Role Selector (Register only) */}
           {!isLogin && (
             <div className="mb-6">
@@ -140,9 +158,7 @@ export default function AuthPage({ mode }: AuthPageProps) {
                     type="button"
                     onClick={() => setRole(r)}
                     className={`p-4 rounded-xl border-2 text-left transition-all ${
-                      role === r
-                        ? "border-blue-600 bg-blue-50"
-                        : "border-gray-200 hover:border-gray-300"
+                      role === r ? "border-blue-600 bg-blue-50" : "border-gray-200 hover:border-gray-300"
                     }`}
                   >
                     <div className="text-2xl mb-1">{r === "candidate" ? "🙋" : "🏢"}</div>
@@ -213,7 +229,7 @@ export default function AuthPage({ mode }: AuthPageProps) {
               variant="primary"
               size="md"
               fullWidth
-              loading={loading}
+              loading={isLoading}
               className="mt-2"
             >
               {isLogin ? "Sign In" : "Create Account"}
@@ -236,7 +252,7 @@ export default function AuthPage({ mode }: AuthPageProps) {
               variant="outline"
               size="sm"
               onClick={() => handleDemoLogin("candidate")}
-              loading={loading}
+              disabled={isLoading}
             >
               🙋 Demo Candidate
             </Button>
@@ -244,7 +260,7 @@ export default function AuthPage({ mode }: AuthPageProps) {
               variant="outline"
               size="sm"
               onClick={() => handleDemoLogin("recruiter")}
-              loading={loading}
+              disabled={isLoading}
             >
               🏢 Demo Recruiter
             </Button>
@@ -252,8 +268,7 @@ export default function AuthPage({ mode }: AuthPageProps) {
 
           {/* Toggle */}
           <p className="text-center text-sm text-gray-500 mt-6">
-            {isLogin ? "Don't have an account?" : "Already have an account?"}
-            {" "}
+            {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
             <button
               type="button"
               onClick={() => setIsLogin(!isLogin)}
@@ -267,8 +282,8 @@ export default function AuthPage({ mode }: AuthPageProps) {
           {!isLogin && (
             <p className="text-xs text-gray-400 text-center mt-4">
               By creating an account, you agree to our{" "}
-              <a href="#" className="text-blue-500 hover:underline">Terms of Service</a>
-              {" "}and{" "}
+              <a href="#" className="text-blue-500 hover:underline">Terms of Service</a>{" "}
+              and{" "}
               <a href="#" className="text-blue-500 hover:underline">Privacy Policy</a>.
             </p>
           )}

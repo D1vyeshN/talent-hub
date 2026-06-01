@@ -9,7 +9,8 @@ const eslintConfig = defineConfig([
     rules: {
       "@typescript-eslint/no-empty-object-type": "off",
       "react/no-unescaped-entities": "off",
-      "react-hooks/purity": "off"
+      "react-hooks/purity": "off",
+      "@typescript-eslint/no-explicit-any":"warn"
     }
   },
   // Override default ignores of eslint-config-next.
