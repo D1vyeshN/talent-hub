@@ -30,11 +30,9 @@ app.use(express.urlencoded({ extended: true, limit: "10kb" }));
 // Cookies
 app.use(cookieParser());
 
-// ─── Routes (mount here as you build them) ────────────────────────────────────
-// import authRoutes from "./routes/auth.routes";
-// app.use("/api/auth", authRoutes);
-// import jobRoutes from "./routes/job.routes";
-// app.use("/api/jobs", jobRoutes);
+// ─── Routes ───────────────────────────────────────────────────────────────────
+import authRoutes from "@/features/auth/auth.routes";
+app.use("/api/auth", authRoutes);
 
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok", uptime: process.uptime() });

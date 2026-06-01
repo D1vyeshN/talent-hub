@@ -6,12 +6,12 @@ import { logger } from "../utils/logger";
  * Global error handler — attach LAST in the middleware chain.
  *
  * Handles:
- *  - Custom AppError (thrown with { statusCode, message })
- *  - Mongoose ValidationError  → 400
- *  - Mongoose CastError        → 400
- *  - Mongoose duplicate key    → 409
- *  - JWT errors                 → 401
- *  - Everything else            → 500
+ * - Custom AppError (thrown with { statusCode, message })
+ * - Mongoose ValidationError → 400
+ * - Mongoose CastError → 400
+ * - Mongoose duplicate key → 409
+ * - JWT errors → 401
+ * - Everything else → 500
  */
 export const errorHandler = (
   err: Error & { statusCode?: number; code?: string },
@@ -25,9 +25,8 @@ export const errorHandler = (
   // Mongoose validation error (e.g. required fields)
   if (err.name === "ValidationError") {
     statusCode = 400;
-    message = Object.values((err as Record<string, unknown>).errors)
-      .map((e: Record<string, unknown>) => e.message)
-      .join(", ");
+    const anyErr = err as any;
+    message = Object.values(anyErr.errors || {}).map((e: any) => e.message).join(", ");
   }
 
   // Mongoose bad ID format
@@ -37,9 +36,10 @@ export const errorHandler = (
   }
 
   // Mongoose duplicate key (e.g. unique email)
-  if ((err as Record<string, unknown>).code === 11000) {
+  const anyErr = err as any;
+  if (anyErr.code === 11000) {
     statusCode = 409;
-    const field = Object.keys((err as Record<string, unknown>).keyValue || {}).join(", ");
+    const field = Object.keys(anyErr.keyValue || {}).join(", ");
     message = `${field} already exists`;
   }
 

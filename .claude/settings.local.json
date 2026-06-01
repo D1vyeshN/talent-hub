@@ -1,1 +1,32 @@
-{}
+{
+  "permissions": {
+    "defaultMode": "plan",
+
+    "allow": [
+      "Bash(npm run *)",
+      "Bash(node *)",
+      "Bash(nodemon *)",
+      "Bash(ts-node *)",
+      "Bash(git status)",
+      "Bash(git diff)",
+      "Bash(ls *)",
+      "Bash(cat *)"
+    ],
+
+    "ask": [
+      "Bash(npm install)",
+      "Bash(npm i *)",
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "Bash(rm *)",
+      "Bash(rmdir *)"
+    ],
+
+    "deny": [
+      "Bash(sudo *)",
+      "Bash(rm -rf *)",
+      "Bash(format *)",
+      "Bash(del /s /q *)"
+    ]
+  }
+}
