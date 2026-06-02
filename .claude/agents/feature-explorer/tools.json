@@ -1,0 +1,8 @@
+{
+  "description": "Read-only tools for exploring the codebase before scaffolding a feature. Cannot write or modify anything.",
+  "allowedTools": [
+    "Read",
+    "Glob",
+    "Grep"
+  ]
+}
