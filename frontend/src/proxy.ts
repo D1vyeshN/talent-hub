@@ -1,14 +1,15 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-const PROTECTED_ROUTES = ["/dashboard", "/messages", "/settings"];
+const PROTECTED_ROUTES = ["/candidate-dashboard",
+    "/recruiter-dashboard","/dashboard", "/messages", "/settings"];
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const session = request.cookies.get("session") || request.cookies.get("token");
-
+  const session =
+    request.cookies.get("session") || request.cookies.get("token");
   const isProtected = PROTECTED_ROUTES.some((route) =>
-    pathname.startsWith(route)
+    pathname.startsWith(route),
   );
 
   if (isProtected && !session) {
@@ -29,6 +30,8 @@ export function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
+    "/candidate-dashboard",
+    "/recruiter-dashboard",
     "/dashboard/:path*",
     "/messages/:path*",
     "/settings/:path*",

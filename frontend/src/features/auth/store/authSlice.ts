@@ -1,4 +1,8 @@
-import { createSlice, createAsyncThunk, type PayloadAction } from "@reduxjs/toolkit";
+import {
+  createSlice,
+  createAsyncThunk,
+  type PayloadAction,
+} from "@reduxjs/toolkit";
 import { authService } from "../services/auth.service";
 import { getCookie, setCookie, deleteCookie } from "@/shared/lib/apiClient";
 import type { User, UserRole } from "@/types";
@@ -11,6 +15,7 @@ interface AuthState {
   role: UserRole | null;
   isLoading: boolean;
   error: string | null;
+  initialized: boolean;
 }
 
 const initialState: AuthState = {
@@ -19,6 +24,7 @@ const initialState: AuthState = {
   role: null,
   isLoading: false,
   error: null,
+  initialized: false,
 };
 
 // ─── Thunks ─────────────────────────────────────────────────────────────────
@@ -27,10 +33,13 @@ export const login = createAsyncThunk(
   "auth/login",
   async (
     credentials: { email: string; password: string },
-    { rejectWithValue }
+    { rejectWithValue },
   ) => {
     try {
-      const data = await authService.login(credentials.email, credentials.password);
+      const data = await authService.login(
+        credentials.email,
+        credentials.password,
+      );
       // Token stored in cookie by backend; also store it here for the header interceptor
       // (belt-and-suspenders: backend sets httpOnly cookie, we also write a client-accessible copy)
       // The cookie is already set via apiClient's setCookie in the login flow...
@@ -41,30 +50,44 @@ export const login = createAsyncThunk(
     } catch (err: any) {
       return rejectWithValue(err.message || "Login failed");
     }
-  }
+  },
 );
 
 export const register = createAsyncThunk(
   "auth/register",
   async (
     data: { name: string; email: string; password: string; role: UserRole },
-    { rejectWithValue }
+    { rejectWithValue },
   ) => {
     try {
       return await authService.register(data);
     } catch (err: any) {
       return rejectWithValue(err.message || "Registration failed");
     }
-  }
+  },
 );
 
-export const getMe = createAsyncThunk("auth/getMe", async (_void, { rejectWithValue }) => {
-  try {
-    return await authService.getMe();
-  } catch (err: any) {
-    return rejectWithValue(err.message || "Session expired");
-  }
-});
+export const fetchCurrentUser = createAsyncThunk(
+  "auth/getMe",
+  async (_void, { rejectWithValue }) => {
+    try {
+      return await authService.getMe();
+    } catch (err: any) {
+      return rejectWithValue(err.message || "Session expired");
+    }
+  },
+);
+
+export const logout = createAsyncThunk(
+  "auth/logout",
+  async (_void, { rejectWithValue }) => {
+    try {
+      return await authService.logout();
+    } catch (err: any) {
+      return rejectWithValue(err.message || "Session expired");
+    }
+  },
+);
 
 // ─── Slice ──────────────────────────────────────────────────────────────────
 
@@ -72,14 +95,14 @@ const authSlice = createSlice({
   name: "auth",
   initialState,
   reducers: {
-    logout(state) {
-      state.user = null;
-      state.isAuthenticated = false;
-      state.role = null;
-      state.isLoading = false;
-      state.error = null;
-      deleteCookie("token");
-    },
+    // logout(state) {
+    //   state.user = null;
+    //   state.isAuthenticated = false;
+    //   state.role = null;
+    //   state.isLoading = false;
+    //   state.error = null;
+    //   deleteCookie("token");
+    // },
     clearError(state) {
       state.error = null;
     },
@@ -102,6 +125,23 @@ const authSlice = createSlice({
       state.error = action.payload as string;
     });
 
+    // logout
+    builder.addCase(logout.pending, (state) => {
+      state.isLoading = true;
+      state.error = null;
+    });
+    builder.addCase(logout.fulfilled, (state) => {
+      state.user = null;
+      state.isAuthenticated = false;
+      state.role = null;
+      state.isLoading = false;
+      state.error = null;
+    });
+    builder.addCase(logout.rejected, (state, action) => {
+      state.isLoading = false;
+      state.error = action.payload as string;
+    });
+
     // register
     builder.addCase(register.pending, (state) => {
       state.isLoading = true;
@@ -120,27 +160,29 @@ const authSlice = createSlice({
     });
 
     // getMe
-    builder.addCase(getMe.pending, (state) => {
+    builder.addCase(fetchCurrentUser.pending, (state) => {
       state.isLoading = true;
     });
-    builder.addCase(getMe.fulfilled, (state, action) => {
+    builder.addCase(fetchCurrentUser.fulfilled, (state, action) => {
       state.isLoading = false;
       state.user = action.payload;
       state.isAuthenticated = true;
       state.role = action.payload.role;
-      state.error = null;
+      state.initialized = true;
+      // state.error = null;
     });
-    builder.addCase(getMe.rejected, (state, action) => {
+    builder.addCase(fetchCurrentUser.rejected, (state, action) => {
       state.isLoading = false;
       state.user = null;
       state.isAuthenticated = false;
       state.role = null;
-      state.error = action.payload as string;
+      state.initialized = true;
+      // state.error = action.payload as string;
     });
   },
 });
 
 // ─── Exports ─────────────────────────────────────────────────────────────────
 
-export const { logout, clearError } = authSlice.actions;
+export const { clearError } = authSlice.actions;
 export default authSlice.reducer;

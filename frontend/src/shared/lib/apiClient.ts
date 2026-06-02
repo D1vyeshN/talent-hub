@@ -9,11 +9,14 @@
  *  - Error normalization (HTTP errors → Error(message))
  */
 
+// import { getCookie } from "./cookie";
+
 // ─── Cookie helpers (replaces separate cookie.ts) ────────────────────────────
 
 const getCookie = (name: string): string | undefined => {
   if (typeof document === "undefined") return undefined;
   const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
+  console.log(document.cookie,"toooooooooo");
   return match?.[1];
 };
 
@@ -31,7 +34,7 @@ export { getCookie, setCookie, deleteCookie };
 
 // ─── Client config ───────────────────────────────────────────────────────────
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
 type ClientConfig = {
   onUnauthorized?: () => void;
@@ -48,15 +51,16 @@ export function setUnauthorizedHandler(handler: () => void) {
 
 async function request<T>(
   endpoint: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
 ): Promise<T> {
-  const token = getCookie("token");
+  // const token = getCookie("token");
 
+  // console.log(token,"toooooooooo");
   const res = await fetch(`${BASE_URL}${endpoint}`, {
     ...options,
     headers: {
       "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      // ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(options.headers as Record<string, string> | undefined),
     },
     credentials: "include",
@@ -95,7 +99,7 @@ export const apiClient = {
   get: <T>(path: string, params?: Record<string, string | number>) => {
     const qs = params
       ? `?${new URLSearchParams(
-          Object.entries(params).map(([k, v]) => [k, String(v)])
+          Object.entries(params).map(([k, v]) => [k, String(v)]),
         ).toString()}`
       : "";
     return request<T>(`${path}${qs}`);

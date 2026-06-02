@@ -431,7 +431,7 @@ You should see:
 
 ```
 ✅ MongoDB connected successfully
-🚀 Server running on http://localhost:5000
+🚀 Server running on http://localhost:8080
 📋 Environment: development
 ```
 
@@ -476,4 +476,4 @@ Use this when building any feature:
 | `Argument of type 'X' is not assignable to Promise<void>` | Controller has `return res.status().json(...)` | Remove `return` — just `res.status().json(...)` |
 | `Property 'X' does not exist on type 'User'` | Spreading role-specific fields on shared `User` type | Cast to `as Candidate` / `as Recruiter` / `as Admin` after spread |
 | `Duplicate schema index` | Declared both `unique: true` and `schema.index()` for same field | Remove the `schema.index()` call |
-| `EADDRINUSE: :::5000` | Old server process still running | Kill old process: `taskkill //F //PID <pid>` |
+| `EADDRINUSE: :::8080` | Old server process still running | Kill old process: `taskkill //F //PID <pid>` |

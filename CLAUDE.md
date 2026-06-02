@@ -203,4 +203,4 @@ For each feature:
 - No `fetch()` outside `apiClient.ts`
 - No exposing `toApi()` helper in service exports
 - No async validators (validators are sync middleware only)
-- No `import { setUser } from "@/store/slices/authSlice"` in new code (the legacy path exists only for demo fallback)
+- No `import { setUser } from "@/features/auth/store/authSlice"` in new code (the legacy path exists only for demo fallback)
