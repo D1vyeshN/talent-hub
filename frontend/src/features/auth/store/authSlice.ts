@@ -95,14 +95,6 @@ const authSlice = createSlice({
   name: "auth",
   initialState,
   reducers: {
-    // logout(state) {
-    //   state.user = null;
-    //   state.isAuthenticated = false;
-    //   state.role = null;
-    //   state.isLoading = false;
-    //   state.error = null;
-    //   deleteCookie("token");
-    // },
     clearError(state) {
       state.error = null;
     },

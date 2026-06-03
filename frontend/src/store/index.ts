@@ -1,12 +1,14 @@
 import { configureStore } from "@reduxjs/toolkit";
 import uiReducer from "./slices/uiSlice";
 import authReducer, { logout } from "@/features/auth/store/authSlice";
+import recruiterProfileReducer from "@/features/recruiterProfile/store/recruiterProfileSlice";
 import { setUnauthorizedHandler } from "@/shared/lib/apiClient";
 
 export const store = configureStore({
   reducer: {
     auth: authReducer,
     ui: uiReducer,
+    recruiterProfile: recruiterProfileReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({ serializableCheck: false }),

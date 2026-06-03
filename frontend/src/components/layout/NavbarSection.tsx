@@ -7,7 +7,6 @@ import {
   LogOut,
   Menu,
   Moon,
-  Search,
   Settings,
   Sun,
   User,
@@ -89,13 +88,16 @@ export function NavbarSection() {
           >
             {navLinks.map((link) => {
               if (link.authOnly && !isAuthenticated) return null;
+              const isActive =
+                currentPage === link.page ||
+                currentPage.startsWith(`${link.page}/`);
               return (
                 <button
                   key={link.page}
                   onClick={() => redirect(link.page)}
                   className={cn(
                     "px-4 py-2 text-sm font-medium rounded-lg transition-colors",
-                    currentPage === link.page
+                    isActive
                       ? "text-blue-600 bg-blue-50"
                       : "text-gray-600 hover:text-gray-900 hover:bg-gray-100",
                   )}
@@ -241,67 +243,54 @@ export function NavbarSection() {
             </button>
           </div>
         </div>
-
-        {/* Mobile Menu */}
-        {mobileMenuOpen && (
-          <div className="md:hidden border-t border-gray-200 py-3 space-y-1">
-            {navLinks.map((link) => {
-              if (link.authOnly && !isAuthenticated) return null;
-              return (
-                <button
-                  key={link.page}
-                  onClick={() => {
-                    redirect(link.page);
-                    setMobileMenuOpen(false);
-                  }}
-                  className="w-full text-left px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-lg"
-                >
-                  {link.label}
-                </button>
-              );
-            })}
-            {!isAuthenticated && (
-              <div className="pt-2 flex gap-2 px-4">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  fullWidth
-                  onClick={() => {
-                    redirect("/login");
-                    setMobileMenuOpen(false);
-                  }}
-                >
-                  Sign In
-                </Button>
-                <Button
-                  variant="primary"
-                  size="sm"
-                  fullWidth
-                  onClick={() => {
-                    redirect("/register");
-                    setMobileMenuOpen(false);
-                  }}
-                >
-                  Get Started
-                </Button>
-              </div>
-            )}
-          </div>
-        )}
       </div>
 
-      {/* Search Bar (optional, shown on jobs page) */}
-      {/* {currentPage === "jobs" && (
-        <div className="bg-gray-50 border-t border-gray-200 px-4 py-2 hidden lg:block">
-          <div className="max-w-7xl mx-auto flex items-center gap-2 text-sm text-gray-500">
-            <Search className="w-4 h-4" />
-            <span>Search results for</span>
-            <Badge variant="info">All Jobs</Badge>
-            <span>·</span>
-            <span className="text-gray-700 font-medium">156 jobs found</span>
-          </div>
+      {/* Mobile Menu */}
+      {mobileMenuOpen && (
+        <div className="md:hidden border-t border-gray-200 py-3 space-y-1">
+          {navLinks.map((link) => {
+            if (link.authOnly && !isAuthenticated) return null;
+            return (
+              <button
+                key={link.page}
+                onClick={() => {
+                  redirect(link.page);
+                  setMobileMenuOpen(false);
+                }}
+                className="w-full text-left px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-lg"
+              >
+                {link.label}
+              </button>
+            );
+          })}
+          {!isAuthenticated && (
+            <div className="pt-2 flex gap-2 px-4">
+              <Button
+                variant="outline"
+                size="sm"
+                fullWidth
+                onClick={() => {
+                  redirect("/login");
+                  setMobileMenuOpen(false);
+                }}
+              >
+                Sign In
+              </Button>
+              <Button
+                variant="primary"
+                size="sm"
+                fullWidth
+                onClick={() => {
+                  redirect("/register");
+                  setMobileMenuOpen(false);
+                }}
+              >
+                Get Started
+              </Button>
+            </div>
+          )}
         </div>
-      )} */}
+      )}
     </header>
   );
 }
