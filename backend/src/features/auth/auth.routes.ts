@@ -5,8 +5,9 @@ import {
   getMe,
   logout,
 } from "./auth.controller";
-import { registerValidation, loginValidation } from "./auth.validator";
+import { registerSchema, loginSchema } from "./auth.validator";
 import { authenticate } from "@/middleware/auth.middleware";
+import { validate } from "@/middleware/validation.middleware";
 
 // ─── Router ───────────────────────────────────────────────────────────────────
 
@@ -17,8 +18,8 @@ const router = Router();
  * @auth   — authenticate middleware required
  */
 
-router.post("/register", registerValidation, register);
-router.post("/login", loginValidation, login);
+router.post("/register", validate(registerSchema), register);
+router.post("/login", validate(loginSchema), login);
 router.get("/me", authenticate, getMe);
 router.post("/logout", authenticate, logout);
 

@@ -1,75 +1,24 @@
-import { Request, Response, NextFunction } from "express";
-import { RegisterRequest, LoginRequest } from "@/shared/types/user";
+import { z } from "zod";
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+export const registerSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(2, "Name must be at least 2 characters")
+    .max(100, "Name must be at most 100 characters"),
 
-const emailRegex = /^\S+@\S+\.\S+$/;
+  email: z.email("Please enter a valid email address"),
 
-// ─── Validators (call next() or send response directly — no asyncHandler needed) ─
+  password: z
+    .string()
+    .min(8, "Password must be at least 8 characters"),
 
-export const registerValidation = (req: Request, res: Response, next: NextFunction) => {
-  const body = req.body as Partial<RegisterRequest>;
+  role: z.enum(["admin", "recruiter", "candidate"], {
+    error: "Role must be one of: admin, recruiter, candidate",
+  }),
+});
 
-  if (!body.name || body.name.trim().length < 2) {
-    return res.status(400).json({
-      success: false,
-      statusCode: 400,
-      data: null,
-      message: "Name must be at least 2 characters",
-    });
-  }
-
-  if (!body.email || !emailRegex.test(body.email)) {
-    return res.status(400).json({
-      success: false,
-      statusCode: 400,
-      data: null,
-      message: "Please enter a valid email address",
-    });
-  }
-
-  if (!body.password || body.password.length < 8) {
-    return res.status(400).json({
-      success: false,
-      statusCode: 400,
-      data: null,
-      message: "Password must be at least 8 characters",
-    });
-  }
-
-  const allowedRoles = ["candidate", "recruiter"];
-  if (!body.role || !allowedRoles.includes(body.role)) {
-    return res.status(400).json({
-      success: false,
-      statusCode: 400,
-      data: null,
-      message: "Role must be either 'candidate' or 'recruiter'",
-    });
-  }
-
-  next();
-};
-
-export const loginValidation = (req: Request, res: Response, next: NextFunction) => {
-  const body = req.body as Partial<LoginRequest>;
-
-  if (!body.email || !emailRegex.test(body.email)) {
-    return res.status(400).json({
-      success: false,
-      statusCode: 400,
-      data: null,
-      message: "Please enter a valid email address",
-    });
-  }
-
-  if (!body.password) {
-    return res.status(400).json({
-      success: false,
-      statusCode: 400,
-      data: null,
-      message: "Password is required",
-    });
-  }
-
-  next();
-};
+export const loginSchema = z.object({
+  email: z.email("Please enter a valid email address"),
+  password: z.string().min(1, "Password is required"),
+});

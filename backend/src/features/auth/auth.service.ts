@@ -1,6 +1,6 @@
 import { Types } from "mongoose";
 import jwt, { JwtPayload } from "jsonwebtoken";
-import { User, IUser } from "./auth.model";
+import { User, IUser } from "@/features/users/user.model";
 import { ApiResponse } from "@/utils/ApiResponse";
 import {
   RegisterRequest,
@@ -12,6 +12,7 @@ import {
   Admin,
 } from "@/shared/types/user";
 import { AppError } from "@/middleware/error.middleware";
+import { userService } from "@/features/users/user.service";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -32,17 +33,35 @@ function generateToken(userId: string, role: string): string {
   return jwt.sign({ userId, role }, JWT_SECRET, { expiresIn: JWT_EXPIRE } as jwt.SignOptions);
 }
 
-/** Convert an IUser doc → API User shape (hides password, formats dates, stringifies _id) */
-function toApiUser(user: IUser): UserType {
+// Profile fields live in CandidateProfile/RecruiterProfile (Phase C+).
+// Cast to the extended interface so auth profiles aren't forced onto IUser.
+interface UserWithProfile extends IUser {
+  headline?: string;
+  location?: string;
+  skills?: string[];
+  experience?: number;
+  resumeUrl?: string;
+  savedJobs?: string[];
+  appliedJobs?: string[];
+  profileCompletion?: number;
+  company?: string;
+  companyId?: string;
+  designation?: string;
+  postedJobs?: string[];
+  permissions?: string[];
+}
+
+/**
+ * Convert an IUser + optional profile into a full API User shape
+ */
+async function toApiUser(user: UserWithProfile): Promise<UserType> {
   const base: UserType = {
-    id: user._id.toString(),
+    id: user._id!.toString(),
     name: user.name,
     email: user.email,
-    role: user.role,
-    createdAt: user.createdAt.toISOString(),
+    role: user.role as UserType["role"],
+    createdAt: (user.createdAt as Date).toISOString(),
   };
-
-  if (user.avatar) base.avatar = user.avatar;
 
   if (user.role === "candidate") {
     return {
@@ -50,12 +69,12 @@ function toApiUser(user: IUser): UserType {
       role: "candidate",
       headline: user.headline,
       location: user.location,
-      skills: user.skills,
-      experience: user.experience,
+      skills: user.skills ?? [],
+      experience: user.experience ?? 0,
       resumeUrl: user.resumeUrl,
-      savedJobs: user.savedJobs,
-      appliedJobs: user.appliedJobs,
-      profileCompletion: user.profileCompletion,
+      savedJobs: user.savedJobs ?? [],
+      appliedJobs: user.appliedJobs ?? [],
+      profileCompletion: user.profileCompletion ?? 0,
     } as Candidate;
   }
 
@@ -63,27 +82,23 @@ function toApiUser(user: IUser): UserType {
     return {
       ...base,
       role: "recruiter",
-      company: user.company || "",
-      companyId: user.companyId || "",
-      designation: user.designation || "",
-      postedJobs: user.postedJobs,
+      company: user.company ?? "",
+      companyId: user.companyId ?? "",
+      designation: user.designation ?? "",
+      postedJobs: user.postedJobs ?? [],
     } as Recruiter;
   }
 
   return {
     ...base,
     role: "admin",
-    permissions: user.permissions,
+    permissions: user.permissions ?? [],
   } as Admin;
 }
 
 // ─── Service Functions ────────────────────────────────────────────────────────
 
 export const authService = {
-  /**
-   * Register a new user.
-   * @throws AppError 409 if email already exists
-   */
   async register(data: RegisterRequest): Promise<AuthResponse> {
     const { name, email, password, role } = data;
 
@@ -95,16 +110,12 @@ export const authService = {
     const userDoc = await User.create({ name, email, password, role });
     const token = generateToken(userDoc._id.toString(), userDoc.role);
 
-    return {
-      user: toApiUser(userDoc),
-      token,
-    };
+    // Phase D: also create CandidateProfile / RecruiterProfile here.
+    const apiUser = await toApiUser(userDoc as unknown as UserWithProfile);
+
+    return { user: apiUser, token };
   },
 
-  /**
-   * Log in an existing user.
-   * @throws AppError 401 if credentials don't match
-   */
   async login(data: LoginRequest): Promise<AuthResponse> {
     const { email, password } = data;
 
@@ -119,22 +130,17 @@ export const authService = {
     }
 
     const token = generateToken(userDoc._id.toString(), userDoc.role);
+    const apiUser = await toApiUser(userDoc as unknown as UserWithProfile);
 
-    return {
-      user: toApiUser(userDoc),
-      token,
-    };
+    return { user: apiUser, token };
   },
 
-  /**
-   * Get the current authenticated user by ID.
-   * @throws AppError 404 if user not found
-   */
   async getMe(userId: string): Promise<UserType> {
     const userDoc = await User.findById(userId);
     if (!userDoc) {
       throw new AppError(404, "User not found");
     }
-    return toApiUser(userDoc);
+    const baseUser = (await userService.getProfile(userId)) as unknown as UserWithProfile;
+    return toApiUser(baseUser);
   },
 };

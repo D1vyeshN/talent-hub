@@ -30,9 +30,15 @@ app.use(express.urlencoded({ extended: true, limit: "10kb" }));
 // Cookies
 app.use(cookieParser());
 
+// HTTP logger middleware
+import { httpLoggerMiddleware } from "./middleware/httplogger.middleware";
+app.use(httpLoggerMiddleware);
+
 // ─── Routes ───────────────────────────────────────────────────────────────────
 import authRoutes from "@/features/auth/auth.routes";
+import usersRoutes from "@/features/users/user.routes";
 app.use("/api/auth", authRoutes);
+app.use("/api/users", usersRoutes);
 
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok", uptime: process.uptime() });
