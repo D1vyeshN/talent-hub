@@ -1,4 +1,6 @@
 import express from "express";
+import http from "http";
+import { Server } from "socket.io";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
@@ -20,12 +22,12 @@ app.use(
   cors({
     origin: process.env.CORS_ORIGIN || "http://localhost:3000",
     credentials: true,
-  })
+  }),
 );
 
 // Body parsing
-app.use(express.json({ limit: "10kb" })); // reject huge payloads
-app.use(express.urlencoded({ extended: true, limit: "10kb" }));
+app.use(express.json({ limit: "10mb" })); // reject huge payloads
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 // Cookies
 app.use(cookieParser());
@@ -38,9 +40,27 @@ app.use(httpLoggerMiddleware);
 import authRoutes from "@/modules/auth/auth.routes";
 import usersRoutes from "@/modules/users/user.routes";
 import candidateRoutes from "@/modules/candidate/candidate.routes";
+import recruiterRoutes from "@/modules/recruiter/recruiter.routes";
+import companyRoutes from "@/modules/company/company.routes";
+import applicationRoutes from "@/modules/application/application.routes";
+import jobRoutes from "@/modules/job/job.routes";
+import messageRoutes from "@/modules/message/message.routes";
+import notificationRoutes from "@/modules/notification/notification.routes";
+import adminRoutes from "@/modules/admin/admin.routes";
+import { initSocket } from "./socket/socket";
+
 app.use("/api/auth", authRoutes);
 app.use("/api/users", usersRoutes);
 app.use("/api/candidate", candidateRoutes);
+app.use("/api/recruiter", recruiterRoutes);
+app.use("/api/company", companyRoutes);
+app.use("/api/application", applicationRoutes);
+app.use("/api/job",jobRoutes);
+app.use("/api/message",messageRoutes);
+app.use("/api/notification",notificationRoutes);
+app.use("/api/admin",adminRoutes);
+
+
 
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok", uptime: process.uptime() });
@@ -53,6 +73,14 @@ app.use(errorHandler);
 const startServer = async () => {
   await connectDB();
 
+  const httpServer = http.createServer(app);
+
+  const io = new Server(httpServer, {
+    cors: { origin: process.env.CLIENT_URL, credentials: true },
+  });
+
+  initSocket(io);
+ 
   app.listen(PORT, () => {
     logger.info(`🚀 Server running on http://localhost:${PORT}`);
     logger.info(`📋 Environment: ${process.env.NODE_ENV || "development"}`);
