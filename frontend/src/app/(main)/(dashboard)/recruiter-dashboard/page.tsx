@@ -103,11 +103,13 @@ export default function RecruiterDashboardHome() {
 
   return (
     <div className="space-y-6">
-      {/* {error && (
-        <div className="p-3 rounded-lg bg-red-50 text-sm text-red-600">
-          {error}
+      {error && (
+        <div className="p-3 rounded-lg bg-amber-50 text-sm text-amber-600 border border-amber-200">
+          ⚠️ Dashboard endpoint not implemented in backend yet. Showing placeholder data.
+          <br />
+          <span className="text-xs">Backend needs: GET /api/recruiter/dashboard</span>
         </div>
-      )} */}
+      )}
 
       {/* Welcome + Post action */}
       <div className="flex items-start justify-between flex-wrap gap-3">

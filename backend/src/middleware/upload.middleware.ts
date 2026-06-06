@@ -1,8 +1,8 @@
 import multer from "multer";
-import { CloudinaryStorage } from "multer-storage-cloudinary";
+import CloudinaryStorage from "multer-storage-cloudinary";
 import cloudinary from "../config/cloudinary";
 
-const resumeStorage = new CloudinaryStorage({
+const resumeStorage = CloudinaryStorage({
   cloudinary,
   params: {
     folder: "resumes",
@@ -10,7 +10,7 @@ const resumeStorage = new CloudinaryStorage({
   } as Record<string, unknown>,
 });
 
-const avatarStorage = new CloudinaryStorage({
+const avatarStorage = CloudinaryStorage({
   cloudinary,
   params: {
     folder: "avatars",

@@ -1,29 +1,69 @@
 "use client"
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Building2, CheckCircle, MapPin, Search, Star, Users } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { MOCK_COMPANIES } from "@/lib/mockData";
 import { cn } from "@/lib/utils";
 import { redirect } from "next/navigation";
-
+import { companyService } from "@/features/company/services/company.service";
+import type { Company } from "@/types";
 
 const INDUSTRIES = ["All", "Technology", "Fintech", "Food Tech", "E-commerce", "Quick Commerce"];
 
 export default function CompaniesPage() {
   const [search, setSearch] = useState("");
   const [industry, setIndustry] = useState("All");
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const filtered = MOCK_COMPANIES.filter((c) => {
+  useEffect(() => {
+    const fetchCompanies = async () => {
+      try {
+        setIsLoading(true);
+        const response = await companyService.getAll();
+        setCompanies(response.data);
+      } catch (err: any) {
+        setError(err.message || "Failed to load companies");
+        // Fallback to mock data for demo
+        const { MOCK_COMPANIES } = await import("@/lib/mockData");
+        setCompanies(MOCK_COMPANIES);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCompanies();
+  }, []);
+
+  const filtered = companies.filter((c) => {
     const matchSearch = c.name.toLowerCase().includes(search.toLowerCase()) ||
       c.industry.toLowerCase().includes(search.toLowerCase());
     const matchIndustry = industry === "All" || c.industry.toLowerCase().includes(industry.toLowerCase());
     return matchSearch && matchIndustry;
   });
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center py-16">
+            <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-500">Loading companies...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {error && (
+          <div className="mb-4 p-3 rounded-lg bg-amber-50 text-sm text-amber-600 border border-amber-200">
+            ⚠️ Using fallback data. Backend endpoint may not be available.
+          </div>
+        )}
         {/* Header */}
         <div className="text-center mb-10">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Explore Top Companies</h1>

@@ -1,7 +1,11 @@
 "use client";
 
-import { useState } from "react";
-import { MOCK_APPLICATIONS, MOCK_CANDIDATE } from "@/lib/mockData";
+import { useState, useEffect } from "react";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import {
+  fetchApplications,
+  updateApplicationStatus,
+} from "@/features/recruiterProfile/store/recruiterProfileSlice";
 import { APPLICATION_STATUS_CONFIG } from "@/constants";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
@@ -12,9 +16,17 @@ import { Input } from "@/components/ui/Input";
 import { Eye, CheckCircle, XCircle } from "lucide-react";
 
 export default function ApplicationsPage() {
+  const dispatch = useAppDispatch();
+  const { applications, isLoading } = useAppSelector((s) => s.recruiterProfile);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const applications = MOCK_APPLICATIONS;
+
+  useEffect(() => {
+    // Note: This endpoint doesn't exist in backend yet
+    // Backend has /api/application/job/:jobId for specific job applications
+    // Need to implement /api/recruiter/applications in backend or fetch per job
+    dispatch(fetchApplications());
+  }, [dispatch]);
 
   const filters = [
     { id: "all", label: "All Applications" },
@@ -25,15 +37,19 @@ export default function ApplicationsPage() {
     { id: "rejected", label: "Rejected" },
   ];
 
-  const filtered = applications.filter((a) => {
-    const candidate = a.candidate || MOCK_CANDIDATE;
+  const filtered = applications.filter((a: any) => {
+    const candidate = a.candidate || { name: "Unknown Candidate" };
     const matchesSearch =
       !searchQuery ||
       candidate.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      a.job.title.toLowerCase().includes(searchQuery.toLowerCase());
+      a.job?.title?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === "all" || a.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
+
+  const handleStatusUpdate = (applicationId: string, newStatus: string) => {
+    dispatch(updateApplicationStatus({ applicationId, status: newStatus }));
+  };
 
   return (
     <div className="space-y-6">
@@ -99,68 +115,85 @@ export default function ApplicationsPage() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((app, i) => {
-                const candidate = app.candidate || MOCK_CANDIDATE;
-                const config = APPLICATION_STATUS_CONFIG[app.status];
-                return (
-                  <tr
-                    key={app.id}
-                    className={cn(
-                      "border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors",
-                    )}
-                  >
-                    <td className="px-5 py-4">
-                      <div className="flex items-center gap-3">
-                        <Avatar name={candidate.name} size="sm" />
-                        <div>
-                          <p className="text-sm font-medium text-gray-900">{candidate.name}</p>
-                          <p className="text-xs text-gray-400">{candidate.experience || "N/A"} yrs exp</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-5 py-4">
-                      <p className="text-sm text-gray-700">{app.job.title}</p>
-                    </td>
-                    <td className="px-5 py-4">
-                      <p className="text-xs text-gray-500">{new Date(app.appliedAt).toLocaleDateString()}</p>
-                    </td>
-                    <td className="px-5 py-4">
-                      <span
-                        className={cn(
-                          "text-xs font-medium px-2.5 py-1 rounded-full",
-                          config.color,
-                          config.bg,
-                        )}
-                      >
-                        {config.label}
-                      </span>
-                    </td>
-                    <td className="px-5 py-4">
-                      <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="xs">
-                          <Eye className="w-3.5 h-3.5" />
-                        </Button>
-                        {app.status !== "rejected" && app.status !== "offer" && (
-                          <>
-                            <Button variant="ghost" size="xs" className="text-green-600 hover:bg-green-50">
-                              <CheckCircle className="w-3.5 h-3.5" />
-                            </Button>
-                            <Button variant="ghost" size="xs" className="text-red-500 hover:bg-red-50">
-                              <XCircle className="w-3.5 h-3.5" />
-                            </Button>
-                          </>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-              {filtered.length === 0 && (
+              {isLoading ? (
+                <tr>
+                  <td colSpan={5} className="px-5 py-12 text-center text-gray-500 text-sm">
+                    Loading applications...
+                  </td>
+                </tr>
+              ) : filtered.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-5 py-12 text-center text-gray-500 text-sm">
                     No applications match your filters.
                   </td>
                 </tr>
+              ) : (
+                filtered.map((app: any) => {
+                  const candidate = app.candidate || { name: "Unknown Candidate", experience: 0 };
+                  const config = APPLICATION_STATUS_CONFIG[app.status as keyof typeof APPLICATION_STATUS_CONFIG] || APPLICATION_STATUS_CONFIG.applied;
+                  return (
+                    <tr
+                      key={app.id}
+                      className={cn(
+                        "border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors",
+                      )}
+                    >
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-3">
+                          <Avatar name={candidate.name} size="sm" />
+                          <div>
+                            <p className="text-sm font-medium text-gray-900">{candidate.name}</p>
+                            <p className="text-xs text-gray-400">{candidate.experience || "N/A"} yrs exp</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-5 py-4">
+                        <p className="text-sm text-gray-700">{app.job?.title || "Unknown role"}</p>
+                      </td>
+                      <td className="px-5 py-4">
+                        <p className="text-xs text-gray-500">{new Date(app.appliedAt).toLocaleDateString()}</p>
+                      </td>
+                      <td className="px-5 py-4">
+                        <span
+                          className={cn(
+                            "text-xs font-medium px-2.5 py-1 rounded-full",
+                            config.color,
+                            config.bg,
+                          )}
+                        >
+                          {config.label}
+                        </span>
+                      </td>
+                      <td className="px-5 py-4">
+                        <div className="flex justify-end gap-1">
+                          <Button variant="ghost" size="xs">
+                            <Eye className="w-3.5 h-3.5" />
+                          </Button>
+                          {app.status !== "rejected" && app.status !== "offer" && (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="xs"
+                                className="text-green-600 hover:bg-green-50"
+                                onClick={() => handleStatusUpdate(app.id, "interview")}
+                              >
+                                <CheckCircle className="w-3.5 h-3.5" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="xs"
+                                className="text-red-500 hover:bg-red-50"
+                                onClick={() => handleStatusUpdate(app.id, "rejected")}
+                              >
+                                <XCircle className="w-3.5 h-3.5" />
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>

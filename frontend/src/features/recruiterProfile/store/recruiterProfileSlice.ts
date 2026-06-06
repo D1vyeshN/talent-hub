@@ -52,7 +52,10 @@ export const fetchJobs = createAsyncThunk(
   "recruiterProfile/fetchJobs",
   async (_void, { rejectWithValue }) => {
     try {
-      return await recruiterProfileService.getJobs();
+      const response = await recruiterProfileService.getJobs();
+      // Service returns paginated response { data, total, page, pageSize, totalPages }
+      // Extract the data array for the slice
+      return response.data;
     } catch (err: any) {
       return rejectWithValue(err.message || "Failed to load jobs");
     }
@@ -117,10 +120,10 @@ export const updateApplicationStatus = createAsyncThunk(
     { rejectWithValue },
   ) => {
     try {
-      return await recruiterProfileService.updateApplicationStatus({
-        id: applicationId,
-        status: status as any,
-      });
+      return await recruiterProfileService.updateApplicationStatus(
+        applicationId,
+        status as any,
+      );
     } catch (err: any) {
       return rejectWithValue(err.message || "Failed to update application");
     }

@@ -56,10 +56,11 @@ async function request<T>(
   // const token = getCookie("token");
 
   // console.log(token,"toooooooooo");
+  const isFormData = options.body instanceof FormData;
   const res = await fetch(`${BASE_URL}${endpoint}`, {
     ...options,
     headers: {
-      "Content-Type": "application/json",
+      ...(isFormData ? {} : { "Content-Type": "application/json" }),
       // ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(options.headers as Record<string, string> | undefined),
     },
@@ -105,16 +106,18 @@ export const apiClient = {
     return request<T>(`${path}${qs}`);
   },
 
-  post: <T>(path: string, body?: unknown) =>
+  post: <T>(path: string, body?: unknown, options?: { headers?: { "Content-Type": string; }; }) =>
     request<T>(path, {
       method: "POST",
-      body: JSON.stringify(body),
+      body: body instanceof FormData ? body : JSON.stringify(body),
+      headers: options?.headers as Record<string, string> | undefined,
     }),
 
-  put: <T>(path: string, body: unknown) =>
+  put: <T>(path: string, body: unknown, options?: { headers?: { "Content-Type": string; }; }) =>
     request<T>(path, {
       method: "PUT",
-      body: JSON.stringify(body),
+      body: body instanceof FormData ? body : JSON.stringify(body),
+      headers: options?.headers as Record<string, string> | undefined,
     }),
   patch: <T>(path: string, body: unknown) =>
     request<T>(path, {

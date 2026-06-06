@@ -3,7 +3,7 @@ import { CompanySize } from "../../shared/types/index";
 
 export interface ICompany extends Document {
   name: string;
-  logo: string;
+  logo?: string;
   website?: string;
   industry: string;
   size: CompanySize;
@@ -20,7 +20,7 @@ export interface ICompany extends Document {
 const CompanySchema = new Schema<ICompany>(
   {
     name: { type: String, required: true, unique: true, trim: true },
-    logo: { type: String, required: true },
+    logo: { type: String },
     website: { type: String },
     industry: { type: String, required: true },
     size: {

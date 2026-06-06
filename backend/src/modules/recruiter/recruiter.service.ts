@@ -5,7 +5,7 @@ import { UpdateRecruiterInput } from "./recruiter.validation";
 
 // ─── Get recruiter profile ────────────────────────────────────────────────────
 export const getRecruiterProfile = async (userId: string) => {
-  const recruiter = await Recruiter.findById(userId).populate("companyId");
+  const recruiter = await Recruiter.findById(userId);
   if (!recruiter) throw new ApiError(404, "Recruiter not found");
   return recruiter;
 };

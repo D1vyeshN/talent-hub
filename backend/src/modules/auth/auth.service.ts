@@ -1,15 +1,18 @@
 import { Types } from "mongoose";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import { User, IUser } from "@/modules/users/user.model";
+import { Candidate } from "@/modules/candidate/candidate.model";
+import { Recruiter } from "@/modules/recruiter/recruiter.model";
+import { Admin } from "@/modules/admin/admin.model";
 import { ApiResponse } from "@/utils/ApiResponse";
 import {
   RegisterRequest,
   LoginRequest,
   AuthResponse,
   User as UserType,
-  Candidate,
-  Recruiter,
-  Admin,
+  Candidate as CandidateType,
+  Recruiter as RecruiterType,
+  Admin as AdminType,
 } from "@/shared/types/user";
 import { AppError } from "@/middleware/error.middleware";
 import { userService } from "@/modules/users/user.service";
@@ -33,30 +36,12 @@ function generateToken(userId: string, role: string): string {
   return jwt.sign({ userId, role }, JWT_SECRET, { expiresIn: JWT_EXPIRE } as jwt.SignOptions);
 }
 
-// Profile fields live in CandidateProfile/RecruiterProfile (Phase C+).
-// Cast to the extended interface so auth profiles aren't forced onto IUser.
-interface UserWithProfile extends IUser {
-  headline?: string;
-  location?: string;
-  skills?: string[];
-  experience?: number;
-  resumeUrl?: string;
-  savedJobs?: string[];
-  appliedJobs?: string[];
-  profileCompletion?: number;
-  company?: string;
-  companyId?: string;
-  designation?: string;
-  postedJobs?: string[];
-  permissions?: string[];
-}
-
 /**
- * Convert an IUser + optional profile into a full API User shape
+ * Convert a discriminator model document to API User shape
  */
-async function toApiUser(user: UserWithProfile): Promise<UserType> {
+function toApiUser(user: any): UserType {
   const base: UserType = {
-    id: user._id!.toString(),
+    id: user._id.toString(),
     name: user.name,
     email: user.email,
     role: user.role as UserType["role"],
@@ -67,33 +52,33 @@ async function toApiUser(user: UserWithProfile): Promise<UserType> {
     return {
       ...base,
       role: "candidate",
-      headline: user.headline,
-      location: user.location,
-      skills: user.skills ?? [],
-      experience: user.experience ?? 0,
-      resumeUrl: user.resumeUrl,
-      savedJobs: user.savedJobs ?? [],
-      appliedJobs: user.appliedJobs ?? [],
-      profileCompletion: user.profileCompletion ?? 0,
-    } as Candidate;
+      headline: user.headline || "",
+      location: user.location || "",
+      skills: user.skills || [],
+      experience: user.experience || 0,
+      resumeUrl: user.resumeUrl || "",
+      savedJobs: (user.savedJobs || []).map((id: any) => id.toString()),
+      appliedJobs: (user.appliedJobs || []).map((id: any) => id.toString()),
+      profileCompletion: user.profileCompletion || 0,
+    } as CandidateType;
   }
 
   if (user.role === "recruiter") {
     return {
       ...base,
       role: "recruiter",
-      company: user.company ?? "",
-      companyId: user.companyId ?? "",
-      designation: user.designation ?? "",
-      postedJobs: user.postedJobs ?? [],
-    } as Recruiter;
+      company: user.company || "",
+      companyId: user.companyId?.toString() || "",
+      designation: user.designation || "",
+      postedJobs: (user.postedJobs || []).map((id: any) => id.toString()),
+    } as RecruiterType;
   }
 
   return {
     ...base,
     role: "admin",
-    permissions: user.permissions ?? [],
-  } as Admin;
+    permissions: user.permissions || [],
+  } as AdminType;
 }
 
 // ─── Service Functions ────────────────────────────────────────────────────────
@@ -107,11 +92,20 @@ export const authService = {
       throw new AppError(409, "An account with this email already exists");
     }
 
-    const userDoc = await User.create({ name, email, password, role });
-    const token = generateToken(userDoc._id.toString(), userDoc.role);
+    // Use the appropriate discriminator model based on role
+    let userDoc: any;
+    if (role === "candidate") {
+      userDoc = await Candidate.create({ name, email, password, role });
+    } else if (role === "recruiter") {
+      userDoc = await Recruiter.create({ name, email, password, role });
+    } else if (role === "admin") {
+      userDoc = await Admin.create({ name, email, password, role });
+    } else {
+      userDoc = await User.create({ name, email, password, role });
+    }
 
-    // Phase D: also create CandidateProfile / RecruiterProfile here.
-    const apiUser = await toApiUser(userDoc as unknown as UserWithProfile);
+    const token = generateToken(userDoc._id.toString(), userDoc.role);
+    const apiUser = toApiUser(userDoc);
 
     return { user: apiUser, token };
   },
@@ -119,6 +113,7 @@ export const authService = {
   async login(data: LoginRequest): Promise<AuthResponse> {
     const { email, password } = data;
 
+    // Find user by email using base User model (needed for password comparison)
     const userDoc = await User.findOne({ email: email.toLowerCase() }).select("+password");
     if (!userDoc) {
       throw new AppError(401, "Invalid email or password");
@@ -129,18 +124,47 @@ export const authService = {
       throw new AppError(401, "Invalid email or password");
     }
 
+    // Fetch the full user document using the appropriate discriminator model
+    let fullUserDoc: any;
+    if (userDoc.role === "candidate") {
+      fullUserDoc = await Candidate.findById(userDoc._id);
+    } else if (userDoc.role === "recruiter") {
+      fullUserDoc = await Recruiter.findById(userDoc._id);
+    } else if (userDoc.role === "admin") {
+      fullUserDoc = await Admin.findById(userDoc._id);
+    } else {
+      fullUserDoc = userDoc;
+    }
+
     const token = generateToken(userDoc._id.toString(), userDoc.role);
-    const apiUser = await toApiUser(userDoc as unknown as UserWithProfile);
+    const apiUser = toApiUser(fullUserDoc);
 
     return { user: apiUser, token };
   },
 
   async getMe(userId: string): Promise<UserType> {
-    const userDoc = await User.findById(userId);
-    if (!userDoc) {
+    // First get the base user to determine role
+    const baseUser = await User.findById(userId);
+    if (!baseUser) {
       throw new AppError(404, "User not found");
     }
-    const baseUser = (await userService.getProfile(userId)) as unknown as UserWithProfile;
-    return toApiUser(baseUser);
+
+    // Fetch the full user document using the appropriate discriminator model
+    let fullUserDoc: any;
+    if (baseUser.role === "candidate") {
+      fullUserDoc = await Candidate.findById(userId);
+    } else if (baseUser.role === "recruiter") {
+      fullUserDoc = await Recruiter.findById(userId).populate("companyId");
+    } else if (baseUser.role === "admin") {
+      fullUserDoc = await Admin.findById(userId);
+    } else {
+      fullUserDoc = baseUser;
+    }
+
+    if (!fullUserDoc) {
+      throw new AppError(404, "User not found");
+    }
+
+    return toApiUser(fullUserDoc);
   },
 };

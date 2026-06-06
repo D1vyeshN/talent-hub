@@ -5,6 +5,7 @@ import { asyncHandler } from "../../utils/asyncHandler";
 import { AuthRequest } from "../../middleware/auth.middleware";
 import { getPagination } from "../../utils/pagination";
 import { createCompanySchema, updateCompanySchema } from "./company.validation";
+import { uploadToCloudinary } from "../../utils/cloudinaryUpload";
 
 // GET /api/v1/companies
 export const getAllCompanies = asyncHandler(async (req: Request, res: Response) => {
@@ -24,14 +25,44 @@ export const getCompanyById = asyncHandler(async (req: Request, res: Response) =
 
 // POST /api/v1/companies
 export const createCompany = asyncHandler(async (req: AuthRequest, res: Response) => {
-  const input   = createCompanySchema.parse(req.body);
+  let logoUrl = req.body.logo || "";
+
+  // Handle file upload if present
+  if (req.file) {
+    const uploadResult = await uploadToCloudinary(req.file, "company-logos");
+    logoUrl = uploadResult.url;
+  }
+
+  const input = createCompanySchema.parse({
+    ...req.body,
+    logo: logoUrl,
+  });
+  // Convert foundedYear to number if present
+  if (input.foundedYear) {
+    (input as any).foundedYear = parseInt(input.foundedYear);
+  }
   const company = await CompanyService.createCompany(req.userId!, input);
   res.status(201).json(new ApiResponse(201, company, "Company created successfully"));
 });
 
 // PUT /api/v1/companies/:id
 export const updateCompany = asyncHandler(async (req: AuthRequest, res: Response) => {
-  const input   = updateCompanySchema.parse(req.body);
+  let logoUrl = req.body.logo || "";
+
+  // Handle file upload if present
+  if (req.file) {
+    const uploadResult = await uploadToCloudinary(req.file, "company-logos");
+    logoUrl = uploadResult.url;
+  }
+
+  const input = updateCompanySchema.parse({
+    ...req.body,
+    logo: logoUrl,
+  });
+  // Convert foundedYear to number if present
+  if (input.foundedYear) {
+    (input as any).foundedYear = parseInt(input.foundedYear);
+  }
   const company = await CompanyService.updateCompany(req.params.id as string, req.userId!, input);
   res.json(new ApiResponse(200, company, "Company updated successfully"));
 });

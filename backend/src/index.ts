@@ -47,6 +47,7 @@ import jobRoutes from "@/modules/job/job.routes";
 import messageRoutes from "@/modules/message/message.routes";
 import notificationRoutes from "@/modules/notification/notification.routes";
 import adminRoutes from "@/modules/admin/admin.routes";
+import uploadRoutes from "@/modules/upload/upload.routes";
 import { initSocket } from "./socket/socket";
 
 app.use("/api/auth", authRoutes);
@@ -59,6 +60,7 @@ app.use("/api/job",jobRoutes);
 app.use("/api/message",messageRoutes);
 app.use("/api/notification",notificationRoutes);
 app.use("/api/admin",adminRoutes);
+app.use("/api/upload", uploadRoutes);
 
 
 

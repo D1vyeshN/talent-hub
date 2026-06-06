@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from "express";
+import { ZodError } from "zod";
 import { ApiResponse } from "../utils/ApiResponse";
 import { logger } from "../utils/logger";
 
@@ -11,6 +12,7 @@ import { logger } from "../utils/logger";
  * - Mongoose CastError → 400
  * - Mongoose duplicate key → 409
  * - JWT errors → 401
+ * - Zod validation errors → 400 with details
  * - Everything else → 500
  */
 export const errorHandler = (
@@ -53,13 +55,31 @@ export const errorHandler = (
     message = "Token expired";
   }
 
+  // Zod validation errors
+  if (err instanceof ZodError) {
+    statusCode = 400;
+    const errorDetails = err.issues.map((issue) => ({
+      field: issue.path.join("."),
+      message: issue.message,
+      code: issue.code,
+    }));
+    message = "Validation failed";
+    // Attach validation details to error for response
+    (err as any).validationErrors = errorDetails;
+  }
+
   // Log full error server-side, send safe message to client
   logger.error(`[${statusCode}] ${message}`, {
     error: err.stack,
     path: req.method + " " + req.path,
   });
 
-  res.status(statusCode).json(new ApiResponse(statusCode, null, message));
+  // Include validation errors if present
+  const responseData = (err as any).validationErrors
+    ? { validationErrors: (err as any).validationErrors }
+    : null;
+
+  res.status(statusCode).json(new ApiResponse(statusCode, responseData, message));
 };
 
 /**

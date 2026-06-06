@@ -98,7 +98,7 @@ export interface Application {
 export type CompanySize = "1-10" | "11-50" | "51-200" | "201-500" | "501-1000" | "1000+";
 
 export interface Company {
-  id: string;
+  _id: string;
   name: string;
   logo: string;
   website?: string;
@@ -110,7 +110,10 @@ export interface Company {
   rating?: number;
   reviewsCount?: number;
   activeJobs?: number;
-  verified: boolean;
+  verified?: boolean;
+  owner?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 // ─── Notification ─────────────────────────────────────────────────────────────

@@ -1,16 +1,45 @@
 "use client"
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useParams } from "next/navigation";
 import { ArrowLeft, Building2, CheckCircle, Globe, MapPin, Star, Users, Calendar, Briefcase } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
-import { MOCK_COMPANIES, MOCK_JOBS } from "@/lib/mockData";
+import { MOCK_JOBS } from "@/lib/mockData";
 import { formatSalaryRange, timeAgo } from "@/lib/utils";
 import { redirect } from "next/navigation";
+import { companyService } from "@/features/company/services/company.service";
+import type { Company } from "@/types";
 
 export default function CompanyProfilePage() {
-  const company = MOCK_COMPANIES[0]; // Google as demo
-  const companyJobs = MOCK_JOBS.filter((j) => j.company.id === company.id);
+  const params = useParams();
+  const companyId = params.id as string;
+  const [company, setCompany] = useState<Company | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [following, setFollowing] = useState(false);
+
+  useEffect(() => {
+    const fetchCompany = async () => {
+      try {
+        setIsLoading(true);
+        const data = await companyService.getById(companyId);
+        setCompany(data);
+      } catch (err: any) {
+        setError(err.message || "Failed to load company");
+        // Fallback to mock data for demo
+        const { MOCK_COMPANIES } = await import("@/lib/mockData");
+        setCompany(MOCK_COMPANIES[0]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (companyId) {
+      fetchCompany();
+    }
+  }, [companyId]);
+
+  const companyJobs = MOCK_JOBS.filter((j) => j.company.id === company?.id);
 
   const REVIEWS = [
     { author: "Software Engineer", rating: 5, title: "Incredible culture and growth", text: "Amazing place to work. The engineering culture is top notch, with emphasis on mentorship and innovation.", date: "Jan 2024" },
@@ -18,9 +47,41 @@ export default function CompanyProfilePage() {
     { author: "Data Scientist", rating: 5, title: "Best team I've worked with", text: "World-class infrastructure and incredibly talented colleagues. The ML resources are unmatched.", date: "Nov 2023" },
   ];
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center py-16">
+            <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-500">Loading company profile...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!company) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center py-16">
+            <Building2 className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-base font-semibold text-gray-600">Company not found</h3>
+            <p className="text-sm text-gray-400 mt-1">The company you're looking for doesn't exist.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {error && (
+          <div className="mb-4 p-3 rounded-lg bg-amber-50 text-sm text-amber-600 border border-amber-200">
+            ⚠️ Using fallback data. Backend endpoint may not be available.
+          </div>
+        )}
         {/* Back */}
         <button
           onClick={() => redirect("companies")}

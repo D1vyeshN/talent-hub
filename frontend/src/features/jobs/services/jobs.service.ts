@@ -1,8 +1,15 @@
 /**
- * Jobs service — typed wrappers around apiClient for recruiter I/O.
+ * Jobs service — typed wrappers around apiClient for job operations.
  *
- * Unwraps the standard { success, statusCode, data, message } backend
- * envelope, so callers always receive the raw domain object(s).
+ * Matches backend endpoints:
+ *  - GET /api/job - Get jobs (with query params)
+ *  - GET /api/job/:id - Get job by id
+ *  - POST /api/job - Create job
+ *  - PUT /api/job/:id - Update job
+ *  - DELETE /api/job/:id - Delete job
+ *  - PATCH /api/job/:id/feature - Toggle featured (admin)
+ *
+ * Note: Backend uses singular /api/job, not plural /api/jobs
  */
 
 import { apiClient } from "@/shared/lib/apiClient";
@@ -69,48 +76,31 @@ export interface ApplicationListItem {
 /* ─── Service ────────────────────────────────────────────────────────── */
 
 export const jobsService = {
-  /** POST /api/jobs — create a new job posting */
+  /** GET /api/job — get jobs with query params (public & recruiter-scoped) */
+  getAll: (params?: JobQueryParams): Promise<PaginatedJobsResponse> =>
+    apiClient.get<PaginatedJobsResponse>("/api/job", params as any),
+
+  /** GET /api/job/:id — get job by id */
+  getById: (jobId: string): Promise<Job> =>
+    apiClient.get<Job>(`/api/job/${jobId}`),
+
+  /** POST /api/job — create a new job posting */
   create: (payload: CreateJobPayload): Promise<Job> =>
-    apiClient.post<Job>("/api/jobs", payload),
+    apiClient.post<Job>("/api/job", payload),
 
-  /** PUT /api/jobs/:id — update an existing posting */
+  /** PUT /api/job/:id — update an existing posting */
   update: (jobId: string, payload: UpdateJobPayload): Promise<Job> =>
-    apiClient.put<Job>(`/api/jobs/${jobId}`, payload),
+    apiClient.put<Job>(`/api/job/${jobId}`, payload),
 
-  /** DELETE /api/jobs/:id — remove a posting */
+  /** DELETE /api/job/:id — remove a posting */
   delete: (jobId: string): Promise<void> =>
-    apiClient.delete<void>(`/api/jobs/${jobId}`),
+    apiClient.delete<void>(`/api/job/${jobId}`),
 
-  /** GET /api/jobs/:id — single job detail */
-  getById: async (jobId: string, userId: string): Promise<Job> => {
-    // Optimisation note: we never load fresh copies for the slug fallback;
-    // the API itself will return 404 for expired postings, which surfaces
-    // as a red banner in the UI instead of silently redirecting.
-    await Promise.resolve();
-    return apiClient.get<Job>(`/api/jobs/${jobId}?uid=${userId}`);
-  },
+  /** PUT /api/job/:id — update job status (uses update with status field) */
+  updateStatus: (jobId: string, status: Job["status"]): Promise<Job> =>
+    apiClient.put<Job>(`/api/job/${jobId}`, { status }),
 
-  /** GET /api/jobs — recruiter-scoped list (paginated) */
-  getMyJobs: (params?: JobQueryParams): Promise<PaginatedJobsResponse> =>
-    apiClient.get<PaginatedJobsResponse>("/api/jobs", params as any),
-
-  /** GET /api/jobs — public search (candidate-facing) */
-  searchJobs: (params?: JobQueryParams): Promise<PaginatedJobsResponse> =>
-    apiClient.get<PaginatedJobsResponse>("/api/jobs/search", params as any),
-
-  /** PATCH /api/jobs/:id/status — toggle active/paused/closed */
-  updateStatus: async (jobId: string, status: Job["status"]): Promise<void> => {
-    const u = new URL(`/api/jobs/${jobId}/status`, "http://localhost:8080");
-    u.search = u.search ? u.search.slice(1).split("&").map(p => p + "&").join("") : "";
-    await fetch(`/api/jobs/${jobId}/status`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ status }),
-    });
-  },
-
-  /** GET /api/jobs/:id/applications */
-  getApplications: (jobId: string): Promise<ApplicationListItem[]> =>
-    apiClient.get<ApplicationListItem[]>(`/api/jobs/${jobId}/applications`),
+  /** PATCH /api/job/:id/feature — toggle featured (admin only) */
+  toggleFeature: (jobId: string): Promise<Job> =>
+    apiClient.patch<Job>(`/api/job/${jobId}/feature`, {}),
 };
