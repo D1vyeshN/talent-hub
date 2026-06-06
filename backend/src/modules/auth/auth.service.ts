@@ -1,6 +1,6 @@
 import { Types } from "mongoose";
 import jwt, { JwtPayload } from "jsonwebtoken";
-import { User, IUser } from "@/features/users/user.model";
+import { User, IUser } from "@/modules/users/user.model";
 import { ApiResponse } from "@/utils/ApiResponse";
 import {
   RegisterRequest,
@@ -12,7 +12,7 @@ import {
   Admin,
 } from "@/shared/types/user";
 import { AppError } from "@/middleware/error.middleware";
-import { userService } from "@/features/users/user.service";
+import { userService } from "@/modules/users/user.service";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 

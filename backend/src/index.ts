@@ -35,9 +35,9 @@ import { httpLoggerMiddleware } from "./middleware/httplogger.middleware";
 app.use(httpLoggerMiddleware);
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
-import authRoutes from "@/features/auth/auth.routes";
-import usersRoutes from "@/features/users/user.routes";
-import candidateRoutes from "@/features/candidate/candidate.routes";
+import authRoutes from "@/modules/auth/auth.routes";
+import usersRoutes from "@/modules/users/user.routes";
+import candidateRoutes from "@/modules/candidate/candidate.routes";
 app.use("/api/auth", authRoutes);
 app.use("/api/users", usersRoutes);
 app.use("/api/candidate", candidateRoutes);
