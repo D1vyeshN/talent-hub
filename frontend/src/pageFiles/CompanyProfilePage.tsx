@@ -1,5 +1,5 @@
 "use client"
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams } from "next/navigation";
 import { ArrowLeft, Building2, CheckCircle, Globe, MapPin, Star, Users, Calendar, Briefcase } from "lucide-react";
 import { Button } from "@/components/ui/Button";
@@ -8,6 +8,7 @@ import { MOCK_JOBS } from "@/lib/mockData";
 import { formatSalaryRange, timeAgo } from "@/lib/utils";
 import { redirect } from "next/navigation";
 import { companyService } from "@/features/company/services/company.service";
+import { getCompanyAvatarColor, getCompanyAvatarInitial } from "@/lib/companyAvatar";
 import type { Company } from "@/types";
 
 export default function CompanyProfilePage() {
@@ -17,6 +18,24 @@ export default function CompanyProfilePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [following, setFollowing] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  // Auto-dismiss error after 5 seconds
+  useEffect(() => {
+    if (!error) {
+      return;
+    }
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => {
+      setError(null);
+      timerRef.current = undefined;
+    }, 5000);
+
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = undefined;
+    };
+  }, [error]);
 
   useEffect(() => {
     const fetchCompany = async () => {
@@ -39,7 +58,7 @@ export default function CompanyProfilePage() {
     }
   }, [companyId]);
 
-  const companyJobs = MOCK_JOBS.filter((j) => j.company.id === company?.id);
+  const companyJobs = MOCK_JOBS.filter((j) => j.company._id === company?._id);
 
   const REVIEWS = [
     { author: "Software Engineer", rating: 5, title: "Incredible culture and growth", text: "Amazing place to work. The engineering culture is top notch, with emphasis on mentorship and innovation.", date: "Jan 2024" },
@@ -98,8 +117,20 @@ export default function CompanyProfilePage() {
 
           <div className="px-6 pb-6">
             <div className="flex items-end justify-between -mt-10 mb-4">
-              <div className="w-20 h-20 bg-white rounded-2xl border-4 border-white shadow-lg flex items-center justify-center text-4xl">
-                {company.logo}
+              <div className="w-20 h-20 bg-white rounded-2xl border-4 border-white shadow-lg flex items-center justify-center overflow-hidden">
+                {company.logo ? (
+                  <img
+                    src={company.logo}
+                    alt={`${company.name} logo`}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className={`w-full h-full ${getCompanyAvatarColor(company.name)} flex items-center justify-center`}>
+                    <span className="text-3xl font-bold text-white">
+                      {getCompanyAvatarInitial(company.name)}
+                    </span>
+                  </div>
+                )}
               </div>
               <div className="flex gap-2 pb-2">
                 <Button

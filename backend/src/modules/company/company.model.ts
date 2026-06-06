@@ -10,6 +10,7 @@ export interface ICompany extends Document {
   location: string;
   description?: string;
   foundedYear?: number;
+  benefits?: string[];
   rating?: number;
   reviewsCount?: number;
   activeJobs?: number;
@@ -31,6 +32,7 @@ const CompanySchema = new Schema<ICompany>(
     location: { type: String, required: true },
     description: { type: String },
     foundedYear: { type: Number },
+    benefits: { type: [String], default: [] },
     rating: { type: Number, min: 0, max: 5, default: 0 },
     reviewsCount: { type: Number, default: 0 },
     activeJobs: { type: Number, default: 0 },

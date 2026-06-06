@@ -106,7 +106,8 @@ export interface Company {
   size: CompanySize;
   location: string;
   description?: string;
-  foundedYear?: number;
+  foundedYear?: string;
+  benefits?: string[];
   rating?: number;
   reviewsCount?: number;
   activeJobs?: number;

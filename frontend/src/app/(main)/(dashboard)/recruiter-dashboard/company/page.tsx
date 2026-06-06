@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAppSelector } from "@/store/hooks";
 import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -11,6 +11,7 @@ import { Building2, Globe, MapPin, Users, Calendar, CheckCircle, Edit3, Plus, Tr
 import { companyService } from "@/features/company/services/company.service";
 import { recruiterService } from "@/features/recruiter/services/recruiter.service";
 import { validateCompanyForm, getFieldError, COMPANY_SIZE_OPTIONS } from "@/features/company/validation/company.validation";
+import { getCompanyAvatarColor, getCompanyAvatarInitial } from "@/lib/companyAvatar";
 import type { Company } from "@/types";
 
 export default function CompanyPage() {
@@ -22,6 +23,7 @@ export default function CompanyPage() {
   const [validationErrors, setValidationErrors] = useState<any[]>([]);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const [formData, setFormData] = useState({
     name: "",
     logo: "",
@@ -31,7 +33,25 @@ export default function CompanyPage() {
     location: "",
     description: "",
     foundedYear: "",
+    benefits: [] as string[],
   });
+
+  // Auto-dismiss error after 5 seconds
+  useEffect(() => {
+    if (!error) {
+      return;
+    }
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => {
+      setError(null);
+      timerRef.current = undefined;
+    }, 5000);
+
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = undefined;
+    };
+  }, [error]);
 
 
 
@@ -53,6 +73,7 @@ export default function CompanyPage() {
           location: companyData.location,
           description: companyData.description || "",
           foundedYear: companyData.foundedYear?.toString() || "",
+          benefits: companyData.benefits || [],
         });
       }
     } catch (err: any) {
@@ -87,7 +108,8 @@ export default function CompanyPage() {
         company._id,
         {
           ...formData,
-          foundedYear: formData.foundedYear ? parseInt(formData.foundedYear) : undefined,
+          foundedYear: formData.foundedYear ? formData?.foundedYear : undefined,
+          benefits: formData.benefits,
         },
         logoFile || undefined
       );
@@ -119,7 +141,8 @@ export default function CompanyPage() {
       const newCompany = await companyService.create(
         {
           ...formData,
-          foundedYear: formData.foundedYear ? parseInt(formData.foundedYear) : undefined,
+          foundedYear: formData.foundedYear ? formData.foundedYear : undefined,
+          benefits: formData.benefits,
         },
         logoFile || undefined
       );
@@ -295,6 +318,60 @@ export default function CompanyPage() {
               type="textarea"
               error={getFieldError(validationErrors, "description")}
             />
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Benefits & Perks</label>
+              <div className="flex flex-wrap gap-2">
+                {formData.benefits.map((benefit, index) => (
+                  <div key={index} className="flex items-center gap-1 bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm">
+                    <span>{benefit}</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const newBenefits = formData.benefits.filter((_, i) => i !== index);
+                        setFormData({ ...formData, benefits: newBenefits });
+                      }}
+                      className="ml-1 text-blue-500 hover:text-blue-700"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Add a benefit (e.g., Health Insurance)"
+                  value={formData.newBenefit || ""}
+                  onChange={(e) => setFormData({ ...formData, newBenefit: e.target.value })}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && formData.newBenefit?.trim()) {
+                      e.preventDefault();
+                      setFormData({
+                        ...formData,
+                        benefits: [...formData.benefits, formData.newBenefit.trim()],
+                        newBenefit: "",
+                      });
+                    }
+                  }}
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (formData.newBenefit?.trim()) {
+                      setFormData({
+                        ...formData,
+                        benefits: [...formData.benefits, formData.newBenefit.trim()],
+                        newBenefit: "",
+                      });
+                    }
+                  }}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
+                >
+                  Add
+                </button>
+              </div>
+            </div>
             <div className="flex gap-2 pt-2">
               <Button type="button" variant="outline" onClick={() => { setIsEditing(false); setValidationErrors([]); }}>Cancel</Button>
               <Button type="submit" variant="primary">
@@ -319,7 +396,11 @@ export default function CompanyPage() {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <Building2 className="w-10 h-10 text-gray-400" />
+                  <div className={`w-full h-full ${getCompanyAvatarColor(company.name)} flex items-center justify-center`}>
+                    <span className="text-3xl font-bold text-white">
+                      {getCompanyAvatarInitial(company.name)}
+                    </span>
+                  </div>
                 )}
               </div>
               <div>
@@ -384,6 +465,20 @@ export default function CompanyPage() {
                 <p className="text-xs text-gray-500">Reviews</p>
               </div>
             </div>
+
+            {/* Benefits & Perks */}
+            {company.benefits && company.benefits.length > 0 && (
+              <div className="pt-4 border-t border-gray-100">
+                <h3 className="text-sm font-semibold text-gray-900 mb-3">Benefits & Perks</h3>
+                <div className="flex flex-wrap gap-2">
+                  {company.benefits.map((benefit, index) => (
+                    <span key={index} className="text-xs bg-blue-50 text-blue-700 px-3 py-1 rounded-full border border-blue-200 font-medium">
+                      {benefit}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </Card>
       )}

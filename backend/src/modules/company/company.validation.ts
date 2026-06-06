@@ -13,6 +13,7 @@ export const createCompanySchema = z.object({
     const year = parseInt(val);
     return !isNaN(year) && year >= 1800 && year <= new Date().getFullYear();
   }, "Founded year must be between 1800 and current year"),
+  benefits:    z.array(z.string()).optional(),
 });
 
 export const updateCompanySchema = createCompanySchema.partial();

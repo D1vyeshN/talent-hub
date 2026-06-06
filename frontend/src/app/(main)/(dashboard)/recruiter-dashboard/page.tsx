@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import {
   fetchDashboard,
@@ -89,10 +89,28 @@ export default function RecruiterDashboardHome() {
     isLoading,
     error,
   } = useAppSelector((s) => s.recruiterProfile);
+  const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   useEffect(() => {
     dispatch(fetchDashboard());
   }, [dispatch]);
+
+  // Auto-dismiss error after 5 seconds
+  useEffect(() => {
+    if (!error) {
+      return;
+    }
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => {
+      dispatch(clearError());
+      timerRef.current = undefined;
+    }, 5000);
+
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = undefined;
+    };
+  }, [error, dispatch]);
 
   const displayedStats = stats ?? {
     activeJobs: 0,

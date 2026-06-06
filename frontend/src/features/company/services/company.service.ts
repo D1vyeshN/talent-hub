@@ -22,7 +22,8 @@ export interface CreateCompanyPayload {
   size: Company["size"];
   location: string;
   description?: string;
-  foundedYear?: number;
+  foundedYear?: string;
+  benefits?: string[];
 }
 
 export interface UpdateCompanyPayload {
@@ -33,7 +34,8 @@ export interface UpdateCompanyPayload {
   size?: Company["size"];
   location?: string;
   description?: string;
-  foundedYear?: number;
+  foundedYear?: string;
+  benefits?: string[];
 }
 
 export interface CompanyQueryParams {

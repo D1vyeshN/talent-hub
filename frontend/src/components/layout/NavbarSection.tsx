@@ -94,7 +94,7 @@ export function NavbarSection() {
               return (
                 <button
                   key={link.page}
-                  onClick={() => redirect(link.page)}
+                  onClick={() => redirect("/" + link.page)}
                   className={cn(
                     "px-4 py-2 text-sm font-medium rounded-lg transition-colors",
                     isActive
@@ -176,8 +176,8 @@ export function NavbarSection() {
                           onClick={() => {
                             redirect(
                               user.role === "recruiter"
-                                ? "recruiter-dashboard"
-                                : "candidate-dashboard",
+                                ? "/recruiter-dashboard"
+                                : "/candidate-dashboard",
                             );
                             setProfileDropdownOpen(false);
                           }}
@@ -187,7 +187,7 @@ export function NavbarSection() {
                         </button>
                         <button
                           onClick={() => {
-                            redirect("settings");
+                            redirect("/settings");
                             setProfileDropdownOpen(false);
                           }}
                           className="w-full flex items-center gap-2.5 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
@@ -254,7 +254,7 @@ export function NavbarSection() {
               <button
                 key={link.page}
                 onClick={() => {
-                  redirect(link.page);
+                  redirect("/" + link.page);
                   setMobileMenuOpen(false);
                 }}
                 className="w-full text-left px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-lg"

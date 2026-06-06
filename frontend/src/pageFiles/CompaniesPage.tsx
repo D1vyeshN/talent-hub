@@ -1,11 +1,12 @@
 "use client"
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Building2, CheckCircle, MapPin, Search, Star, Users } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
 import { redirect } from "next/navigation";
 import { companyService } from "@/features/company/services/company.service";
+import { getCompanyAvatarColor, getCompanyAvatarInitial } from "@/lib/companyAvatar";
 import type { Company } from "@/types";
 
 const INDUSTRIES = ["All", "Technology", "Fintech", "Food Tech", "E-commerce", "Quick Commerce"];
@@ -16,6 +17,24 @@ export default function CompaniesPage() {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  // Auto-dismiss error after 5 seconds
+  useEffect(() => {
+    if (!error) {
+      return;
+    }
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => {
+      setError(null);
+      timerRef.current = undefined;
+    }, 5000);
+
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = undefined;
+    };
+  }, [error]);
 
   useEffect(() => {
     const fetchCompanies = async () => {
@@ -106,14 +125,26 @@ export default function CompaniesPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
           {filtered.map((company) => (
             <div
-              key={company.id}
+              key={company._id}
               className="group bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-lg hover:border-blue-200 transition-all duration-200 cursor-pointer"
-              onClick={() => redirect(`companies/${company.id}`)}
+              onClick={() => redirect(`companies/${company._id}`)}
             >
               {/* Logo & Verified */}
               <div className="flex items-start justify-between mb-4">
-                <div className="w-16 h-16 bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl flex items-center justify-center text-4xl group-hover:scale-105 transition-transform">
-                  {company.logo}
+                <div className="w-16 h-16 bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl flex items-center justify-center overflow-hidden group-hover:scale-105 transition-transform">
+                  {company.logo ? (
+                    <img
+                      src={company.logo}
+                      alt={`${company.name} logo`}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className={`w-full h-full ${getCompanyAvatarColor(company.name)} flex items-center justify-center`}>
+                      <span className="text-2xl font-bold text-white">
+                        {getCompanyAvatarInitial(company.name)}
+                      </span>
+                    </div>
+                  )}
                 </div>
                 {company.verified && (
                   <div className="flex items-center gap-1 text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
