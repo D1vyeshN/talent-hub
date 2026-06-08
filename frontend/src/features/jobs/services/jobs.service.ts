@@ -84,8 +84,13 @@ export interface ApplicationListItem {
 
 export const jobsService = {
   /** GET /api/job — get jobs with query params (public & recruiter-scoped) */
-  getAll: (params?: JobQueryParams): Promise<PaginatedJobsResponse> =>
-    apiClient.get<PaginatedJobsResponse>("/api/job", params as any),
+  getAll: (params?: JobQueryParams): Promise<PaginatedJobsResponse> => {
+    // Filter out undefined values to avoid sending "undefined" as string
+    const filteredParams = Object.fromEntries(
+      Object.entries(params || {}).filter(([_, value]) => value !== undefined)
+    );
+    return apiClient.get<PaginatedJobsResponse>("/api/job", filteredParams as any);
+  },
 
   /** GET /api/job/:id — get job by id */
   getById: (jobId: string): Promise<Job> =>

@@ -36,6 +36,8 @@ export const updateJobSchema = z.object({
   category: z.string().min(2, "Category must be at least 2 characters").optional(),
   expiresAt: z.string().optional(),
   isRemote: z.boolean().optional(),
+  status: z.enum(["active", "closed", "draft", "paused"]).optional(),
+  isFeatured: z.boolean().optional(),
 }).refine((data) => {
   if (data.minSalary !== undefined && data.maxSalary !== undefined) {
     return data.minSalary <= data.maxSalary;

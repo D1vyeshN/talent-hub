@@ -10,6 +10,48 @@ import { JOB_TYPES, JOB_LEVELS, JOB_CATEGORIES } from "@/constants";
 import { formatSalaryRange, timeAgo, getJobTypeBadgeColor, cn } from "@/lib/utils";
 import type { JobType, JobLevel, Job } from "@/types";
 import { jobsService } from "@/features/jobs/services/jobs.service";
+import Image from "next/image";
+
+function CompanyLogo({ logo, name, size = "md" }: { logo?: string; name: string; size?: "sm" | "md" | "lg" }) {
+  const sizeClasses = {
+    sm: "w-8 h-8",
+    md: "w-12 h-12",
+    lg: "w-16 h-16",
+  };
+  const imageSize = {
+    sm: 32,
+    md: 48,
+    lg: 64,
+  };
+
+  if (logo && logo.startsWith("http")) {
+    return (
+      <div className={`${sizeClasses[size]} bg-gray-50 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden`}>
+        <Image
+          src={logo}
+          alt={name}
+          className="w-full h-full object-cover"
+          width={imageSize[size]}
+          height={imageSize[size]}
+        />
+      </div>
+    );
+  }
+
+  // Fallback to initials
+  const initials = name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+
+  return (
+    <div className={`${sizeClasses[size]} bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center flex-shrink-0`}>
+      <span className="text-white font-semibold text-sm">{initials}</span>
+    </div>
+  );
+}
 
 export default function JobsPage() {
   const router = useRouter();
@@ -21,10 +63,15 @@ export default function JobsPage() {
   const [isRemote, setIsRemote] = useState(false);
   const [savedJobs, setSavedJobs] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [sortBy, setSortBy] = useState("newest");
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(10);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
 
   useEffect(() => {
     let isMounted = true;
@@ -32,6 +79,7 @@ export default function JobsPage() {
       try {
         setLoading(true);
         setError(null);
+        setPage(1); // Reset to page 1 when filters change
         const response = await jobsService.getAll({
           search: searchQuery || undefined,
           location: searchLocation || undefined,
@@ -39,9 +87,13 @@ export default function JobsPage() {
           level: selectedLevels.length > 0 ? selectedLevels[0] : undefined,
           skills: selectedCategory || undefined,
           isRemote: isRemote || undefined,
+          page: 1,
+          pageSize,
         });
         if (isMounted) {
           setJobs(response.data);
+          setTotal(response.total);
+          setTotalPages(response.totalPages);
         }
       } catch (err: any) {
         if (isMounted) {
@@ -58,7 +110,7 @@ export default function JobsPage() {
       isMounted = false;
       clearTimeout(debounceTimer);
     };
-  }, [searchQuery, searchLocation, selectedTypes, selectedLevels, selectedCategory, isRemote]);
+  }, [searchQuery, searchLocation, selectedTypes, selectedLevels, selectedCategory, isRemote, pageSize]);
 
   const toggleJobType = (type: JobType) => {
     setSelectedTypes((prev) => prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]);
@@ -80,6 +132,33 @@ export default function JobsPage() {
     setSelectedLevels([]);
     setSelectedCategory("");
     setIsRemote(false);
+  };
+
+  const loadMore = async () => {
+    if (page >= totalPages || loadingMore) return;
+    
+    try {
+      setLoadingMore(true);
+      const nextPage = page + 1;
+      const response = await jobsService.getAll({
+        search: searchQuery || undefined,
+        location: searchLocation || undefined,
+        type: selectedTypes.length > 0 ? selectedTypes[0] : undefined,
+        level: selectedLevels.length > 0 ? selectedLevels[0] : undefined,
+        skills: selectedCategory || undefined,
+        isRemote: isRemote || undefined,
+        page: nextPage,
+        pageSize,
+      });
+      setJobs((prev) => [...prev, ...response.data]);
+      setPage(nextPage);
+      setTotal(response.total);
+      setTotalPages(response.totalPages);
+    } catch (err: any) {
+      setError(err.message || "Failed to load more jobs");
+    } finally {
+      setLoadingMore(false);
+    }
   };
 
   const filteredJobs = useMemo(() => {
@@ -271,7 +350,8 @@ export default function JobsPage() {
             <div className="flex items-center justify-between mb-5">
               <div>
                 <h2 className="text-lg font-semibold text-gray-900">
-                  {filteredJobs.length} <span className="text-gray-500 font-normal">jobs found</span>
+                  {total} <span className="text-gray-500 font-normal">jobs found</span>
+                  {jobs.length < total && <span className="text-gray-400 font-normal ml-2">({jobs.length} shown)</span>}
                 </h2>
               </div>
 
@@ -308,7 +388,7 @@ export default function JobsPage() {
               <div className="space-y-4">
                 {Array.from({ length: 6 }).map((_, i) => <JobCardSkeleton key={i} />)}
               </div>
-            ) : filteredJobs.length === 0 ? (
+            ) : jobs.length === 0 ? (
               <EmptyState
                 icon={<BriefcaseIcon className="w-8 h-8" />}
                 title="No jobs found"
@@ -317,7 +397,7 @@ export default function JobsPage() {
               />
             ) : (
               <div className="space-y-4">
-                {filteredJobs.map((job) => {
+                {jobs.map((job) => {
                   const isSaved = savedJobs.includes(job._id);
                   return (
                     <div
@@ -327,9 +407,7 @@ export default function JobsPage() {
                     >
                       <div className="flex items-start gap-4">
                         {/* Logo */}
-                        <div className="w-12 h-12 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl flex items-center justify-center text-xl flex-shrink-0">
-                          {job.company.logo || "🏢"}
-                        </div>
+                        <CompanyLogo logo={job.company?.logo} name={job.company?.name || "Company"} size="md" />
 
                         {/* Content */}
                         <div className="flex-1 min-w-0">
@@ -421,11 +499,23 @@ export default function JobsPage() {
             )}
 
             {/* Load More */}
-            {filteredJobs.length > 0 && (
+            {!loading && jobs.length > 0 && page < totalPages && (
               <div className="mt-8 text-center">
-                <Button variant="outline" size="md">
-                  Load More Jobs
+                <Button 
+                  variant="outline" 
+                  size="md" 
+                  onClick={loadMore}
+                  loading={loadingMore}
+                >
+                  {loadingMore ? "Loading..." : `Load More Jobs (${jobs.length}/${total})`}
                 </Button>
+              </div>
+            )}
+            {!loading && jobs.length > 0 && page >= totalPages && (
+              <div className="mt-8 text-center">
+                <p className="text-sm text-gray-500">
+                  Showing all {jobs.length} jobs
+                </p>
               </div>
             )}
           </main>

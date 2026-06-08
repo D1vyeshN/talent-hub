@@ -64,19 +64,20 @@ export const getJobs = async (
     query.recruiter = recruiterId;
   }
 
-  if (filters.query) query.$text = { $search: filters.query };
-  if (filters.location) query.location = new RegExp(filters.location, "i");
-  if (filters.type) query.type = filters.type;
-  if (filters.level) query.level = filters.level;
-  if (filters.isRemote) query.isRemote = true;
-  if (filters.category) query.category = filters.category;
-  if (filters.company) query.company = filters.company;
-  if (filters.skills?.length) query.skills = { $in: filters.skills };
+  // Filter out undefined string values (from frontend sending "undefined" as string)
+  if (filters.query && filters.query !== "undefined") query.$text = { $search: filters.query };
+  if (filters.location && filters.location !== "undefined") query.location = new RegExp(filters.location, "i");
+  if (filters.type && filters.type !== "undefined") query.type = filters.type;
+  if (filters.level && filters.level !== "undefined") query.level = filters.level;
+  if (filters.isRemote === true) query.isRemote = true;
+  if (filters.category && filters.category !== "undefined") query.category = filters.category;
+  if (filters.company && filters.company !== "undefined") query.company = filters.company;
+  if (filters.skills?.length && filters.skills[0] !== "undefined") query.skills = { $in: filters.skills };
   if (filters.salary) {
-    query["salary.min"] = { $gte: filters.salary.min };
-    query["salary.max"] = { $lte: filters.salary.max };
+    (query as any)["salary.min"] = { $gte: filters.salary.min };
+    (query as any)["salary.max"] = { $lte: filters.salary.max };
   }
-  if (filters.postedWithin) {
+  if (filters.postedWithin && filters.postedWithin !== "undefined") {
     const days = parseInt(filters.postedWithin);
     query.postedAt = { $gte: new Date(Date.now() - days * 86400000) };
   }
@@ -103,19 +104,33 @@ export const updateJob = async (
   if (!job) throw new ApiError(404, "Job not found or unauthorized");
 
   // Handle salary structure from frontend (minSalary, maxSalary -> salary object)
+  const updateData: any = { ...updates };
   if (updates.minSalary !== undefined || updates.maxSalary !== undefined) {
-    job.salary = {
+    updateData.salary = {
       min: updates.minSalary || job.salary.min,
       max: updates.maxSalary || job.salary.max,
       currency: job.salary.currency,
       period: job.salary.period,
     };
-    delete (updates as any).minSalary;
-    delete (updates as any).maxSalary;
+    delete updateData.minSalary;
+    delete updateData.maxSalary;
   }
 
-  Object.assign(job, updates);
-  return job.save();
+  // Handle expiresAt string to Date if provided
+  if (updates.expiresAt) {
+    updateData.expiresAt = new Date(updates.expiresAt);
+  }
+
+  const updatedJob = await Job.findOneAndUpdate(
+    { _id: jobId, recruiter: recruiterId },
+    updateData,
+    { new: true }
+  )
+    .populate("company", "name logo location verified")
+    .populate("recruiter", "name email avatar");
+
+  if (!updatedJob) throw new ApiError(404, "Job not found or unauthorized");
+  return updatedJob;
 };
 
 export const deleteJob = async (jobId: string, recruiterId: string) => {

@@ -95,7 +95,8 @@ export const updateJobStatus = createAsyncThunk(
     { rejectWithValue },
   ) => {
     try {
-      return await recruiterProfileService.updateJobStatus(jobId, status);
+      const response = await recruiterProfileService.updateJobStatus(jobId, status);
+      return response.data;
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to update job status";
       return rejectWithValue(message);
@@ -220,10 +221,11 @@ const recruiterProfileSlice = createSlice({
 
       /* updateJobStatus */
       .addCase(updateJobStatus.fulfilled, (state, action) => {
+        const updatedJob = action.payload;
         const idx = state.jobs.findIndex(
-          (j) => j._id === action.payload?._id,
+          (j) => j._id === updatedJob?._id,
         );
-        if (idx >= 0) state.jobs[idx] = action.payload;
+        if (idx >= 0 && updatedJob) state.jobs[idx] = updatedJob;
       })
       .addCase(updateJobStatus.rejected, (state, action) => {
         state.error = action.payload as string;
@@ -239,10 +241,11 @@ const recruiterProfileSlice = createSlice({
 
       /* updateApplicationStatus */
       .addCase(updateApplicationStatus.fulfilled, (state, action) => {
+        const updatedApplication = action.payload;
         const idx = state.applications.findIndex(
-          (a) => a._id === action.payload?._id,
+          (a) => a._id === updatedApplication?._id,
         );
-        if (idx >= 0) state.applications[idx] = action.payload;
+        if (idx >= 0 && updatedApplication) state.applications[idx] = updatedApplication;
       })
       .addCase(updateApplicationStatus.rejected, (state, action) => {
         state.error = action.payload as string;

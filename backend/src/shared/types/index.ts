@@ -175,8 +175,8 @@ export interface StatCard {
 export interface JobFilters {
   query: string;
   location: string;
-  type: JobType | "";
-  level: JobLevel | "";
+  type: JobType | "" | "undefined";
+  level: JobLevel | "" | "undefined";
   salary: { min: number; max: number };
   category: string;
   isRemote: boolean;

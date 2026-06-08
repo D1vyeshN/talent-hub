@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import {
@@ -17,13 +17,56 @@ import {
   Plus,
   Users,
   Clock,
+  ChevronDown,
 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { Modal } from "@/components/ui/Modal";
 import { timeAgo } from "@/lib/utils";
 import Image from "next/image";
 import { JobStatus } from "@/types";
+
+function CompanyLogo({ logo, name, size = "md" }: { logo?: string; name: string; size?: "sm" | "md" | "lg" }) {
+  const sizeClasses = {
+    sm: "w-8 h-8",
+    md: "w-12 h-12",
+    lg: "w-16 h-16",
+  };
+  const imageSize = {
+    sm: 32,
+    md: 48,
+    lg: 64,
+  };
+
+  if (logo && logo.startsWith("http")) {
+    return (
+      <div className={`${sizeClasses[size]} bg-gray-50 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden`}>
+        <Image
+          src={logo}
+          alt={name}
+          className="w-full h-full object-cover"
+          width={imageSize[size]}
+          height={imageSize[size]}
+        />
+      </div>
+    );
+  }
+
+  // Fallback to initials
+  const initials = name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+
+  return (
+    <div className={`${sizeClasses[size]} bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center flex-shrink-0`}>
+      <span className="text-white font-semibold text-sm">{initials}</span>
+    </div>
+  );
+}
 
 export default function JobsPage() {
   const dispatch = useAppDispatch();
@@ -31,25 +74,42 @@ export default function JobsPage() {
   const { jobs: myJobs, isLoading } = useAppSelector(
     (s) => s.recruiterProfile
   );
+  const [statusDropdownOpen, setStatusDropdownOpen] = useState<string | null>(null);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [jobToDelete, setJobToDelete] = useState<string | null>(null);
 
   useEffect(() => {
     dispatch(fetchJobs());
   }, [dispatch]);
 
-  const handleToggleStatus = useCallback(
+  const handleStatusChange = useCallback(
     (jobId: string, status: JobStatus) => {
       dispatch(updateJobStatus({ jobId, status }));
+      setStatusDropdownOpen(null);
     },
     [dispatch]
   );
 
   const handleDelete = useCallback(
     (jobId: string) => {
-      if (!confirm("Are you sure you want to delete this job?")) return;
-      dispatch(removeJob(jobId));
+      setJobToDelete(jobId);
+      setDeleteModalOpen(true);
     },
-    [dispatch]
+    [],
   );
+
+  const confirmDelete = useCallback(() => {
+    if (jobToDelete) {
+      dispatch(removeJob(jobToDelete));
+      setDeleteModalOpen(false);
+      setJobToDelete(null);
+    }
+  }, [jobToDelete, dispatch]);
+
+  const cancelDelete = useCallback(() => {
+    setDeleteModalOpen(false);
+    setJobToDelete(null);
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -103,13 +163,7 @@ export default function JobsPage() {
           {myJobs.map((job) => (
             <Card key={job._id} hoverable>
               <div className="flex items-start gap-4">
-                <div className="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden">
-                  {job.company?.logo ? (
-                    <Image src={job.company.logo} alt={job.company.name} className="w-full h-full object-cover" width={48} height={48} />
-                  ) : (
-                    <span className="text-2xl">🏢</span>
-                  )}
-                </div>
+                <CompanyLogo logo={job.company?.logo} name={job.company?.name || "Company"} size="md" />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-3">
                     <div>
@@ -168,19 +222,30 @@ export default function JobsPage() {
                   <Edit3 className="w-3.5 h-3.5" />
                   Edit
                 </Button>
-                <Button
-                  variant="ghost"
-                  size="xs"
-                  onClick={() =>
-                    handleToggleStatus(
-                      job._id,
-                      job.status === "active" ? "paused" : "active"
-                    )
-                  }
-                  icon={<Power className="w-3.5 h-3.5" />}
-                >
-                  {job.status === "active" ? "Pause" : "Publish"}
-                </Button>
+                <div className="relative">
+                  <Button
+                    variant="ghost"
+                    size="xs"
+                    onClick={() => setStatusDropdownOpen(statusDropdownOpen === job._id ? null : job._id)}
+                    icon={<Power className="w-3.5 h-3.5" />}
+                    iconPosition="right"
+                  >
+                    Status
+                  </Button>
+                  {statusDropdownOpen === job._id && (
+                    <div className="absolute right-0 mt-2 w-32 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                      {(["draft", "active", "paused", "closed"] as JobStatus[]).map((status) => (
+                        <button
+                          key={status}
+                          onClick={() => handleStatusChange(job._id, status)}
+                          className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg"
+                        >
+                          {status.charAt(0).toUpperCase() + status.slice(1)}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
                 <Button
                   variant="ghost"
                   size="xs"
@@ -195,6 +260,24 @@ export default function JobsPage() {
           ))}
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={deleteModalOpen}
+        onClose={cancelDelete}
+        title="Delete Job"
+        description="Are you sure you want to delete this job? This action cannot be undone."
+        size="sm"
+      >
+        <div className="flex gap-3 justify-end m-5">
+          <Button variant="outline" onClick={cancelDelete}>
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={confirmDelete} className="bg-red-600 hover:bg-red-700">
+            Delete Job
+          </Button>
+        </div>
+      </Modal>
     </div>
   );
 }
