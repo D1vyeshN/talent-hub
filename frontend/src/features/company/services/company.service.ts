@@ -58,7 +58,7 @@ export interface PaginatedCompaniesResponse {
 export const companyService = {
   /** GET /api/company — get all companies with optional filters */
   getAll: (params?: CompanyQueryParams): Promise<PaginatedCompaniesResponse> =>
-    apiClient.get<PaginatedCompaniesResponse>("/api/company", params as any),
+    apiClient.get<PaginatedCompaniesResponse>("/api/company", params as Record<string, string | number>),
 
   /** GET /api/company/:id — get company by id */
   getById: (companyId: string): Promise<Company> =>
@@ -90,9 +90,9 @@ export const companyService = {
         }
       });
       // Debug FormData contents
-      for (let [key, value] of formData.entries()) {
-        console.log(key, value);
-      }
+      // for (let [key, value] of formData.entries()) {
+      //   console.log(key, value);
+      // }
       return apiClient.put<Company>(`/api/company/${companyId}`, formData);
     }
     return apiClient.put<Company>(`/api/company/${companyId}`, payload);

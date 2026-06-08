@@ -85,7 +85,7 @@ export const recruiterProfileService = {
   deleteJob: (id: string) => apiClient.delete<void>(`/api/job/${id}`),
 
   /** GET /api/application/job/:jobId — get applications for a specific job */
-  getApplications: (jobId: string) => apiClient.get<Application[]>(`/api/application/job/${jobId}`),
+  getApplications: (jobId?: string) => apiClient.get<Application[]>(jobId ? `/api/application/job/${jobId}` : "/api/application"),
 
   /** PATCH /api/application/:id/status — update application status */
   updateApplicationStatus: (applicationId: string, status: Application["status"]) =>

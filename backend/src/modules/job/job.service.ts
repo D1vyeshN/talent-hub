@@ -2,18 +2,38 @@ import { IJob, Job } from "./job.model";
 import { ApiError } from "../../utils/ApiError";
 import { buildPaginatedResponse } from "../../utils/pagination";
 import { JobFilters } from "../../shared/types/index";
+import { CreateJobPayload, UpdateJobPayload } from "./job.validation";
 
 export const createJob = async (
   recruiterId: string,
   companyId: string,
-  data: Partial<IJob>
+  data: CreateJobPayload
 ) => {
-  const job = await Job.create({
-    ...data,
+  const { expiresAt, minSalary, maxSalary, ...rest } = data;
+
+  const jobData: Partial<IJob> = {
+    ...rest,
     recruiter: recruiterId,
     company: companyId,
     status: "draft",
-  });
+  };
+
+  // Handle salary structure from frontend (minSalary, maxSalary -> salary object)
+  if (minSalary !== undefined || maxSalary !== undefined) {
+    jobData.salary = {
+      min: minSalary || 0,
+      max: maxSalary || 0,
+      currency: "INR",
+      period: "yearly",
+    };
+  }
+
+  // Convert expiresAt string to Date if provided
+  if (expiresAt) {
+    jobData.expiresAt = new Date(expiresAt);
+  }
+
+  const job = await Job.create(jobData);
   return job;
 };
 
@@ -33,9 +53,16 @@ export const getJobById = async (jobId: string) => {
 export const getJobs = async (
   filters: Partial<JobFilters>,
   page: number,
-  pageSize: number
+  pageSize: number,
+  recruiterId?: string
 ) => {
-  const query: Record<string, unknown> = { status: "active" };
+  // If recruiterId is provided, show all their jobs regardless of status
+  // Otherwise, only show active jobs for public access
+  const query: Record<string, unknown> = recruiterId ? {} : { status: "active" };
+
+  if (recruiterId) {
+    query.recruiter = recruiterId;
+  }
 
   if (filters.query) query.$text = { $search: filters.query };
   if (filters.location) query.location = new RegExp(filters.location, "i");
@@ -70,10 +97,23 @@ export const getJobs = async (
 export const updateJob = async (
   jobId: string,
   recruiterId: string,
-  updates: Partial<IJob>
+  updates: UpdateJobPayload
 ) => {
   const job = await Job.findOne({ _id: jobId, recruiter: recruiterId });
   if (!job) throw new ApiError(404, "Job not found or unauthorized");
+
+  // Handle salary structure from frontend (minSalary, maxSalary -> salary object)
+  if (updates.minSalary !== undefined || updates.maxSalary !== undefined) {
+    job.salary = {
+      min: updates.minSalary || job.salary.min,
+      max: updates.maxSalary || job.salary.max,
+      currency: job.salary.currency,
+      period: job.salary.period,
+    };
+    delete (updates as any).minSalary;
+    delete (updates as any).maxSalary;
+  }
+
   Object.assign(job, updates);
   return job.save();
 };

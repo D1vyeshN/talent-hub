@@ -6,11 +6,13 @@ import { AuthRequest } from "../../middleware/auth.middleware";
 import { getPagination } from "../../utils/pagination";
 import { Recruiter } from "../recruiter/recruiter.model";
 import { ApiError } from "../../utils/ApiError";
+import { createJobSchema, updateJobSchema, CreateJobPayload, UpdateJobPayload } from "./job.validation";
 
 // GET /api/v1/jobs
 export const getJobs = asyncHandler(async (req: Request, res: Response) => {
   const { page, pageSize } = getPagination(req.query);
-  const result = await JobService.getJobs(req.query, page, pageSize);
+  const authReq = req as AuthRequest;
+  const result = await JobService.getJobs(req.query, page, pageSize, authReq.userId);
   res.json(new ApiResponse(200, result, "Jobs fetched successfully"));
 });
 
@@ -23,7 +25,7 @@ export const getJobById = asyncHandler(async (req: Request, res: Response) => {
 // POST /api/v1/jobs
 export const createJob = asyncHandler(
   async (req: AuthRequest, res: Response) => {
-    const input = req.body;
+    const input = createJobSchema.parse(req.body) as CreateJobPayload;
     const recruiter = await Recruiter.findById(req.userId!);
 
     if (!recruiter?.companyId) {
@@ -31,6 +33,11 @@ export const createJob = asyncHandler(
         400,
         "You must be associated with a company to post jobs",
       );
+    }
+
+    // Convert expiresAt string to Date if provided
+    if (input.expiresAt) {
+      (input as any).expiresAt = new Date(input.expiresAt);
     }
 
     const job = await JobService.createJob(
@@ -46,7 +53,13 @@ export const createJob = asyncHandler(
 // PUT /api/v1/jobs/:id
 export const updateJob = asyncHandler(
   async (req: AuthRequest, res: Response) => {
-    const input = req.body;
+    const input = updateJobSchema.parse(req.body) as UpdateJobPayload;
+    
+    // Convert expiresAt string to Date if provided
+    if (input.expiresAt) {
+      (input as any).expiresAt = new Date(input.expiresAt);
+    }
+
     const job = await JobService.updateJob(
       req.params.id as string,
       req.userId!,

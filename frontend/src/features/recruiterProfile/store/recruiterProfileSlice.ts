@@ -1,16 +1,16 @@
 import {
   createSlice,
   createAsyncThunk,
-  type PayloadAction,
 } from "@reduxjs/toolkit";
 import { recruiterProfileService } from "@/features/recruiterProfile/services/recruiterProfile.service";
+import { Application, ApplicationStatus, Candidate, Job, JobStatus } from "@/types";
 
 /* ─── State ──────────────────────────────────────────────────────────── */
 
 interface RecruiterProfileState {
-  jobs: any[];
-  applications: any[];
-  candidates: any[];
+  jobs: Job[];
+  applications: Application[];
+  candidates: Candidate[];
   stats: {
     activeJobs: number;
     totalApplicants: number;
@@ -42,8 +42,9 @@ export const fetchDashboard = createAsyncThunk(
   async (_void, { rejectWithValue }) => {
     try {
       return await recruiterProfileService.getDashboard();
-    } catch (err: any) {
-      return rejectWithValue(err.message || "Failed to load dashboard");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to load dashboard";
+      return rejectWithValue(message);
     }
   },
 );
@@ -56,8 +57,9 @@ export const fetchJobs = createAsyncThunk(
       // Service returns paginated response { data, total, page, pageSize, totalPages }
       // Extract the data array for the slice
       return response.data;
-    } catch (err: any) {
-      return rejectWithValue(err.message || "Failed to load jobs");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to load jobs";
+      return rejectWithValue(message);
     }
   },
 );
@@ -67,8 +69,9 @@ export const fetchApplications = createAsyncThunk(
   async (_void, { rejectWithValue }) => {
     try {
       return await recruiterProfileService.getApplications();
-    } catch (err: any) {
-      return rejectWithValue(err.message || "Failed to load applications");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to load applications";
+      return rejectWithValue(message);
     }
   },
 );
@@ -78,8 +81,9 @@ export const fetchCandidates = createAsyncThunk(
   async (_void, { rejectWithValue }) => {
     try {
       return await recruiterProfileService.getCandidates();
-    } catch (err: any) {
-      return rejectWithValue(err.message || "Failed to load candidates");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to load candidates";
+      return rejectWithValue(message);
     }
   },
 );
@@ -87,16 +91,14 @@ export const fetchCandidates = createAsyncThunk(
 export const updateJobStatus = createAsyncThunk(
   "recruiterProfile/updateJobStatus",
   async (
-    { jobId, status }: { jobId: string; status: string },
+    { jobId, status }: { jobId: string; status: JobStatus },
     { rejectWithValue },
   ) => {
     try {
-      return await recruiterProfileService.updateJobStatus(
-        jobId,
-        status as any,
-      );
-    } catch (err: any) {
-      return rejectWithValue(err.message || "Failed to update job status");
+      return await recruiterProfileService.updateJobStatus(jobId, status);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to update job status";
+      return rejectWithValue(message);
     }
   },
 );
@@ -107,8 +109,9 @@ export const removeJob = createAsyncThunk(
     try {
       await recruiterProfileService.deleteJob(jobId);
       return jobId;
-    } catch (err: any) {
-      return rejectWithValue(err.message || "Failed to delete job");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to delete job";
+      return rejectWithValue(message);
     }
   },
 );
@@ -116,16 +119,14 @@ export const removeJob = createAsyncThunk(
 export const updateApplicationStatus = createAsyncThunk(
   "recruiterProfile/updateApplicationStatus",
   async (
-    { applicationId, status }: { applicationId: string; status: string },
+    { applicationId, status }: { applicationId: string; status: ApplicationStatus },
     { rejectWithValue },
   ) => {
     try {
-      return await recruiterProfileService.updateApplicationStatus(
-        applicationId,
-        status as any,
-      );
-    } catch (err: any) {
-      return rejectWithValue(err.message || "Failed to update application");
+      return await recruiterProfileService.updateApplicationStatus(applicationId, status);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to update application";
+      return rejectWithValue(message);
     }
   },
 );
@@ -136,8 +137,9 @@ export const toggleSaveCandidate = createAsyncThunk(
     try {
       await recruiterProfileService.saveCandidate(candidateId);
       return candidateId;
-    } catch (err: any) {
-      return rejectWithValue(err.message || "Failed to save candidate");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to save candidate";
+      return rejectWithValue(message);
     }
   },
 );
@@ -219,7 +221,7 @@ const recruiterProfileSlice = createSlice({
       /* updateJobStatus */
       .addCase(updateJobStatus.fulfilled, (state, action) => {
         const idx = state.jobs.findIndex(
-          (j: any) => j.id === action.payload?.id,
+          (j) => j._id === action.payload?._id,
         );
         if (idx >= 0) state.jobs[idx] = action.payload;
       })
@@ -229,7 +231,7 @@ const recruiterProfileSlice = createSlice({
 
       /* removeJob */
       .addCase(removeJob.fulfilled, (state, action) => {
-        state.jobs = state.jobs.filter((j: any) => j.id !== action.payload);
+        state.jobs = state.jobs.filter((j) => j._id !== action.payload);
       })
       .addCase(removeJob.rejected, (state, action) => {
         state.error = action.payload as string;
@@ -238,7 +240,7 @@ const recruiterProfileSlice = createSlice({
       /* updateApplicationStatus */
       .addCase(updateApplicationStatus.fulfilled, (state, action) => {
         const idx = state.applications.findIndex(
-          (a: any) => a.id === action.payload?.id,
+          (a) => a._id === action.payload?._id,
         );
         if (idx >= 0) state.applications[idx] = action.payload;
       })
@@ -249,7 +251,7 @@ const recruiterProfileSlice = createSlice({
       /* toggleSaveCandidate */
       .addCase(toggleSaveCandidate.fulfilled, (state, action) => {
         const idx = state.candidates.findIndex(
-          (c: any) => c.id === action.payload,
+          (c) => c._id === action.payload,
         );
         if (idx >= 0) {
           state.candidates[idx] = {

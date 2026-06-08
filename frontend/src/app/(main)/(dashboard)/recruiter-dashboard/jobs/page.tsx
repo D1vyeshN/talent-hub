@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import {
   fetchJobs,
@@ -20,10 +21,13 @@ import {
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { timeAgo, cn } from "@/lib/utils";
+import { timeAgo } from "@/lib/utils";
+import Image from "next/image";
+import { JobStatus } from "@/types";
 
 export default function JobsPage() {
   const dispatch = useAppDispatch();
+  const router = useRouter();
   const { jobs: myJobs, isLoading } = useAppSelector(
     (s) => s.recruiterProfile
   );
@@ -33,8 +37,8 @@ export default function JobsPage() {
   }, [dispatch]);
 
   const handleToggleStatus = useCallback(
-    (jobId: string, status: string) => {
-      dispatch(updateJobStatus({ jobId, status } as any));
+    (jobId: string, status: JobStatus) => {
+      dispatch(updateJobStatus({ jobId, status }));
     },
     [dispatch]
   );
@@ -61,8 +65,7 @@ export default function JobsPage() {
           variant="primary"
           icon={<Plus className="w-4 h-4" />}
           onClick={() => {
-            const { redirect } = require("next/navigation");
-            redirect("/recruiter-dashboard/jobs/post");
+            router.push("/recruiter-dashboard/jobs/post");
           }}
         >
           Post New Job
@@ -97,11 +100,15 @@ export default function JobsPage() {
       {/* Jobs list */}
       {myJobs.length > 0 && (
         <div className="space-y-4">
-          {myJobs.map((job: any) => (
-            <Card key={job.id} hoverable>
+          {myJobs.map((job) => (
+            <Card key={job._id} hoverable>
               <div className="flex items-start gap-4">
-                <div className="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center text-2xl flex-shrink-0">
-                  {job.company?.logo ?? "🏢"}
+                <div className="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden">
+                  {job.company?.logo ? (
+                    <Image src={job.company.logo} alt={job.company.name} className="w-full h-full object-cover" width={48} height={48} />
+                  ) : (
+                    <span className="text-2xl">🏢</span>
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-3">
@@ -149,14 +156,15 @@ export default function JobsPage() {
                   variant="outline"
                   size="xs"
                   onClick={() => {
-                    const { redirect } = require("next/navigation");
-                    redirect(`/jobs/${job.id}`);
+                    router.push(`/jobs/${job._id}`);
                   }}
                 >
                   <Eye className="w-3.5 h-3.5" />
                   View
                 </Button>
-                <Button variant="ghost" size="xs" onClick={() => {}}>
+                <Button variant="ghost" size="xs" onClick={() => {
+                  router.push(`/recruiter-dashboard/jobs/${job._id}/edit`);
+                }}>
                   <Edit3 className="w-3.5 h-3.5" />
                   Edit
                 </Button>
@@ -165,7 +173,7 @@ export default function JobsPage() {
                   size="xs"
                   onClick={() =>
                     handleToggleStatus(
-                      job.id,
+                      job._id,
                       job.status === "active" ? "paused" : "active"
                     )
                   }
@@ -177,7 +185,7 @@ export default function JobsPage() {
                   variant="ghost"
                   size="xs"
                   className="ml-auto text-red-500 hover:bg-red-50"
-                  onClick={() => handleDelete(job.id)}
+                  onClick={() => handleDelete(job._id)}
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                   Delete

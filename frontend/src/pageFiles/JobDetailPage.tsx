@@ -1,24 +1,90 @@
 "use client"
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter, useParams } from "next/navigation";
+import Image from "next/image";
 import { ArrowLeft, Bookmark, BookmarkCheck, Briefcase, Building2, CheckCircle, Clock, DollarSign, ExternalLink, Globe, MapPin, Share2, Star, Users } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Avatar } from "@/components/ui/Avatar";
 import { Modal } from "@/components/ui/Modal";
-import { MOCK_JOBS } from "@/lib/mockData";
 import { formatSalaryRange, timeAgo, getJobTypeBadgeColor, cn } from "@/lib/utils";
-import { redirect } from "next/navigation";
+import type { Job } from "@/types";
+import { jobsService } from "@/features/jobs/services/jobs.service";
+
+// Helper component to render company logo with fallback
+function CompanyLogo({ logo, name, size = "md" }: { logo?: string; name: string; size?: "sm" | "md" | "lg" }) {
+  const sizeClasses = {
+    sm: "w-10 h-10 text-lg",
+    md: "w-12 h-12 text-2xl",
+    lg: "w-20 h-20 text-4xl",
+  };
+
+  const isUrl = logo && (logo.startsWith("http://") || logo.startsWith("https://") || logo.startsWith("/"));
+
+  if (isUrl) {
+    return (
+      <div className={`${sizeClasses[size]} bg-gray-50 rounded-xl flex items-center justify-center overflow-hidden flex-shrink-0`}>
+        <Image
+          src={logo}
+          alt={name}
+          width={size === "lg" ? 80 : size === "md" ? 48 : 40}
+          height={size === "lg" ? 80 : size === "md" ? 48 : 40}
+          className="w-full h-full object-cover"
+        />
+      </div>
+    );
+  }
+
+  // Fallback: show company name initials or emoji
+  const initials = name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+
+  return (
+    <div className={`${sizeClasses[size]} bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl flex items-center justify-center flex-shrink-0`}>
+      <span className="font-semibold text-blue-600">{initials}</span>
+    </div>
+  );
+}
 
 export default function JobDetailPage() {
-  const job = MOCK_JOBS[0]; // Showing first job as demo
+  const router = useRouter();
+  const params = useParams();
+  const jobId = params.id as string;
+
+  const [job, setJob] = useState<Job | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [applyModalOpen, setApplyModalOpen] = useState(false);
   const [applying, setApplying] = useState(false);
   const [applied, setApplied] = useState(false);
   const [coverLetter, setCoverLetter] = useState("");
 
-  const similarJobs = MOCK_JOBS.filter((j) => j.category === job.category && j.id !== job.id).slice(0, 3);
 
+
+  useEffect(() => {
+    if (!jobId) return;
+
+    const fetchJob = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await jobsService.getById(jobId);
+        setJob(data);
+      } catch (err: any) {
+        setError(err.message || "Failed to load job");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchJob();
+  }, [jobId]);
+  
   const handleApply = async () => {
     setApplying(true);
     await new Promise((r) => setTimeout(r, 1800));
@@ -27,12 +93,42 @@ export default function JobDetailPage() {
     setApplyModalOpen(false);
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="animate-pulse space-y-6">
+            <div className="h-8 bg-gray-200 rounded w-32"></div>
+            <div className="bg-white border border-gray-200 rounded-2xl p-6 h-64"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !job) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="bg-white border border-gray-200 rounded-2xl p-12 text-center">
+            <p className="text-red-600">{error || "Job not found"}</p>
+            <Button variant="outline" className="mt-4" onClick={() => router.push("/jobs")}>
+              Back to Jobs
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const similarJobs: Job[] = []; // TODO: Fetch similar jobs from backend
+
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Back Button */}
         <button
-          onClick={() => redirect("jobs")}
+          onClick={() => router.push("/jobs")}
           className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 mb-6 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -45,9 +141,7 @@ export default function JobDetailPage() {
             {/* Job Header Card */}
             <div className="bg-white border border-gray-200 rounded-2xl p-6">
               <div className="flex items-start gap-5">
-                <div className="w-20 h-20 bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl flex items-center justify-center text-4xl flex-shrink-0">
-                  {job.company.logo}
-                </div>
+                <CompanyLogo logo={job.company.logo} name={job.company.name} size="lg" />
                 <div className="flex-1">
                   <div className="flex items-start justify-between">
                     <div>
@@ -129,7 +223,7 @@ export default function JobDetailPage() {
                   </div>
                 ) : (
                   <div className="flex gap-3">
-                    <Button variant="outline" size="md" onClick={() => redirect("candidate-dashboard")}>
+                    <Button variant="outline" size="md" onClick={() => router.push("/candidate-dashboard")}>
                       View Similar
                     </Button>
                     <Button variant="primary" size="md" onClick={() => setApplyModalOpen(true)}>
@@ -181,13 +275,11 @@ export default function JobDetailPage() {
               <div className="space-y-4">
                 {similarJobs.map((sj) => (
                   <div
-                    key={sj.id}
+                    key={sj._id}
                     className="flex items-center gap-4 p-4 rounded-xl border border-gray-100 hover:border-blue-200 hover:bg-blue-50/30 cursor-pointer transition-all"
-                    onClick={() => redirect("job-detail")}
+                    onClick={() => router.push(`/jobs/${sj._id}`)}
                   >
-                    <div className="w-10 h-10 bg-gray-50 rounded-lg flex items-center justify-center text-lg">
-                      {sj.company.logo}
-                    </div>
+                    <CompanyLogo logo={sj.company.logo} name={sj.company.name} size="sm" />
                     <div className="flex-1">
                       <p className="text-sm font-semibold text-gray-900">{sj.title}</p>
                       <p className="text-xs text-gray-500">{sj.company.name} · {sj.location}</p>
@@ -209,9 +301,7 @@ export default function JobDetailPage() {
               <h3 className="text-sm font-semibold text-gray-900 mb-4">About {job.company.name}</h3>
 
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center text-2xl">
-                  {job.company.logo}
-                </div>
+                <CompanyLogo logo={job.company.logo} name={job.company.name} size="md" />
                 <div>
                   <p className="text-sm font-semibold text-gray-900">{job.company.name}</p>
                   <p className="text-xs text-gray-500">{job.company.industry}</p>
@@ -240,7 +330,7 @@ export default function JobDetailPage() {
                 size="sm"
                 fullWidth
                 className="mt-4"
-                onClick={() => redirect(`companies/${job.company.id}`)}
+                onClick={() => router.push(`/companies/${job.company._id}`)}
                 icon={<ExternalLink className="w-4 h-4" />}
                 iconPosition="right"
               >
@@ -277,7 +367,7 @@ export default function JobDetailPage() {
                   <p className="text-xs text-gray-500">Senior Technical Recruiter</p>
                 </div>
               </div>
-              <Button variant="outline" size="sm" fullWidth onClick={() => redirect("messages")}>
+              <Button variant="outline" size="sm" fullWidth onClick={() => router.push("/messages")}>
                 Send Message
               </Button>
             </div>

@@ -1,27 +1,64 @@
 "use client"
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Bookmark, BookmarkCheck, BriefcaseIcon, ChevronDown, Filter, MapPin, Search, SlidersHorizontal, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Badge } from "@/components/ui/Badge";
 import { JobCardSkeleton } from "@/components/ui/Skeleton";
-import { MOCK_JOBS } from "@/lib/mockData";
 import { JOB_TYPES, JOB_LEVELS, JOB_CATEGORIES } from "@/constants";
 import { formatSalaryRange, timeAgo, getJobTypeBadgeColor, cn } from "@/lib/utils";
-import type { JobType, JobLevel } from "@/types";
-import { redirect } from "next/navigation";
+import type { JobType, JobLevel, Job } from "@/types";
+import { jobsService } from "@/features/jobs/services/jobs.service";
 
 export default function JobsPage() {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [searchLocation, setSearchLocation] = useState("");
   const [selectedTypes, setSelectedTypes] = useState<JobType[]>([]);
   const [selectedLevels, setSelectedLevels] = useState<JobLevel[]>([]);
   const [selectedCategory, setSelectedCategory] = useState("");
   const [isRemote, setIsRemote] = useState(false);
-  const [savedJobs, setSavedJobs] = useState<string[]>(["j1", "j3", "j7"]);
-  const [loading] = useState(false);
+  const [savedJobs, setSavedJobs] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [jobs, setJobs] = useState<Job[]>([]);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [sortBy, setSortBy] = useState("newest");
+
+  useEffect(() => {
+    let isMounted = true;
+    const debounceTimer = setTimeout(async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await jobsService.getAll({
+          search: searchQuery || undefined,
+          location: searchLocation || undefined,
+          type: selectedTypes.length > 0 ? selectedTypes[0] : undefined,
+          level: selectedLevels.length > 0 ? selectedLevels[0] : undefined,
+          skills: selectedCategory || undefined,
+          isRemote: isRemote || undefined,
+        });
+        if (isMounted) {
+          setJobs(response.data);
+        }
+      } catch (err: any) {
+        if (isMounted) {
+          setError(err.message || "Failed to load jobs");
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    }, 500);
+
+    return () => {
+      isMounted = false;
+      clearTimeout(debounceTimer);
+    };
+  }, [searchQuery, searchLocation, selectedTypes, selectedLevels, selectedCategory, isRemote]);
 
   const toggleJobType = (type: JobType) => {
     setSelectedTypes((prev) => prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]);
@@ -46,47 +83,18 @@ export default function JobsPage() {
   };
 
   const filteredJobs = useMemo(() => {
-    let jobs = MOCK_JOBS;
-
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      jobs = jobs.filter(
-        (j) => j.title.toLowerCase().includes(q) ||
-          j.company.name.toLowerCase().includes(q) ||
-          j.skills.some((s) => s.toLowerCase().includes(q))
-      );
-    }
-
-    if (searchLocation) {
-      jobs = jobs.filter((j) => j.location.toLowerCase().includes(searchLocation.toLowerCase()));
-    }
-
-    if (selectedTypes.length > 0) {
-      jobs = jobs.filter((j) => selectedTypes.includes(j.type));
-    }
-
-    if (selectedLevels.length > 0) {
-      jobs = jobs.filter((j) => selectedLevels.includes(j.level));
-    }
-
-    if (selectedCategory) {
-      jobs = jobs.filter((j) => j.category === selectedCategory);
-    }
-
-    if (isRemote) {
-      jobs = jobs.filter((j) => j.isRemote);
-    }
+    let filteredJobs = jobs;
 
     if (sortBy === "newest") {
-      jobs = [...jobs].sort((a, b) => new Date(b.postedAt).getTime() - new Date(a.postedAt).getTime());
+      filteredJobs = [...filteredJobs].sort((a, b) => new Date(b.postedAt).getTime() - new Date(a.postedAt).getTime());
     } else if (sortBy === "salary") {
-      jobs = [...jobs].sort((a, b) => b.salary.max - a.salary.max);
+      filteredJobs = [...filteredJobs].sort((a, b) => b.salary.max - a.salary.max);
     } else if (sortBy === "applicants") {
-      jobs = [...jobs].sort((a, b) => b.applicantsCount - a.applicantsCount);
+      filteredJobs = [...filteredJobs].sort((a, b) => b.applicantsCount - a.applicantsCount);
     }
 
-    return jobs;
-  }, [searchQuery, searchLocation, selectedTypes, selectedLevels, selectedCategory, isRemote, sortBy]);
+    return filteredJobs;
+  }, [jobs, sortBy]);
 
   const activeFilterCount = selectedTypes.length + selectedLevels.length + (selectedCategory ? 1 : 0) + (isRemote ? 1 : 0);
 
@@ -310,17 +318,17 @@ export default function JobsPage() {
             ) : (
               <div className="space-y-4">
                 {filteredJobs.map((job) => {
-                  const isSaved = savedJobs.includes(job.id);
+                  const isSaved = savedJobs.includes(job._id);
                   return (
                     <div
-                      key={job.id}
+                      key={job._id}
                       className="group bg-white border border-gray-200 rounded-xl p-5 hover:shadow-md hover:border-blue-200 transition-all duration-200 cursor-pointer"
-                      onClick={() => redirect("job-detail")}
+                      onClick={() => router.push(`/jobs/${job._id}`)}
                     >
                       <div className="flex items-start gap-4">
                         {/* Logo */}
                         <div className="w-12 h-12 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl flex items-center justify-center text-xl flex-shrink-0">
-                          {job.company.logo}
+                          {job.company.logo || "🏢"}
                         </div>
 
                         {/* Content */}
@@ -340,7 +348,7 @@ export default function JobsPage() {
 
                             {/* Save Button */}
                             <button
-                              onClick={(e) => toggleSave(job.id, e)}
+                              onClick={(e) => toggleSave(job._id, e)}
                               className={cn(
                                 "p-2 rounded-lg transition-colors flex-shrink-0",
                                 isSaved
@@ -401,7 +409,7 @@ export default function JobsPage() {
                         <Button
                           variant="primary"
                           size="sm"
-                          onClick={(e) => { e.stopPropagation(); redirect("job-detail"); }}
+                          onClick={(e) => { e.stopPropagation(); router.push(`/jobs/${job._id}`); }}
                         >
                           Apply Now
                         </Button>

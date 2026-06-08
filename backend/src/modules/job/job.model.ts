@@ -3,7 +3,7 @@ import { JobType, JobLevel, JobStatus } from "@/shared/types/index";
 
 export interface IJob extends Document {
   title: string;
-  company: mongoose.Types.ObjectId;
+  company: mongoose.Types.ObjectId | string;
   location: string;
   type: JobType;
   level: JobLevel;
@@ -19,7 +19,7 @@ export interface IJob extends Document {
   viewsCount: number;
   isFeatured: boolean;
   isRemote: boolean;
-  recruiter: mongoose.Types.ObjectId;
+  recruiter: mongoose.Types.ObjectId | string;
   category: string;
 }
 
@@ -54,7 +54,7 @@ const JobSchema = new Schema<IJob>(
     responsibilities: { type: [String], default: [] },
     skills: { type: [String], default: [], index: true },
     postedAt: { type: Date, default: Date.now },
-    expiresAt: { type: Date, required: true },
+    expiresAt: { type: Date },
     status: {
       type: String,
       enum: ["active", "closed", "draft", "paused"],

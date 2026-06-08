@@ -3,7 +3,7 @@
 export type UserRole = "candidate" | "recruiter" | "admin";
 
 export interface User {
-  id: string;
+  _id: string;
   name: string;
   email: string;
   avatar?: string;
@@ -21,6 +21,7 @@ export interface Candidate extends User {
   savedJobs: string[];
   appliedJobs: string[];
   profileCompletion: number;
+  saved?: boolean; // Whether this candidate is saved by the current recruiter
 }
 
 export interface Recruiter extends User {
@@ -57,7 +58,7 @@ export interface Salary {
 }
 
 export interface Job {
-  id: string;
+  _id: string;
   title: string;
   company: Company;
   location: string;
@@ -75,12 +76,12 @@ export interface Job {
   viewsCount: number;
   isFeatured: boolean;
   isRemote: boolean;
-  recruiter: string; // recruiter id
+  recruiter: string; // recruiter _id
   category: string;
 }
 
 export interface Application {
-  id: string;
+  _id: string;
   jobId: string;
   job: Job;
   candidateId: string;
@@ -127,7 +128,7 @@ export type NotificationType =
   | "interview_scheduled";
 
 export interface Notification {
-  id: string;
+  _id: string;
   type: NotificationType;
   title: string;
   message: string;
@@ -140,7 +141,7 @@ export interface Notification {
 // ─── Message / Chat ────────────────────────────────────────────────────────────
 
 export interface Message {
-  id: string;
+  _id: string;
   senderId: string;
   receiverId: string;
   content: string;
@@ -149,7 +150,7 @@ export interface Message {
 }
 
 export interface Conversation {
-  id: string;
+  _id: string;
   participants: User[];
   lastMessage: Message;
   unreadCount: number;
@@ -165,7 +166,7 @@ export interface AnalyticsDataPoint {
 }
 
 export interface StatCard {
-  id: string;
+  _id: string;
   title: string;
   value: string | number;
   change: number;
@@ -204,7 +205,7 @@ export interface PaginatedResponse<T> {
 export type PlanType = "free" | "pro" | "enterprise";
 
 export interface Plan {
-  id: string;
+  _id: string;
   name: string;
   price: number;
   billingPeriod: "monthly" | "yearly";

@@ -395,8 +395,8 @@ export default function HomePage() {
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
             {topCompanies.map((company) => (
               <button
-                key={company.id}
-                onClick={() => redirect(`companies/${company.id}`)}
+                key={company._id}
+                onClick={() => redirect(`companies/${company._id}`)}
                 className="group bg-white border border-gray-200 rounded-xl p-5 text-center hover:border-blue-200 hover:shadow-md transition-all duration-200"
               >
                 <div className="w-14 h-14 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl flex items-center justify-center text-3xl mx-auto mb-3 group-hover:scale-110 transition-transform">

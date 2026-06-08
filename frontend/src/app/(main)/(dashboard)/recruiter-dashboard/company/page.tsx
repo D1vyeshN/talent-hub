@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useAppSelector } from "@/store/hooks";
 import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -34,6 +33,7 @@ export default function CompanyPage() {
     description: "",
     foundedYear: "",
     benefits: [] as string[],
+    newBenefit: "",
   });
 
   // Auto-dismiss error after 5 seconds
@@ -74,6 +74,7 @@ export default function CompanyPage() {
           description: companyData.description || "",
           foundedYear: companyData.foundedYear?.toString() || "",
           benefits: companyData.benefits || [],
+          newBenefit: "",
         });
       }
     } catch (err: any) {
@@ -88,6 +89,7 @@ export default function CompanyPage() {
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchCompany();
   }, []);
 

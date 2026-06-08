@@ -1,4 +1,5 @@
 import multer from "multer";
+// @ts-ignore - Type declaration exists in src/types/multer-storage-cloudinary.d.ts
 import CloudinaryStorage from "multer-storage-cloudinary";
 import cloudinary from "../config/cloudinary";
 

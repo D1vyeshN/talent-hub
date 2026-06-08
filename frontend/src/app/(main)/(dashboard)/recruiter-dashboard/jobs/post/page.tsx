@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { cn } from "@/lib/utils";
 import { ChevronRight } from "lucide-react";
+import { jobsService, CreateJobPayload } from "@/features/jobs/services/jobs.service";
 
 type Step = 1 | 2 | 3;
 
@@ -15,12 +16,114 @@ export default function PostJobPage() {
   const router = useRouter();
   const [step, setStep] = useState<Step>(1);
   const [posting, setPosting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const [formData, setFormData] = useState<CreateJobPayload>({
+    title: "",
+    description: "",
+    location: "",
+    type: "full-time",
+    level: "mid",
+    minSalary: undefined,
+    maxSalary: undefined,
+    skills: [],
+    requirements: [],
+    responsibilities: [],
+    category: "",
+    expiresAt: undefined,
+    isRemote: false,
+  });
 
   const handlePost = async () => {
+    setError(null);
     setPosting(true);
-    await new Promise((r) => setTimeout(r, 1500));
-    setPosting(false);
-    router.push("/recruiter-dashboard/jobs");
+
+    try {
+      // Validate required fields with same rules as backend
+      if (!formData.title || formData.title.length < 5) {
+        setError("Job title must be at least 5 characters");
+        setPosting(false);
+        return;
+      }
+
+      if (formData.title.length > 100) {
+        setError("Job title must not exceed 100 characters");
+        setPosting(false);
+        return;
+      }
+
+      if (!formData.description || formData.description.length < 20) {
+        setError("Description must be at least 20 characters");
+        setPosting(false);
+        return;
+      }
+
+      if (formData.description.length > 5000) {
+        setError("Description must not exceed 5000 characters");
+        setPosting(false);
+        return;
+      }
+
+      if (!formData.location || formData.location.length < 2) {
+        setError("Location must be at least 2 characters");
+        setPosting(false);
+        return;
+      }
+
+      if (!formData.category || formData.category.length < 2) {
+        setError("Category must be at least 2 characters");
+        setPosting(false);
+        return;
+      }
+
+      if (formData.skills.length === 0) {
+        setError("At least one skill is required");
+        setPosting(false);
+        return;
+      }
+
+      if (formData.skills.length > 20) {
+        setError("Cannot have more than 20 skills");
+        setPosting(false);
+        return;
+      }
+
+      if (formData.requirements.length > 20) {
+        setError("Cannot have more than 20 requirements");
+        setPosting(false);
+        return;
+      }
+
+      if (formData.responsibilities.length > 20) {
+        setError("Cannot have more than 20 responsibilities");
+        setPosting(false);
+        return;
+      }
+
+      if (formData.minSalary !== undefined && formData.minSalary < 0) {
+        setError("Minimum salary must be a positive number");
+        setPosting(false);
+        return;
+      }
+
+      if (formData.maxSalary !== undefined && formData.maxSalary < 0) {
+        setError("Maximum salary must be a positive number");
+        setPosting(false);
+        return;
+      }
+
+      if (formData.minSalary !== undefined && formData.maxSalary !== undefined && formData.minSalary > formData.maxSalary) {
+        setError("Minimum salary must be less than or equal to maximum salary");
+        setPosting(false);
+        return;
+      }
+
+      await jobsService.create(formData);
+      router.push("/recruiter-dashboard/jobs");
+    } catch (err: any) {
+      setError(err.message || "Failed to create job");
+      setPosting(false);
+    }
   };
 
   return (
@@ -40,6 +143,13 @@ export default function PostJobPage() {
           </p>
         </div>
       </div>
+
+      {/* Error Display */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+          <p className="text-sm text-red-700">{error}</p>
+        </div>
+      )}
 
       {/* Steps */}
       <div className="bg-white rounded-xl border border-gray-200 p-4">
@@ -84,6 +194,8 @@ export default function PostJobPage() {
                 <input
                   className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="e.g. Senior React Developer"
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -94,17 +206,23 @@ export default function PostJobPage() {
                   <input
                     className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="City or Remote"
+                    value={formData.location}
+                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                   />
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-700 mb-1.5 block">
                     Job Type *
                   </label>
-                  <select className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <option>Full Time</option>
-                    <option>Part Time</option>
-                    <option>Contract</option>
-                    <option>Remote</option>
+                  <select
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={formData.type}
+                    onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
+                  >
+                    <option value="full-time">Full Time</option>
+                    <option value="part-time">Part Time</option>
+                    <option value="contract">Contract</option>
+                    <option value="remote">Remote</option>
                   </select>
                 </div>
                 <div>
@@ -115,6 +233,8 @@ export default function PostJobPage() {
                     type="number"
                     className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="e.g. 1000000"
+                    value={formData.minSalary || ""}
+                    onChange={(e) => setFormData({ ...formData, minSalary: e.target.value ? Number(e.target.value) : undefined })}
                   />
                 </div>
                 <div>
@@ -125,6 +245,8 @@ export default function PostJobPage() {
                     type="number"
                     className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="e.g. 2000000"
+                    value={formData.maxSalary || ""}
+                    onChange={(e) => setFormData({ ...formData, maxSalary: e.target.value ? Number(e.target.value) : undefined })}
                   />
                 </div>
               </div>
@@ -136,6 +258,19 @@ export default function PostJobPage() {
                   rows={5}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                   placeholder="Describe the role, team, and what the candidate will work on..."
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-1.5 block">
+                  Category *
+                </label>
+                <input
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="e.g. Engineering, Design, Marketing"
+                  value={formData.category}
+                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                 />
               </div>
             </div>
@@ -145,22 +280,28 @@ export default function PostJobPage() {
             <div className="space-y-5">
               <div>
                 <label className="text-sm font-medium text-gray-700 mb-1.5 block">
-                  Required Skills
+                  Required Skills *
                 </label>
                 <input
                   className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Type skills separated by commas (e.g. React, TypeScript, Node.js)"
+                  value={formData.skills.join(", ")}
+                  onChange={(e) => setFormData({ ...formData, skills: e.target.value.split(",").map(s => s.trim()).filter(s => s) })}
                 />
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-700 mb-1.5 block">
                   Experience Level *
                 </label>
-                <select className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                  <option>Entry Level (0-2 yrs)</option>
-                  <option>Mid Level (3-5 yrs)</option>
-                  <option>Senior Level (5-8 yrs)</option>
-                  <option>Lead / Principal (8+ yrs)</option>
+                <select
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={formData.level}
+                  onChange={(e) => setFormData({ ...formData, level: e.target.value as any })}
+                >
+                  <option value="entry">Entry Level (0-2 yrs)</option>
+                  <option value="mid">Mid Level (3-5 yrs)</option>
+                  <option value="senior">Senior Level (5-8 yrs)</option>
+                  <option value="lead">Lead / Principal (8+ yrs)</option>
                 </select>
               </div>
               <div>
@@ -171,6 +312,8 @@ export default function PostJobPage() {
                   rows={4}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                   placeholder="List key requirements (one per line)..."
+                  value={formData.requirements.join("\n")}
+                  onChange={(e) => setFormData({ ...formData, requirements: e.target.value.split("\n").map(r => r.trim()).filter(r => r) })}
                 />
               </div>
               <div>
@@ -181,6 +324,8 @@ export default function PostJobPage() {
                   rows={4}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                   placeholder="List key responsibilities (one per line)..."
+                  value={formData.responsibilities.join("\n")}
+                  onChange={(e) => setFormData({ ...formData, responsibilities: e.target.value.split("\n").map(r => r.trim()).filter(r => r) })}
                 />
               </div>
             </div>
@@ -200,10 +345,14 @@ export default function PostJobPage() {
               <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-2 text-sm">
                 <p className="font-semibold text-gray-900">Preview Summary</p>
                 <div className="text-gray-600 space-y-1">
-                  <p>📌 Senior React Developer</p>
-                  <p>📍 Bengaluru, India · Full Time</p>
-                  <p>💰 ₹15L – ₹25L / year</p>
-                  <p>🏢 Google · Verified Company</p>
+                  <p>📌 {formData.title}</p>
+                  <p>📍 {formData.location} · {formData.type}</p>
+                  {formData.minSalary && formData.maxSalary && (
+                    <p>💰 ₹{formData.minSalary.toLocaleString()} – ₹{formData.maxSalary.toLocaleString()} / year</p>
+                  )}
+                  <p>🏢 {MOCK_RECRUITER.company}</p>
+                  <p>🎯 {formData.level} level</p>
+                  <p>🏷️ {formData.category}</p>
                 </div>
               </div>
               <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-xl border border-blue-200">

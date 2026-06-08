@@ -28,6 +28,9 @@ export interface CreateJobPayload {
   skills: string[];
   requirements: string[];
   responsibilities: string[];
+  category: string;
+  expiresAt?: string;
+  isRemote?: boolean;
 }
 
 export interface UpdateJobPayload {
@@ -42,6 +45,9 @@ export interface UpdateJobPayload {
   requirements?: string[];
   responsibilities?: string[];
   status?: Job["status"];
+  category?: string;
+  expiresAt?: string;
+  isRemote?: boolean;
 }
 
 export interface JobQueryParams {
@@ -53,6 +59,7 @@ export interface JobQueryParams {
   skills?: string;
   page?: number;
   pageSize?: number;
+  isRemote?: boolean;
 }
 
 export interface PaginatedJobsResponse {
