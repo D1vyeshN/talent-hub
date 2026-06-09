@@ -33,3 +33,15 @@ export const toggleUserBan = asyncHandler(async (req: Request, res: Response) =>
   const user = await AdminService.toggleUserBan(req.params.id as string);
   res.json(new ApiResponse(200, user, "User ban status toggled"));
 });
+
+// POST /api/v1/admin/mock-data/import
+export const importMockData = asyncHandler(async (req: Request, res: Response) => {
+  const results = await AdminService.bulkImportMockData(req.body);
+  res.json(new ApiResponse(200, results, "Mock data imported successfully"));
+});
+
+// DELETE /api/v1/admin/mock-data/clear
+export const clearMockData = asyncHandler(async (_req: Request, res: Response) => {
+  const result = await AdminService.clearAllData();
+  res.json(new ApiResponse(200, result, "All data cleared successfully"));
+});

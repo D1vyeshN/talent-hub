@@ -32,6 +32,7 @@ export type Page =
   | "company-profile"
   | "candidate-dashboard"
   | "recruiter-dashboard"
+  | "admin-dashboard"
   | "login"
   | "register"
   | "messages"
@@ -49,7 +50,6 @@ export function NavbarSection() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const unreadCount = MOCK_NOTIFICATIONS.filter((n) => !n.read).length;
-
   const navLinks = [
     { label: "Find Jobs", page: "jobs" as Page },
     { label: "Companies", page: "companies" as Page },
@@ -58,7 +58,7 @@ export function NavbarSection() {
       page:
         user?.role === "recruiter"
           ? ("recruiter-dashboard" as Page)
-          : ("candidate-dashboard" as Page),
+          : user?.role === "admin" ? "admin-dashboard" as Page : ("candidate-dashboard" as Page),
       authOnly: true,
     },
   ];
@@ -176,7 +176,7 @@ export function NavbarSection() {
                             redirect(
                               user.role === "recruiter"
                                 ? "/recruiter-dashboard"
-                                : "/candidate-dashboard",
+                                : user.role === "admin" ? "/admin-dashboard" : "/candidate-dashboard",
                             );
                             setProfileDropdownOpen(false);
                           }}

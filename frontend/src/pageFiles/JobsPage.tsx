@@ -393,7 +393,7 @@ export default function JobsPage() {
                 icon={<BriefcaseIcon className="w-8 h-8" />}
                 title="No jobs found"
                 description="Try adjusting your search criteria or clearing some filters."
-                action={<Button variant="outline" onClick={clearFilters}>Clear All Filters</Button>}
+                action={activeFilterCount > 0 ? <Button variant="outline" onClick={clearFilters}>Clear All Filters</Button> : undefined}
               />
             ) : (
               <div className="space-y-4">

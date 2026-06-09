@@ -6,6 +6,7 @@ import { logger } from "../utils/logger";
 export interface AuthRequest extends Request {
   userId?: string;
   userRole?: string;
+  isSuperadmin?: boolean;
 }
 
 /**
@@ -18,7 +19,7 @@ export const authenticate = (
   next: NextFunction
 ) => {
   // const authHeader = req.headers.authorization;
- 
+
   // if (!authHeader?.startsWith("Bearer ")) {
   //   throw new AppError(401, "Unauthorized — no token provided");
   // }
@@ -30,14 +31,69 @@ export const authenticate = (
     const payload = jwt.verify(token, process.env.JWT_SECRET!) as {
       userId: string;
       role: string;
+      email?: string;
     };
 
     req.userId = payload.userId;
     req.userRole = payload.role;
+
+    // Check if user is superadmin based on credentials
+    const superadminEmail = process.env.SUPERADMIN_EMAIL;
+    const superadminPassword = process.env.SUPERADMIN_PASSWORD;
+
+    if (superadminEmail && superadminPassword && payload.email === superadminEmail) {
+      req.isSuperadmin = true;
+      // Grant admin privileges regardless of actual role
+      req.userRole = "admin";
+    }
+
     next();
   } catch (err) {
     logger.warn("JWT verification failed", { error: (err as Error).message });
     throw new AppError(401, "Invalid or expired token");
+  }
+};
+
+/**
+ * Optional authentication - allows requests without token but attaches user info if token is valid
+ * Used for public routes that can show recruiter-specific data when logged in
+ */
+export const optionalAuth = (
+  req: AuthRequest,
+  _res: Response,
+  next: NextFunction
+) => {
+  const token = req.cookies.token;
+
+  if (!token) {
+    // No token provided, proceed without auth
+    return next();
+  }
+
+  try {
+    const payload = jwt.verify(token, process.env.JWT_SECRET!) as {
+      userId: string;
+      role: string;
+      email?: string;
+    };
+
+    req.userId = payload.userId;
+    req.userRole = payload.role;
+
+    // Check if user is superadmin based on credentials
+    const superadminEmail = process.env.SUPERADMIN_EMAIL;
+    const superadminPassword = process.env.SUPERADMIN_PASSWORD;
+
+    if (superadminEmail && superadminPassword && payload.email === superadminEmail) {
+      req.isSuperadmin = true;
+      req.userRole = "admin";
+    }
+
+    next();
+  } catch (err) {
+    // Invalid token, but proceed without auth for optional routes
+    logger.warn("Optional auth failed, proceeding without auth", { error: (err as Error).message });
+    next();
   }
 };
 

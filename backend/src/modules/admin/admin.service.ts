@@ -88,3 +88,72 @@ export const toggleUserBan = async (userId: string) => {
 
   return user.save();
 };
+
+// ─── Bulk Import Mock Data ─────────────────────────────────────────────────────
+export const bulkImportMockData = async (data: any) => {
+  const { companies, jobs, users, applications, notifications, messages } = data;
+
+  const results: any = {
+    companies: 0,
+    jobs: 0,
+    users: 0,
+    applications: 0,
+    notifications: 0,
+    messages: 0,
+  };
+
+  try {
+    // Import users first
+    if (users && users.length > 0) {
+      const importedUsers = await User.insertMany(users);
+      results.users = importedUsers.length;
+    }
+
+    // Import companies
+    if (companies && companies.length > 0) {
+      const importedCompanies = await Company.insertMany(companies);
+      results.companies = importedCompanies.length;
+    }
+
+    // Import jobs
+    if (jobs && jobs.length > 0) {
+      const importedJobs = await Job.insertMany(jobs);
+      results.jobs = importedJobs.length;
+    }
+
+    // Import applications
+    if (applications && applications.length > 0) {
+      const importedApplications = await Application.insertMany(applications);
+      results.applications = importedApplications.length;
+    }
+
+    // Import notifications
+    if (notifications && notifications.length > 0) {
+      const importedNotifications = await Notification.insertMany(notifications);
+      results.notifications = importedNotifications.length;
+    }
+
+    // Import messages
+    if (messages && messages.length > 0) {
+      const importedMessages = await Message.insertMany(messages);
+      results.messages = importedMessages.length;
+    }
+
+    return results;
+  } catch (error) {
+    throw new ApiError(500, `Failed to import mock data: ${error}`);
+  }
+};
+
+// ─── Clear All Data ────────────────────────────────────────────────────────────
+export const clearAllData = async () => {
+  await User.deleteMany({});
+  await Company.deleteMany({});
+  await Job.deleteMany({});
+  await Application.deleteMany({});
+  await Notification.deleteMany({});
+  await Message.deleteMany({});
+  await Conversation.deleteMany({});
+
+  return { message: "All data cleared successfully" };
+};

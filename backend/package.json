@@ -7,7 +7,9 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "lint": "eslint src/**/*.ts",
-    "lint:fix": "eslint src/**/*.ts --fix"
+    "lint:fix": "eslint src/**/*.ts --fix",
+    "seed": "ts-node --transpile-only -r tsconfig-paths/register src/seeders/mockData.seeder.ts",
+    "seed:clear": "ts-node --transpile-only -r tsconfig-paths/register src/seeders/mockData.seeder.ts --clear"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

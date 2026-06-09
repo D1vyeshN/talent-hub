@@ -233,12 +233,12 @@ export default function JobsPage() {
                     Status
                   </Button>
                   {statusDropdownOpen === job._id && (
-                    <div className="absolute right-0 mt-2 w-32 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                    <div className="absolute right-0 mt-2 w-32 bg-white border border-gray-200 rounded-lg shadow-lg z-50 overflow-hidden">
                       {(["draft", "active", "paused", "closed"] as JobStatus[]).map((status) => (
                         <button
                           key={status}
                           onClick={() => handleStatusChange(job._id, status)}
-                          className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg"
+                          className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg whitespace-nowrap"
                         >
                           {status.charAt(0).toUpperCase() + status.slice(1)}
                         </button>

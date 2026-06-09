@@ -1,0 +1,246 @@
+"use client";
+
+import {
+  LayoutDashboard,
+  Database,
+  Users,
+  Briefcase,
+  Building2,
+  Settings,
+  LogOut,
+  ChevronLeft,
+  Shield,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { usePathname, useRouter } from "next/navigation";
+import { logout } from "@/features/auth/store/authSlice";
+import { useState } from "react";
+
+interface NavItem {
+  label: string;
+  icon: React.ReactNode;
+  href: string;
+  section?: string;
+  badge?: number;
+  exact?: boolean;
+}
+
+export function AdminSidebar() {
+  const dispatch = useAppDispatch();
+  const router = useRouter();
+  const pathname = usePathname();
+  const { sidebarOpen } = useAppSelector((s) => s.ui);
+  const { user } = useAppSelector((s) => s.auth);
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  const navItems: NavItem[] = [
+    {
+      label: "Dashboard",
+      icon: <LayoutDashboard className="w-5 h-5" />,
+      href: "/admin-dashboard",
+      exact: true,
+      section: "Main",
+    },
+    {
+      label: "Mock Data",
+      icon: <Database className="w-5 h-5" />,
+      href: "/admin-dashboard/mock-data",
+      exact: true,
+      section: "Data Management",
+    },
+    {
+      label: "Users",
+      icon: <Users className="w-5 h-5" />,
+      href: "/admin-dashboard/users",
+      exact: true,
+      section: "Management",
+    },
+    {
+      label: "Jobs",
+      icon: <Briefcase className="w-5 h-5" />,
+      href: "/admin-dashboard/jobs",
+      exact: true,
+      section: "Management",
+    },
+    {
+      label: "Companies",
+      icon: <Building2 className="w-5 h-5" />,
+      href: "/admin-dashboard/companies",
+      exact: true,
+      section: "Management",
+    },
+    {
+      label: "Settings",
+      icon: <Settings className="w-5 h-5" />,
+      href: "/admin-dashboard/settings",
+      exact: true,
+      section: "Account",
+    },
+  ];
+
+  const isActive = (href: string, exact?: boolean) => {
+    if (exact) return pathname === href;
+    return pathname.startsWith(href);
+  };
+
+  const handleNavigate = (href: string) => {
+    router.push(href);
+    setMobileOpen(false);
+  };
+
+  const handleLogout = async () => {
+    dispatch(logout()).then(() => {
+      router.push("/login");
+    });
+  };
+
+  return (
+    <div className={cn("relative w-0 lg:w-fit")}>
+      {/* Mobile backdrop */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-30 lg:hidden"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside
+        className={cn(
+          "sticky top-[65px] z-35 left-0 h-[calc(100vh-65px)] max-h-screen bg-white border border-t-0 border-gray-200 flex flex-col transition-all duration-300 ease-in-out",
+          // Desktop collapsed
+          !sidebarOpen && "lg:w-[72px]",
+          sidebarOpen && "lg:w-[260px]",
+          // Mobile
+          mobileOpen
+            ? "w-[260px] translate-x-0"
+            : "translate-x-0 lg:translate-x-0",
+        )}
+      >
+        {/* Logo / Brand */}
+        <div className="flex items-center gap-3 h-16 px-4 border-b border-gray-100 flex-shrink-0">
+          <div className="w-8 h-8 bg-gradient-to-br from-purple-600 to-purple-700 rounded-lg flex items-center justify-center flex-shrink-0">
+            <Shield className="w-5 h-5 text-white" />
+          </div>
+          {sidebarOpen && (
+            <span className="text-lg font-bold text-gray-900 whitespace-nowrap">
+              Admin<span className="text-purple-600">Panel</span>
+            </span>
+          )}
+          <button
+            onClick={() => setMobileOpen(false)}
+            className="lg:hidden ml-auto p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Navigation */}
+        <nav
+          className={cn(
+            "overflow-y-auto py-4 px-3 ",
+            mobileOpen ? "flex-1 lg:flex-1" : "hidden lg:block lg:flex-1",
+          )}
+          aria-label="Admin sidebar"
+        >
+          {(() => {
+            let lastSection: string | null = null;
+            const items: React.ReactNode[] = [];
+            navItems.forEach((item) => {
+              if (item.section && item.section !== lastSection) {
+                lastSection = item.section;
+                if (sidebarOpen) {
+                  items.push(
+                    <p
+                      key={item.section}
+                      className="px-3 mt-0 mb-2 text-[11px] font-semibold uppercase tracking-wider text-gray-400 select-none"
+                    >
+                      {item.section}
+                    </p>,
+                  );
+                }
+              }
+              const active = isActive(item.href, item.exact);
+              items.push(
+                <button
+                  key={item.href}
+                  onClick={() => handleNavigate(item.href)}
+                  className={cn(
+                    "w-full cursor-pointer flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 mb-1 group relative",
+                    active
+                      ? "bg-purple-50 text-purple-700"
+                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
+                  )}
+                  title={!sidebarOpen ? item.label : undefined}
+                >
+                  <span
+                    className={cn(
+                      "flex-shrink-0",
+                      active
+                        ? "text-purple-600"
+                        : "text-gray-400 group-hover:text-gray-600",
+                    )}
+                  >
+                    {item.icon}
+                  </span>
+                  {sidebarOpen && (
+                    <span className="whitespace-nowrap">{item.label}</span>
+                  )}
+                  {item.badge !== undefined && sidebarOpen && (
+                    <span className="ml-auto inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-purple-100 text-purple-700 text-[11px] font-semibold">
+                      {item.badge}
+                    </span>
+                  )}
+                  {/* Tooltip for collapsed state */}
+                  {!sidebarOpen && (
+                    <span className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50">
+                      {item.label}
+                    </span>
+                  )}
+                </button>,
+              );
+            });
+            return items;
+          })()}
+        </nav>
+
+        {/* Logout */}
+        <div className="p-3 border-t border-gray-100">
+          <button
+            onClick={handleLogout}
+            className={cn(
+              "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 group relative",
+              "text-gray-600 hover:bg-red-50 hover:text-red-700",
+            )}
+            title={!sidebarOpen ? "Logout" : undefined}
+          >
+            <LogOut className="w-5 h-5 text-gray-400 group-hover:text-red-600 flex-shrink-0" />
+            {sidebarOpen && <span className="whitespace-nowrap">Logout</span>}
+            {!sidebarOpen && (
+              <span className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50">
+                Logout
+              </span>
+            )}
+          </button>
+        </div>
+
+        <div className="absolute -right-8 bottom-10 z-50 bg-white border border-gray-600 rounded-lg">
+          <button
+            onClick={() => {
+              setMobileOpen(!mobileOpen);
+            }}
+            className="flex lg:hidden ml-auto p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+          >
+            <ChevronLeft
+              className={cn(
+                "w-5 h-5 transition-transform",
+                !mobileOpen && "rotate-180",
+              )}
+            />
+          </button>
+        </div>
+      </aside>
+    </div>
+  );
+}

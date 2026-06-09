@@ -91,7 +91,7 @@ export const getJobs = async (
       .limit(pageSize),
     Job.countDocuments(query),
   ]);
-
+  console.log(data,await Job.find())
   return buildPaginatedResponse(data, total, page, pageSize);
 };
 

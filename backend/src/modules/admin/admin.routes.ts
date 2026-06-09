@@ -13,5 +13,7 @@ router.post("/create-admin",            AdminController.createAdmin);
 router.patch("/companies/:id/verify",   AdminController.verifyCompany);
 router.patch("/jobs/:id/feature",       AdminController.toggleFeature);
 router.patch("/users/:id/ban",          AdminController.toggleUserBan);
+router.post("/mock-data/import",        AdminController.importMockData);
+router.delete("/mock-data/clear",       AdminController.clearMockData);
 
 export default router;

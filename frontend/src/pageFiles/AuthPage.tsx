@@ -62,7 +62,13 @@ export default function AuthPage({ mode }: AuthPageProps) {
         login({ email: formData.email, password: formData.password }),
       );
       if (login.fulfilled.match(result)) {
-        redirect("jobs");
+        // Check if user is admin and redirect to admin dashboard
+        const { user } = result.payload;
+        if (user?.role === "admin") {
+          redirect("admin-dashboard");
+        } else {
+          redirect("jobs");
+        }
       }
     } else {
       const result = await dispatch(

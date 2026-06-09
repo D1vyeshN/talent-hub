@@ -29,6 +29,7 @@ const userSchema = new Schema<IUser>(
       unique: true,
       lowercase: true,
       trim: true,
+      index: true,
       match: [/^\S+@\S+\.\S+$/, "Please enter a valid email address"],
     },
     password: {
@@ -58,7 +59,7 @@ const userSchema = new Schema<IUser>(
   { timestamps: true }
 );
 
-userSchema.index({ email: 1 });
+// userSchema.index({ email: 1 });
 userSchema.index({ role: 1 });
 
 userSchema.methods.comparePassword = async function (candidatePassword: string): Promise<boolean> {

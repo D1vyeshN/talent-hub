@@ -10,6 +10,7 @@ export const store = configureStore({
     ui: uiReducer,
     recruiterProfile: recruiterProfileReducer,
   },
+  devTools: true,
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({ serializableCheck: false }),
 });
@@ -17,7 +18,7 @@ export const store = configureStore({
 // Wire 401 handling: when apiClient detects an expired/invalid token,
 // it calls this → we dispatch logout() which clears Redux + cookies.
 export const setup401Handler = () => {
-  // setUnauthorizedHandler(() => store.dispatch(logout()));
+  setUnauthorizedHandler(() => store.dispatch(logout()));
 };
 
 export type RootState = ReturnType<typeof store.getState>;

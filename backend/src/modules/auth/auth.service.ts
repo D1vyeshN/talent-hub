@@ -32,8 +32,8 @@ export function verifyToken(token: string): { userId: string; role: string } {
 }
 
 /** Build a signed JWT */
-function generateToken(userId: string, role: string): string {
-  return jwt.sign({ userId, role }, JWT_SECRET, { expiresIn: JWT_EXPIRE } as jwt.SignOptions);
+function generateToken(userId: string, role: string, email?: string): string {
+  return jwt.sign({ userId, role, email }, JWT_SECRET, { expiresIn: JWT_EXPIRE } as jwt.SignOptions);
 }
 
 /**
@@ -104,7 +104,7 @@ export const authService = {
       userDoc = await User.create({ name, email, password, role });
     }
 
-    const token = generateToken(userDoc._id.toString(), userDoc.role);
+    const token = generateToken(userDoc._id.toString(), userDoc.role, userDoc.email);
     const apiUser = toApiUser(userDoc);
 
     return { user: apiUser, token };
@@ -113,7 +113,33 @@ export const authService = {
   async login(data: LoginRequest): Promise<AuthResponse> {
     const { email, password } = data;
 
-    // Find user by email using base User model (needed for password comparison)
+    // Check if credentials match superadmin
+    const superadminEmail = process.env.SUPERADMIN_EMAIL;
+    const superadminPassword = process.env.SUPERADMIN_PASSWORD;
+
+    if (superadminEmail && superadminPassword && email === superadminEmail && password === superadminPassword) {
+      // Superadmin login - check if superadmin user exists in database
+      let superadminUser = await User.findOne({ email: email.toLowerCase() });
+
+      if (!superadminUser) {
+        // Create superadmin user if it doesn't exist
+        superadminUser = await Admin.create({
+          name: "Superadmin",
+          email: email.toLowerCase(),
+          password: superadminPassword,
+          role: "admin",
+          permissions: ["manage_users", "manage_jobs", "manage_companies", "view_analytics", "import_mock_data", "clear_data"],
+        });
+      }
+
+      const fullUserDoc = await Admin.findById(superadminUser._id);
+      const token = generateToken(superadminUser._id.toString(), "admin", superadminUser.email);
+      const apiUser = toApiUser(fullUserDoc);
+
+      return { user: apiUser, token };
+    }
+
+    // Regular user login
     const userDoc = await User.findOne({ email: email.toLowerCase() }).select("+password");
     if (!userDoc) {
       throw new AppError(401, "Invalid email or password");
@@ -136,7 +162,7 @@ export const authService = {
       fullUserDoc = userDoc;
     }
 
-    const token = generateToken(userDoc._id.toString(), userDoc.role);
+    const token = generateToken(userDoc._id.toString(), userDoc.role, userDoc.email);
     const apiUser = toApiUser(fullUserDoc);
 
     return { user: apiUser, token };
