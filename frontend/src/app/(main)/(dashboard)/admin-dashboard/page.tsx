@@ -8,6 +8,29 @@ import { adminService } from "@/features/admin/admin.service";
 import type { DashboardStats, ImportResult } from "@/features/admin/admin.types";
 import { Upload, Trash2, BarChart3, Users, Briefcase, Building2, FileText } from "lucide-react";
 
+interface StatCardProps {
+  title: string;
+  value: number;
+  icon: React.ElementType;
+  color: string;
+}
+
+function StatCard({ title, value, icon: Icon, color }: StatCardProps) {
+  return (
+    <Card className="p-6">
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="text-sm font-medium text-gray-600 mb-1">{title}</p>
+          <p className="text-3xl font-bold text-gray-900">{value}</p>
+        </div>
+        <div className={`p-3 rounded-lg ${color}`}>
+          <Icon className="w-6 h-6 text-white" />
+        </div>
+      </div>
+    </Card>
+  );
+}
+
 export default function AdminDashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -17,7 +40,7 @@ export default function AdminDashboard() {
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
   const [clearModalOpen, setClearModalOpen] = useState(false);
   const [clearing, setClearing] = useState(false);
-  
+
   const loadStats = async () => {
     try {
       const data = await adminService.getDashboardStats();
@@ -28,9 +51,13 @@ export default function AdminDashboard() {
       setLoading(false);
     }
   };
-  useEffect(() => {
-    // loadStats();
 
+  useEffect(() => {
+    const fetchData = async () => {
+      await loadStats();
+    };
+
+    fetchData();
   }, []);
 
 
@@ -80,24 +107,24 @@ export default function AdminDashboard() {
     }
   };
 
-  const StatCard = ({ title, value, icon: Icon, color }: { title: string; value: number; icon: any; color: string }) => (
-    <Card className="p-6">
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-sm font-medium text-gray-600 mb-1">{title}</p>
-          <p className="text-3xl font-bold text-gray-900">{value}</p>
-        </div>
-        <div className={`p-3 rounded-lg ${color}`}>
-          <Icon className="w-6 h-6 text-white" />
-        </div>
-      </div>
-    </Card>
-  );
+  // const StatCard = ({ title, value, icon: Icon, color }: { title: string; value: number; icon: any; color: string }) => (
+  //   <Card className="p-6">
+  //     <div className="flex items-start justify-between">
+  //       <div>
+  //         <p className="text-sm font-medium text-gray-600 mb-1">{title}</p>
+  //         <p className="text-3xl font-bold text-gray-900">{value}</p>
+  //       </div>
+  //       <div className={`p-3 rounded-lg ${color}`}>
+  //         <Icon className="w-6 h-6 text-white" />
+  //       </div>
+  //     </div>
+  //   </Card>
+  // );
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
       </div>
     );
   }
@@ -112,16 +139,16 @@ export default function AdminDashboard() {
       </div>
 
       {/* Stats Cards */}
-      {/* {stats && (
+      {stats && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <StatCard title="Total Users" value={stats.totalUsers} icon={Users} color="bg-purple-500" />
-          <StatCard title="Total Jobs" value={stats.totalJobs} icon={Briefcase} color="bg-blue-500" />
-          <StatCard title="Total Companies" value={stats.totalCompanies} icon={Building2} color="bg-green-500" />
+          <StatCard title="Total Users" value={stats.totalUsers} icon={Users} color="bg-blue-500" />
+          <StatCard title="Total Jobs" value={stats.totalJobs} icon={Briefcase} color="bg-green-500" />
+          <StatCard title="Total Companies" value={stats.totalCompanies} icon={Building2} color="bg-teal-500" />
           <StatCard title="Applications" value={stats.totalApplications} icon={FileText} color="bg-orange-500" />
-          <StatCard title="Active Jobs" value={stats.activeJobs} icon={BarChart3} color="bg-teal-500" />
+          <StatCard title="Active Jobs" value={stats.activeJobs} icon={BarChart3} color="bg-indigo-500" />
           <StatCard title="Verified Companies" value={stats.verifiedCompanies} icon={Building2} color="bg-pink-500" />
         </div>
-      )} */}
+      )}
 
       {/* Mock Data Management */}
       <Card className="p-6">
@@ -179,7 +206,7 @@ export default function AdminDashboard() {
               type="file"
               accept=".json"
               onChange={handleFileUpload}
-              className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100"
+              className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
             />
           </div>
 
@@ -191,7 +218,7 @@ export default function AdminDashboard() {
               value={jsonInput}
               onChange={(e) => setJsonInput(e.target.value)}
               placeholder='{"companies": [...], "jobs": [...], "users": [...]}'
-              className="w-full h-64 p-4 border border-gray-300 rounded-lg font-mono text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              className="w-full h-64 p-4 border border-gray-300 rounded-lg font-mono text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
 

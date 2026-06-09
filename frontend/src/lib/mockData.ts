@@ -60,7 +60,7 @@ export const MOCK_COMPANIES: Company[] = [
 
 export const MOCK_JOBS: Job[] = [
   {
-    id: "j1", title: "Senior Frontend Engineer", company: MOCK_COMPANIES[0],
+    _id: "j1", title: "Senior Frontend Engineer", company: MOCK_COMPANIES[0],
     location: "Bengaluru, India", type: "full-time", level: "senior",
     salary: { min: 2800000, max: 4500000, currency: "INR", period: "yearly" },
     description: "We are looking for a Senior Frontend Engineer to join our Ads Infrastructure team. You will be responsible for building scalable, high-performance web applications that reach billions of users globally.",
@@ -72,7 +72,7 @@ export const MOCK_JOBS: Job[] = [
     isFeatured: true, isRemote: false, recruiter: "r1", category: "Technology",
   },
   {
-    id: "j2", title: "Full Stack Developer", company: MOCK_COMPANIES[2],
+    _id: "j2", title: "Full Stack Developer", company: MOCK_COMPANIES[2],
     location: "Bengaluru, India", type: "full-time", level: "mid",
     salary: { min: 1500000, max: 2500000, currency: "INR", period: "yearly" },
     description: "Join Razorpay's core payments team to build the infrastructure that powers India's digital economy. You'll work on high-throughput systems processing millions of transactions daily.",
@@ -84,7 +84,7 @@ export const MOCK_JOBS: Job[] = [
     isFeatured: true, isRemote: false, recruiter: "r2", category: "Technology",
   },
   {
-    id: "j3", title: "Product Designer (UI/UX)", company: MOCK_COMPANIES[5],
+    _id: "j3", title: "Product Designer (UI/UX)", company: MOCK_COMPANIES[5],
     location: "Remote", type: "remote", level: "mid",
     salary: { min: 1200000, max: 2000000, currency: "INR", period: "yearly" },
     description: "CRED is looking for a Product Designer who obsesses over details and can craft experiences for India's most premium user base. You'll own end-to-end design for our flagship features.",
@@ -96,7 +96,7 @@ export const MOCK_JOBS: Job[] = [
     isFeatured: false, isRemote: true, recruiter: "r3", category: "Design",
   },
   {
-    id: "j4", title: "Backend Engineer — Golang", company: MOCK_COMPANIES[4],
+    _id: "j4", title: "Backend Engineer — Golang", company: MOCK_COMPANIES[4],
     location: "Mumbai, India", type: "full-time", level: "senior",
     salary: { min: 2000000, max: 3500000, currency: "INR", period: "yearly" },
     description: "Zepto is scaling its instant delivery platform and needs talented backend engineers to build and scale its logistics and order management systems.",
@@ -108,7 +108,7 @@ export const MOCK_JOBS: Job[] = [
     isFeatured: false, isRemote: false, recruiter: "r4", category: "Technology",
   },
   {
-    id: "j5", title: "Data Scientist", company: MOCK_COMPANIES[3],
+    _id: "j5", title: "Data Scientist", company: MOCK_COMPANIES[3],
     location: "Bengaluru, India", type: "full-time", level: "mid",
     salary: { min: 1800000, max: 3000000, currency: "INR", period: "yearly" },
     description: "Join Swiggy's Data Science team to build recommendation engines and demand forecasting models that directly impact millions of food orders daily.",
@@ -120,7 +120,7 @@ export const MOCK_JOBS: Job[] = [
     isFeatured: true, isRemote: false, recruiter: "r5", category: "Data Science",
   },
   {
-    id: "j6", title: "DevOps Engineer", company: MOCK_COMPANIES[6],
+    _id: "j6", title: "DevOps Engineer", company: MOCK_COMPANIES[6],
     location: "Bengaluru, India", type: "full-time", level: "senior",
     salary: { min: 2200000, max: 3800000, currency: "INR", period: "yearly" },
     description: "PhonePe is looking for a DevOps Engineer to build and manage our cloud infrastructure, CI/CD pipelines, and ensure 99.99% uptime for our payment systems.",
@@ -132,7 +132,7 @@ export const MOCK_JOBS: Job[] = [
     isFeatured: false, isRemote: false, recruiter: "r1", category: "Engineering",
   },
   {
-    id: "j7", title: "Product Manager", company: MOCK_COMPANIES[1],
+    _id: "j7", title: "Product Manager", company: MOCK_COMPANIES[1],
     location: "Hyderabad, India", type: "full-time", level: "lead",
     salary: { min: 3000000, max: 5000000, currency: "INR", period: "yearly" },
     description: "Microsoft is seeking an experienced Product Manager to lead its Cloud Business Applications group, driving strategy for enterprise SaaS products.",
@@ -144,7 +144,7 @@ export const MOCK_JOBS: Job[] = [
     isFeatured: true, isRemote: false, recruiter: "r2", category: "Product",
   },
   {
-    id: "j8", title: "React Native Developer", company: MOCK_COMPANIES[7],
+    _id: "j8", title: "React Native Developer", company: MOCK_COMPANIES[7],
     location: "Remote", type: "remote", level: "mid",
     salary: { min: 1200000, max: 2200000, currency: "INR", period: "yearly" },
     description: "Meesho is building the next generation of social commerce in India. We need React Native developers to craft beautiful, performant mobile experiences for Tier 2/3 India.",
@@ -156,7 +156,7 @@ export const MOCK_JOBS: Job[] = [
     isFeatured: false, isRemote: true, recruiter: "r3", category: "Technology",
   },
   {
-    id: "j9", title: "Marketing Manager — Growth", company: MOCK_COMPANIES[4],
+    _id: "j9", title: "Marketing Manager — Growth", company: MOCK_COMPANIES[4],
     location: "Mumbai, India", type: "full-time", level: "mid",
     salary: { min: 1000000, max: 1800000, currency: "INR", period: "yearly" },
     description: "Drive Zepto's user acquisition and retention strategies across digital channels. Own the full funnel from awareness to conversion.",
@@ -168,7 +168,7 @@ export const MOCK_JOBS: Job[] = [
     isFeatured: false, isRemote: false, recruiter: "r4", category: "Marketing",
   },
   {
-    id: "j10", title: "Machine Learning Engineer", company: MOCK_COMPANIES[0],
+    _id: "j10", title: "Machine Learning Engineer", company: MOCK_COMPANIES[0],
     location: "Bengaluru, India", type: "full-time", level: "senior",
     salary: { min: 3500000, max: 6000000, currency: "INR", period: "yearly" },
     description: "Join Google DeepMind's India team to build cutting-edge ML systems that power products used by billions. You'll work on NLP, CV, and reinforcement learning problems at scale.",
@@ -180,7 +180,7 @@ export const MOCK_JOBS: Job[] = [
     isFeatured: true, isRemote: false, recruiter: "r5", category: "Data Science",
   },
   {
-    id: "j11", title: "Backend Engineer — Python", company: MOCK_COMPANIES[2],
+    _id: "j11", title: "Backend Engineer — Python", company: MOCK_COMPANIES[2],
     location: "Bengaluru, India", type: "full-time", level: "entry",
     salary: { min: 800000, max: 1400000, currency: "INR", period: "yearly" },
     description: "Entry-level position for ambitious backend engineers who want to work on India's most critical payment infrastructure at Razorpay.",
@@ -192,7 +192,7 @@ export const MOCK_JOBS: Job[] = [
     isFeatured: false, isRemote: false, recruiter: "r1", category: "Technology",
   },
   {
-    id: "j12", title: "Content Strategist", company: MOCK_COMPANIES[5],
+    _id: "j12", title: "Content Strategist", company: MOCK_COMPANIES[5],
     location: "Remote", type: "remote", level: "mid",
     salary: { min: 900000, max: 1500000, currency: "INR", period: "yearly" },
     description: "CRED is looking for a content strategist to craft compelling narratives for India's most premium credit card community.",
@@ -208,63 +208,65 @@ export const MOCK_JOBS: Job[] = [
 // ─── Mock Candidate ────────────────────────────────────────────────────────────
 
 export const MOCK_CANDIDATE: Candidate = {
-  id: "u1", name: "Aryan Sharma", email: "aryan.sharma@email.com",
+  _id: "u1", name: "Aryan Sharma", email: "aryan.sharma@email.com",
   avatar: "AS", role: "candidate",
   headline: "Senior Frontend Engineer | React • TypeScript • Next.js",
   location: "Bengaluru, India",
   skills: ["React", "TypeScript", "Next.js", "Node.js", "GraphQL", "Tailwind CSS"],
   experience: 5, resumeUrl: "/resume-aryan.pdf",
   savedJobs: ["j1", "j3", "j7"], appliedJobs: ["j2", "j5", "j10"],
+  isVerified: true, isBlocked: false,
   profileCompletion: 82, createdAt: "2023-06-15T10:00:00Z",
 };
 
 // ─── Mock Recruiter ────────────────────────────────────────────────────────────
 
 export const MOCK_RECRUITER: Recruiter = {
-  id: "r1", name: "Priya Nair", email: "priya.nair@google.com",
+  _id: "r1", name: "Priya Nair", email: "priya.nair@google.com",
   avatar: "PN", role: "recruiter",
   company: "Google", companyId: "c1",
   designation: "Senior Technical Recruiter",
   postedJobs: ["j1", "j6", "j10"],
   createdAt: "2022-03-10T09:00:00Z",
+  isVerified: true, isBlocked: false,
 };
 
 // ─── Mock Applications ────────────────────────────────────────────────────────
 
 export const MOCK_APPLICATIONS: Application[] = [
   {
-    id: "a1", jobId: "j2", job: MOCK_JOBS[1],
+    _id: "a1", jobId: "j2", job: MOCK_JOBS[1],
     candidateId: "u1", candidate: MOCK_CANDIDATE,
     status: "interview", appliedAt: "2024-01-10T10:00:00Z", updatedAt: "2024-01-14T15:00:00Z",
     coverLetter: "I'm excited to apply for the Full Stack Developer position at Razorpay...",
     resumeUrl: "/resume-aryan.pdf",
   },
   {
-    id: "a2", jobId: "j5", job: MOCK_JOBS[4],
+    _id: "a2", jobId: "j5", job: MOCK_JOBS[4],
     candidateId: "u1", candidate: MOCK_CANDIDATE,
     status: "screening", appliedAt: "2024-01-08T09:00:00Z", updatedAt: "2024-01-11T12:00:00Z",
     coverLetter: "As a data enthusiast with 5 years of experience...",
     resumeUrl: "/resume-aryan.pdf",
   },
   {
-    id: "a3", jobId: "j10", job: MOCK_JOBS[9],
+    _id: "a3", jobId: "j10", job: MOCK_JOBS[9],
     candidateId: "u1", candidate: MOCK_CANDIDATE,
     status: "applied", appliedAt: "2024-01-06T11:00:00Z", updatedAt: "2024-01-06T11:00:00Z",
     coverLetter: "I would love to work on ML systems at Google...",
     resumeUrl: "/resume-aryan.pdf",
   },
   {
-    id: "a4", jobId: "j1", job: MOCK_JOBS[0],
+    _id: "a4", jobId: "j1", job: MOCK_JOBS[0],
     candidateId: "u2", status: "offer",
     appliedAt: "2024-01-05T08:00:00Z", updatedAt: "2024-01-13T16:00:00Z",
   },
   {
-    id: "a5", jobId: "j1", job: MOCK_JOBS[0],
+    _id: "a5", jobId: "j1", job: MOCK_JOBS[0],
     candidateId: "u3", status: "rejected",
     appliedAt: "2024-01-04T10:00:00Z", updatedAt: "2024-01-12T14:00:00Z",
   },
   {
-    id: "a6", jobId: "j6", job: MOCK_JOBS[5],
+    _id: "a6", jobId: "j6", job: MOCK_JOBS[5],
     candidateId: "u4", status: "screening",
     appliedAt: "2024-01-11T09:00:00Z", updatedAt: "2024-01-13T10:00:00Z",
   },
@@ -274,27 +276,27 @@ export const MOCK_APPLICATIONS: Application[] = [
 
 export const MOCK_NOTIFICATIONS: Notification[] = [
   {
-    id: "n1", type: "application_update",
+    _id: "n1", type: "application_update",
     title: "Interview Scheduled!", message: "Razorpay wants to schedule a technical interview with you for Full Stack Developer role.",
     read: false, createdAt: "2024-01-14T15:00:00Z", actionUrl: "/applications/a1",
   },
   {
-    id: "n2", type: "profile_view",
+    _id: "n2", type: "profile_view",
     title: "Google viewed your profile", message: "A recruiter from Google viewed your profile 2 hours ago.",
     read: false, createdAt: "2024-01-14T13:00:00Z",
   },
   {
-    id: "n3", type: "job_alert",
+    _id: "n3", type: "job_alert",
     title: "New jobs matching your profile", message: "5 new Senior Frontend Engineer positions were posted today in Bengaluru.",
     read: false, createdAt: "2024-01-14T08:00:00Z", actionUrl: "/jobs",
   },
   {
-    id: "n4", type: "new_message",
+    _id: "n4", type: "new_message",
     title: "New message from Priya Nair", message: "Hi Aryan, I'd love to discuss the Senior Frontend Engineer role at Google...",
     read: true, createdAt: "2024-01-13T10:00:00Z", actionUrl: "/messages",
   },
   {
-    id: "n5", type: "application_update",
+    _id: "n5", type: "application_update",
     title: "Application Update — Swiggy", message: "Your application for Data Scientist is under screening review.",
     read: true, createdAt: "2024-01-11T12:00:00Z", actionUrl: "/applications/a2",
   },
@@ -303,11 +305,11 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
 // ─── Mock Conversations ────────────────────────────────────────────────────────
 
 export const MOCK_MESSAGES: Message[] = [
-  { id: "m1", senderId: "r1", receiverId: "u1", content: "Hi Aryan! I came across your profile and think you'd be a great fit for our Senior Frontend Engineer role at Google.", sentAt: "2024-01-13T10:00:00Z", read: true },
-  { id: "m2", senderId: "u1", receiverId: "r1", content: "Hi Priya! Thank you for reaching out. I'm definitely interested in learning more about the role.", sentAt: "2024-01-13T10:15:00Z", read: true },
-  { id: "m3", senderId: "r1", receiverId: "u1", content: "Great! The role is within our Ads Infrastructure team. You'd be working on large-scale React applications serving billions of users.", sentAt: "2024-01-13T10:20:00Z", read: true },
-  { id: "m4", senderId: "u1", receiverId: "r1", content: "That sounds incredibly exciting! Could you share more about the team structure and the tech stack you're working with?", sentAt: "2024-01-13T10:30:00Z", read: true },
-  { id: "m5", senderId: "r1", receiverId: "u1", content: "Of course! The team uses React, TypeScript, GraphQL, and internal tooling. Team size is around 12 engineers. Would you be open to a 30-min intro call this week?", sentAt: "2024-01-13T11:00:00Z", read: false },
+  { _id: "m1", senderId: "r1", receiverId: "u1", content: "Hi Aryan! I came across your profile and think you'd be a great fit for our Senior Frontend Engineer role at Google.", sentAt: "2024-01-13T10:00:00Z", read: true },
+  { _id: "m2", senderId: "u1", receiverId: "r1", content: "Hi Priya! Thank you for reaching out. I'm definitely interested in learning more about the role.", sentAt: "2024-01-13T10:15:00Z", read: true },
+  { _id: "m3", senderId: "r1", receiverId: "u1", content: "Great! The role is within our Ads Infrastructure team. You'd be working on large-scale React applications serving billions of users.", sentAt: "2024-01-13T10:20:00Z", read: true },
+  { _id: "m4", senderId: "u1", receiverId: "r1", content: "That sounds incredibly exciting! Could you share more about the team structure and the tech stack you're working with?", sentAt: "2024-01-13T10:30:00Z", read: true },
+  { _id: "m5", senderId: "r1", receiverId: "u1", content: "Of course! The team uses React, TypeScript, GraphQL, and internal tooling. Team size is around 12 engineers. Would you be open to a 30-min intro call this week?", sentAt: "2024-01-13T11:00:00Z", read: false },
 ];
 
 // ─── Analytics Data ────────────────────────────────────────────────────────────
@@ -352,17 +354,17 @@ export const RECRUITER_ANALYTICS = {
 
 export const SUBSCRIPTION_PLANS: Plan[] = [
   {
-    id: "free", name: "Free", price: 0, billingPeriod: "monthly",
+    _id: "free", name: "Free", price: 0, billingPeriod: "monthly",
     features: ["Post up to 3 jobs", "Basic applicant tracking", "Email support", "Standard job listing"],
     jobPostLimit: 3, featuredJobs: 0, highlighted: false,
   },
   {
-    id: "pro", name: "Pro", price: 4999, billingPeriod: "monthly",
+    _id: "pro", name: "Pro", price: 4999, billingPeriod: "monthly",
     features: ["Post up to 25 jobs", "Advanced ATS", "Priority support", "Featured job listings", "Analytics dashboard", "Custom branding", "Resume database access"],
     jobPostLimit: 25, featuredJobs: 5, highlighted: true,
   },
   {
-    id: "enterprise", name: "Enterprise", price: 14999, billingPeriod: "monthly",
+    _id: "enterprise", name: "Enterprise", price: 14999, billingPeriod: "monthly",
     features: ["Unlimited job posts", "Full ATS suite", "Dedicated account manager", "Unlimited featured jobs", "Advanced analytics", "API access", "Custom integrations", "White-label solution"],
     jobPostLimit: -1, featuredJobs: -1, highlighted: false,
   },

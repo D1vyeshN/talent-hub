@@ -8,6 +8,8 @@ export interface User {
   email: string;
   avatar?: string;
   role: UserRole;
+  isVerified: boolean;
+  isBlocked: boolean;
   createdAt: string;
 }
 

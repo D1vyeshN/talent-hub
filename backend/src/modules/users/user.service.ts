@@ -90,9 +90,9 @@ export const userService = {
   },
 
   /**
-   * List all users — optionally filtered.
+   * List all users — optionally filtered with pagination.
    */
-  async getAllUsers(filter?: UserFilterDto): Promise<IUser[]> {
+  async getAllUsers(filter?: UserFilterDto): Promise<{ data: IUser[]; total: number }> {
     const query: Record<string, unknown> = {};
 
     if (filter?.role) query.role = filter.role;
@@ -106,8 +106,16 @@ export const userService = {
       ];
     }
 
-    // ── Phase D: map .lean() and parallel-fetch profiles for each user
-    return User.find(query) as unknown as Promise<IUser[]>;
+    const page = filter?.page || 1;
+    const limit = filter?.limit || 10;
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await Promise.all([
+      User.find(query).skip(skip).limit(limit) as unknown as Promise<IUser[]>,
+      User.countDocuments(query)
+    ]);
+
+    return { data, total };
   },
 
   /**

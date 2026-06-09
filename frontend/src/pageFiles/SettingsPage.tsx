@@ -9,30 +9,53 @@ import { ProgressBar } from "@/components/ui/ProgressBar";
 import { Tabs } from "@/components/ui/Tabs";
 import { SUBSCRIPTION_PLANS } from "@/lib/mockData";
 import { cn } from "@/lib/utils";
-import { useAppSelector } from "@/store/hooks";
+import { useAppSelector, useAppDispatch } from "@/store/hooks";
+import { updateProfile, addSkill, removeSkill, uploadAvatar } from "@/store/slices/candidateSlice";
 
 export default function SettingsPage() {
+  const dispatch = useAppDispatch();
   const { user } = useAppSelector((s) => s.auth);
+  const { profile, error } = useAppSelector((s) => s.candidate);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
-  const handleSave = async () => {
+  const handleSave = async (updates: any) => {
     setSaving(true);
-    await new Promise((r) => setTimeout(r, 1200));
-    setSaving(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+    setSaved(false);
+    try {
+      await dispatch(updateProfile(updates)).unwrap();
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (err) {
+      console.error("Failed to update profile:", err);
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const name = user?.name || "Aryan Sharma";
-  const email = user?.email || "aryan@example.com";
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    try {
+      await dispatch(uploadAvatar(file)).unwrap();
+      alert("Avatar uploaded successfully!");
+    } catch (err) {
+      console.error("Failed to upload avatar:", err);
+      const errorMessage = err instanceof Error ? err.message : "Failed to upload avatar";
+      alert(errorMessage);
+    }
+  };
+
+  const name = profile?.name || user?.name || "User";
+  const email = profile?.email || user?.email || "user@example.com";
 
   const tabs = [
     {
       id: "profile",
       label: "Profile",
       icon: <User className="w-4 h-4" />,
-      content: <ProfileTab name={name} email={email} onSave={handleSave} saving={saving} saved={saved} />,
+      content: <ProfileTab profile={profile} onSave={handleSave} saving={saving} saved={saved} error={error} />,
     },
     {
       id: "notifications",
@@ -73,7 +96,17 @@ export default function SettingsPage() {
           <div className="flex items-center gap-5">
             <div className="relative">
               <Avatar name={name} size="xl" />
-              <button className="absolute -bottom-1 -right-1 w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white shadow hover:bg-blue-700 transition-colors">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleAvatarUpload}
+                className="hidden"
+                id="avatar-upload"
+              />
+              <button
+                onClick={() => document.getElementById("avatar-upload")?.click()}
+                className="absolute -bottom-1 -right-1 w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white shadow hover:bg-blue-700 transition-colors"
+              >
                 <Upload className="w-3.5 h-3.5" />
               </button>
             </div>
@@ -98,9 +131,54 @@ export default function SettingsPage() {
 
 // ── Profile Tab ───────────────────────────────────────────────────────────────
 
-function ProfileTab({ name, email, onSave, saving, saved }: {
-  name: string; email: string; onSave: () => void; saving: boolean; saved: boolean;
+function ProfileTab({ profile, onSave, saving, saved, error }: {
+  profile: any;
+  onSave: (updates: any) => void;
+  saving: boolean;
+  saved: boolean;
+  error: string | null;
 }) {
+  const dispatch = useAppDispatch();
+  const [formData, setFormData] = useState({
+    name: profile?.name || "",
+    location: profile?.location || "",
+    headline: profile?.headline || "",
+    skills: profile?.skills?.join(", ") || "",
+  });
+  const [newSkill, setNewSkill] = useState("");
+
+  const handleSubmit = () => {
+    const updates = {
+      name: formData.name,
+      location: formData.location,
+      headline: formData.headline,
+      skills: formData.skills.split(",").map((s:string) => s.trim()).filter((s:string) => s),
+    };
+    onSave(updates);
+  };
+
+  const handleAddSkill = async () => {
+    if (!newSkill.trim()) return;
+    try {
+      await dispatch(addSkill(newSkill.trim())).unwrap();
+      setNewSkill("");
+    } catch (err) {
+      console.error("Failed to add skill:", err);
+      const errorMessage = err instanceof Error ? err.message : "Failed to add skill";
+      alert(errorMessage);
+    }
+  };
+
+  const handleRemoveSkill = async (skill: string) => {
+    try {
+      await dispatch(removeSkill(skill)).unwrap();
+    } catch (err) {
+      console.error("Failed to remove skill:", err);
+      const errorMessage = err instanceof Error ? err.message : "Failed to remove skill";
+      alert(errorMessage);
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -110,44 +188,66 @@ function ProfileTab({ name, email, onSave, saving, saved }: {
             <CheckCircle className="w-4 h-4" /> Changes saved!
           </span>
         )}
+        {error && (
+          <span className="flex items-center gap-1.5 text-sm text-red-600">
+            {error}
+          </span>
+        )}
       </CardHeader>
       <div className="space-y-5">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Input label="Full Name" defaultValue={name} />
-          <Input label="Email Address" type="email" defaultValue={email} />
-          <Input label="Phone Number" type="tel" placeholder="+91 98765 43210" />
-          <Input label="Location" placeholder="City, Country" defaultValue="Bengaluru, India" />
+          <Input
+            label="Full Name"
+            value={formData.name}
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+          />
+          <Input label="Email Address" type="email" value={profile?.email || ""} disabled />
+          <Input label="Location" placeholder="City, Country" value={formData.location} onChange={(e) => setFormData({ ...formData, location: e.target.value })} />
         </div>
 
         <div>
           <label className="text-sm font-medium text-gray-700 mb-1.5 block">Professional Headline</label>
           <input
             className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            defaultValue="Senior Frontend Engineer | React • TypeScript • Next.js"
-          />
-        </div>
-
-        <div>
-          <label className="text-sm font-medium text-gray-700 mb-1.5 block">Professional Summary</label>
-          <textarea
-            rows={4}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-            defaultValue="Passionate frontend engineer with 5+ years of experience building scalable web applications..."
+            value={formData.headline}
+            onChange={(e) => setFormData({ ...formData, headline: e.target.value })}
           />
         </div>
 
         <div>
           <label className="text-sm font-medium text-gray-700 mb-1.5 block">Skills</label>
-          <input
-            className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            defaultValue="React, TypeScript, Next.js, Node.js, GraphQL, Tailwind CSS"
-            placeholder="Separate skills with commas"
-          />
+          <div className="flex flex-wrap gap-2 mb-2">
+            {profile?.skills?.map((skill: string) => (
+              <span
+                key={skill}
+                className="inline-flex items-center gap-1 px-3 py-1 text-sm bg-blue-50 text-blue-700 rounded-full border border-blue-100"
+              >
+                {skill}
+                <button
+                  type="button"
+                  onClick={() => handleRemoveSkill(skill)}
+                  className="hover:text-red-600 transition-colors"
+                >
+                  <Trash2 className="w-3 h-3" />
+                </button>
+              </span>
+            ))}
+          </div>
+          <div className="flex gap-2">
+            <input
+              className="flex-1 border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Add a new skill..."
+              value={newSkill}
+              onChange={(e) => setNewSkill(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddSkill())}
+            />
+            <Button onClick={handleAddSkill} size="sm">Add</Button>
+          </div>
         </div>
 
         <div className="flex justify-end gap-3 pt-2">
           <Button variant="outline" size="md">Discard Changes</Button>
-          <Button variant="primary" size="md" loading={saving} onClick={onSave}>
+          <Button variant="primary" size="md" loading={saving} onClick={handleSubmit}>
             Save Changes
           </Button>
         </div>
@@ -333,7 +433,7 @@ function SubscriptionTab() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
         {SUBSCRIPTION_PLANS.map((plan) => (
           <div
-            key={plan.id}
+            key={plan._id}
             className={cn(
               "relative bg-white rounded-2xl border-2 p-6",
               plan.highlighted

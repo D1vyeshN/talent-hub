@@ -20,4 +20,29 @@ export const adminService = {
 
   toggleUserBan: (userId: string): Promise<User> =>
     apiClient.patch<User>(`/api/admin/users/${userId}/ban`, {}),
+
+  // Use existing backend routes - these are shared with other services
+  getUsers: (params?: {
+    page?: number;
+    pageSize?: number;
+    search?: string;
+    role?: string;
+  }): Promise<{ data: User[]; total: number }> =>
+    apiClient.get<{ data: User[]; total: number }>("/api/users", params as Record<string, string | number> | undefined),
+
+  getJobs: (params?: {
+    page?: number;
+    pageSize?: number;
+    search?: string;
+    status?: string;
+  }): Promise<{ data: Job[]; total: number }> =>
+    apiClient.get<{ data: Job[]; total: number }>("/api/job", params as Record<string, string | number> | undefined),
+
+  getCompanies: (params?: {
+    page?: number;
+    pageSize?: number;
+    search?: string;
+    isVerified?: boolean;
+  }): Promise<{ data: Company[]; total: number }> =>
+    apiClient.get<{ data: Company[]; total: number }>("/api/company", params as Record<string, string | number> | undefined),
 };

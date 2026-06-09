@@ -46,9 +46,20 @@ function setTokenCookie(res: Response, token: string) {
 //   res.status(200).json(new ApiResponse(200, user, "Session active"));
 // };
 
-export const getUsers = async (_req: Request, res: Response) => {
-  const users = await userService.getAllUsers({});
-  res.status(200).json(new ApiResponse(200, users, "Users fetched successfully"));
+export const getUsers = async (req: Request, res: Response) => {
+  const page = parseInt(req.query.page as string) || 1;
+  const pageSize = parseInt(req.query.pageSize as string) || 10;
+  const search = req.query.search as string;
+  const role = req.query.role as string;
+
+  const result = await userService.getAllUsers({
+    page,
+    limit: pageSize,
+    search,
+    role: role as any,
+  });
+
+  res.status(200).json(new ApiResponse(200, result, "Users fetched successfully"));
 };
 
 export const updateMe = async (req: AuthRequest, res: Response) => {
