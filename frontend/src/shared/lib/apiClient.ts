@@ -59,11 +59,13 @@ async function request<T>(
   const isFormData = options.body instanceof FormData;
   const res = await fetch(`${BASE_URL}${endpoint}`, {
     ...options,
-    headers: {
-      ...(isFormData ? {} : { "Content-Type": "application/json" }),
-      // ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(options.headers as Record<string, string> | undefined),
-    },
+    headers: isFormData
+      ? { /* Let browser set Content-Type with boundary for FormData */ }
+      : {
+          "Content-Type": "application/json",
+          // ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...(options.headers as Record<string, string> | undefined),
+        },
     credentials: "include",
   });
 

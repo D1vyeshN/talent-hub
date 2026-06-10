@@ -1,6 +1,7 @@
 "use client"
 import { useState } from "react";
 import { Bell, Lock, Shield, User, CreditCard, Eye, Trash2, Upload, CheckCircle } from "lucide-react";
+import toast from "react-hot-toast";
 import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -39,11 +40,11 @@ export default function SettingsPage() {
     
     try {
       await dispatch(uploadAvatar(file)).unwrap();
-      alert("Avatar uploaded successfully!");
+      toast.success("Avatar uploaded successfully!");
     } catch (err) {
       console.error("Failed to upload avatar:", err);
       const errorMessage = err instanceof Error ? err.message : "Failed to upload avatar";
-      alert(errorMessage);
+      toast.error(errorMessage);
     }
   };
 
@@ -95,7 +96,7 @@ export default function SettingsPage() {
         <Card className="mb-6">
           <div className="flex items-center gap-5">
             <div className="relative">
-              <Avatar name={name} size="xl" />
+              <Avatar src={user?.avatar} name={name} size="xl" />
               <input
                 type="file"
                 accept="image/*"

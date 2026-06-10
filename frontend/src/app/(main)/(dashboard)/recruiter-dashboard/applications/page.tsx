@@ -140,7 +140,7 @@ export default function ApplicationsPage() {
                     >
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-3">
-                          <Avatar name={candidate.name} size="sm" />
+                          <Avatar src={candidate.avatar} name={candidate.name} size="sm" />
                           <div>
                             <p className="text-sm font-medium text-gray-900">{candidate.name}</p>
                             <p className="text-xs text-gray-400">{candidate.experience || "N/A"} yrs exp</p>

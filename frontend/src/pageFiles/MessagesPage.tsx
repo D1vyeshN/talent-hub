@@ -83,7 +83,7 @@ export default function MessagesPage() {
                   activeConv === conv.id && "bg-blue-50 border-blue-100"
                 )}
               >
-                <Avatar name={conv.participant.name} size="md" showStatus status="online" />
+                <Avatar src={conv.participant.avatar} name={conv.participant.name} size="md" showStatus status="online" />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-semibold text-gray-900 truncate">{conv.participant.name}</p>
@@ -109,7 +109,7 @@ export default function MessagesPage() {
               {/* Chat Header */}
               <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
                 <div className="flex items-center gap-3">
-                  <Avatar name={activeConvData.participant.name} size="md" showStatus status="online" />
+                  <Avatar src={activeConvData.participant.avatar} name={activeConvData.participant.name} size="md" showStatus status="online" />
                   <div>
                     <p className="text-sm font-semibold text-gray-900">{activeConvData.participant.name}</p>
                     <p className="text-xs text-gray-500">
@@ -147,7 +147,7 @@ export default function MessagesPage() {
 
                   return (
                     <div key={msg.id} className={cn("flex gap-3", isMine && "flex-row-reverse")}>
-                      <Avatar name={senderName} size="sm" />
+                      <Avatar src={isMine ? user?.avatar : activeConvData.participant?.avatar} name={senderName} size="sm" />
                       <div className={cn("max-w-sm", isMine && "items-end flex flex-col")}>
                         <div
                           className={cn(

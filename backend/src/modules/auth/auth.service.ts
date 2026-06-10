@@ -44,6 +44,7 @@ function toApiUser(user: any): UserType {
     id: user._id.toString(),
     name: user.name,
     email: user.email,
+    avatar: user.avatar,
     role: user.role as UserType["role"],
     createdAt: (user.createdAt as Date).toISOString(),
   };

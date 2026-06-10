@@ -48,9 +48,7 @@ export const withdrawApplication = async (applicationId: string): Promise<Applic
 export const uploadResume = async (file: File): Promise<{ resumeUrl: string }> => {
   const formData = new FormData();
   formData.append("resume", file);
-  return apiClient.post<{ resumeUrl: string }>("/api/candidate/me/resume", formData, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
+  return apiClient.post<{ resumeUrl: string }>("/api/candidate/me/resume", formData);
 };
 
 // ─── Avatar Upload ─────────────────────────────────────────────────────────────────
@@ -58,9 +56,7 @@ export const uploadResume = async (file: File): Promise<{ resumeUrl: string }> =
 export const uploadAvatar = async (file: File): Promise<{ avatar: string }> => {
   const formData = new FormData();
   formData.append("avatar", file);
-  return apiClient.post<{ avatar: string }>("/api/candidate/me/avatar", formData, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
+  return apiClient.post<{ avatar: string }>("/api/candidate/me/avatar", formData);
 };
 
 // ─── Admin/Recruiter ─────────────────────────────────────────────────────────────

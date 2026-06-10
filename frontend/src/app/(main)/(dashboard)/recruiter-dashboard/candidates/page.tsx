@@ -83,7 +83,7 @@ export default function CandidatesPage() {
             {filtered.map((c) => (
               <Card key={c._id} padding="md" hoverable className="border-gray-100">
                 <div className="flex items-start gap-4">
-                  <Avatar name={c.name} size="md" />
+                  <Avatar src={c.avatar} name={c.name} size="md" />
                   <div className="flex-1">
                     <div className="flex items-start justify-between">
                       <div>

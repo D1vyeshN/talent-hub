@@ -23,6 +23,7 @@ export interface Candidate extends User {
   savedJobs: string[];
   appliedJobs: string[];
   profileCompletion: number;
+  education?: any[];
   saved?: boolean; // Whether this candidate is saved by the current recruiter
 }
 
@@ -41,7 +42,12 @@ export interface Admin extends User {
 
 // ─── Job ─────────────────────────────────────────────────────────────────────
 
-export type JobType = "full-time" | "part-time" | "contract" | "internship" | "remote";
+export type JobType =
+  | "full-time"
+  | "part-time"
+  | "contract"
+  | "internship"
+  | "remote";
 export type JobLevel = "entry" | "mid" | "senior" | "lead" | "executive";
 export type JobStatus = "active" | "closed" | "draft" | "paused";
 export type ApplicationStatus =
@@ -98,7 +104,13 @@ export interface Application {
 
 // ─── Company ─────────────────────────────────────────────────────────────────
 
-export type CompanySize = "1-10" | "11-50" | "51-200" | "201-500" | "501-1000" | "1000+";
+export type CompanySize =
+  | "1-10"
+  | "11-50"
+  | "51-200"
+  | "201-500"
+  | "501-1000"
+  | "1000+";
 
 export interface Company {
   _id: string;

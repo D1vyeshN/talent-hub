@@ -38,7 +38,6 @@ export function Avatar({
 }: AvatarProps) {
   const initials = getInitials(name);
   const colorClass = getAvatarColor(name);
-
   return (
     <div className={cn("relative inline-flex flex-shrink-0", className)}>
       {src ? (

@@ -8,8 +8,9 @@ import { Badge } from "@/components/ui/Badge";
 import { Avatar } from "@/components/ui/Avatar";
 import { Modal } from "@/components/ui/Modal";
 import { formatSalaryRange, timeAgo, getJobTypeBadgeColor, cn } from "@/lib/utils";
-import type { Job } from "@/types";
+import type { Job, User } from "@/types";
 import { jobsService } from "@/features/jobs/services/jobs.service";
+import { apiClient } from "@/shared/lib/apiClient";
 
 // Helper component to render company logo with fallback
 function CompanyLogo({ logo, name, size = "md" }: { logo?: string; name: string; size?: "sm" | "md" | "lg" }) {
@@ -56,6 +57,7 @@ export default function JobDetailPage() {
   const jobId = params.id as string;
 
   const [job, setJob] = useState<Job | null>(null);
+  const [recruiter, setRecruiter] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
@@ -75,6 +77,11 @@ export default function JobDetailPage() {
         setError(null);
         const data = await jobsService.getById(jobId);
         setJob(data);
+        // Fetch recruiter details
+        if (data.recruiter) {
+          const recruiterData = await apiClient.get<User>(`/api/users/${data.recruiter}`);
+          setRecruiter(recruiterData);
+        }
       } catch (err: any) {
         setError(err.message || "Failed to load job");
       } finally {
@@ -360,13 +367,25 @@ export default function JobDetailPage() {
             {/* Recruiter Card */}
             <div className="bg-white border border-gray-200 rounded-2xl p-5">
               <h3 className="text-sm font-semibold text-gray-900 mb-4">Hiring Recruiter</h3>
-              <div className="flex items-center gap-3 mb-4">
-                <Avatar name="Priya Nair" size="md" showStatus status="online" />
-                <div>
-                  <p className="text-sm font-semibold text-gray-900">Priya Nair</p>
-                  <p className="text-xs text-gray-500">Senior Technical Recruiter</p>
+              {recruiter ? (
+                <div className="flex items-center gap-3 mb-4">
+                  <Avatar src={recruiter.avatar} name={recruiter.name} size="md" showStatus status="online" />
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900">{recruiter.name}</p>
+                    <p className="text-xs text-gray-500">
+                      Recruiter at {job?.company?.name}
+                    </p>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="flex items-center gap-3 mb-4">
+                  <Avatar name="Recruiter" size="md" showStatus status="online" />
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900">Recruiter</p>
+                    <p className="text-xs text-gray-500">Loading...</p>
+                  </div>
+                </div>
+              )}
               <Button variant="outline" size="sm" fullWidth onClick={() => router.push("/messages")}>
                 Send Message
               </Button>

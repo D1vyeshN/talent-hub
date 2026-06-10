@@ -2,8 +2,8 @@
 import { useState, useEffect } from "react";
 import {
   Bookmark, Briefcase, CheckCircle, ChevronRight, Edit3,
-  Eye, MapPin, MessageCircle, Star, TrendingUp, Upload,
-  BookOpen, Settings, Trash2
+  Eye, FileText, GraduationCap, MapPin, MessageCircle, Plus, Star, Trash2,
+  TrendingUp, Upload
 } from "lucide-react";
 import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -16,30 +16,32 @@ import { APPLICATION_STATUS_CONFIG } from "@/constants";
 import { timeAgo, cn } from "@/lib/utils";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  RadarChart, PolarGrid, PolarAngleAxis, Radar,
 } from "recharts";
 import { redirect } from "next/navigation";
+import toast from "react-hot-toast";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
-import { fetchCandidateProfile, fetchApplications, uploadResume, fetchSavedJobs, updateProfile, addSkill, removeSkill, uploadAvatar, addEducation, removeEducation, addWorkExperience, removeWorkExperience } from "@/store/slices/candidateSlice";
+import {
+  fetchCandidateProfile, fetchApplications, uploadResume, fetchSavedJobs,
+  updateProfile, addSkill, removeSkill, uploadAvatar, addEducation, removeEducation, addWorkExperience, removeWorkExperience
+} from "@/store/slices/candidateSlice";
 
 export default function CandidateDashboard() {
   const dispatch = useAppDispatch();
   const { profile, applications, savedJobs, isLoading, error } = useAppSelector((state) => state.candidate);
   const [uploading, setUploading] = useState(false);
-  const [_activeResumeSection] = useState("profile");
 
   const handleResumeUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    
+
     setUploading(true);
     try {
       await dispatch(uploadResume(file)).unwrap();
-      alert("Resume uploaded successfully!");
+      toast.success("Resume uploaded successfully!");
     } catch (err) {
       console.error("Failed to upload resume:", err);
       const errorMessage = err instanceof Error ? err.message : "Failed to upload resume";
-      alert(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setUploading(false);
     }
@@ -64,13 +66,13 @@ export default function CandidateDashboard() {
     );
   }
 
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-red-500">Error: {error}</div>
-      </div>
-    );
-  }
+  // if (error) {
+  //   return (
+  //     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+  //       <div className="text-red-500">Error: {error}</div>
+  //     </div>
+  //   );
+  // }
 
   const candidate = profile;
   const myApplications = applications.slice(0, 3);
@@ -87,7 +89,7 @@ export default function CandidateDashboard() {
   const profileSections = [
     { label: "Basic Info", done: !!candidate?.name },
     { label: "Work Experience", done: !!candidate?.experience && candidate.experience > 0 },
-    { label: "Education", done: false },
+    { label: "Education", done: !!candidate?.education && candidate.education.length > 0 },
     { label: "Skills", done: !!candidate?.skills && candidate.skills.length > 0 },
     { label: "Resume Upload", done: !!candidate?.resumeUrl },
     { label: "Profile Photo", done: !!candidate?.avatar },
@@ -117,38 +119,13 @@ export default function CandidateDashboard() {
     {
       id: "profile",
       label: "Profile",
-      icon: <Edit3 className="w-4 h-4" />,
-      content: <ProfileTab profile={profile} />,
-    },
-    {
-      id: "skills",
-      label: "Skills",
       icon: <Star className="w-4 h-4" />,
-      badge: profile?.skills?.length || 0,
-      content: <SkillsTab profile={profile} />,
-    },
-    {
-      id: "resume",
-      label: "Resume",
-      icon: <Upload className="w-4 h-4" />,
-      content: <ResumeTab profile={profile} />,
-    },
-    {
-      id: "education",
-      label: "Education",
-      icon: <BookOpen className="w-4 h-4" />,
-      content: <EducationTab profile={profile} />,
-    },
-    {
-      id: "experience",
-      label: "Experience",
-      icon: <Briefcase className="w-4 h-4" />,
-      content: <ExperienceTab profile={profile} />,
+      content: <ProfileTab profile={profile} />,
     },
     {
       id: "settings",
       label: "Settings",
-      icon: <Settings className="w-4 h-4" />,
+      icon: <Edit3 className="w-4 h-4" />,
       content: <SettingsTab profile={profile} />,
     },
   ];
@@ -161,7 +138,7 @@ export default function CandidateDashboard() {
           <h1 className="text-2xl font-bold text-gray-900">
             Good morning, {candidate?.name?.split(" ")[0] || "there"}! 👋
           </h1>
-          <p className="text-gray-500 mt-1">Here's what's happening with your job search today.</p>
+          <p className="text-gray-500 mt-1">Here&apos;s what&apos;s happening with your job search today.</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -171,10 +148,10 @@ export default function CandidateDashboard() {
             <Card>
               <div className="text-center">
                 <div className="relative inline-block">
-                  <Avatar name={candidate?.name || "User"} size="xl" />
-                  <button className="absolute -bottom-1 -right-1 w-7 h-7 bg-blue-600 rounded-full flex items-center justify-center text-white shadow-sm hover:bg-blue-700 transition-colors">
+                  <Avatar src={candidate?.avatar} name={candidate?.name || "User"} size="xl" />
+                  {/* <button className="absolute -bottom-1 -right-1 w-7 h-7 bg-blue-600 rounded-full flex items-center justify-center text-white shadow-sm hover:bg-blue-700 transition-colors">
                     <Edit3 className="w-3.5 h-3.5" />
-                  </button>
+                  </button> */}
                 </div>
                 <h2 className="text-base font-semibold text-gray-900 mt-3">{candidate?.name || "User"}</h2>
                 <p className="text-xs text-gray-500 mt-1 leading-tight">{candidate?.headline || ""}</p>
@@ -245,7 +222,6 @@ export default function CandidateDashboard() {
                   </button>
                 </div>
                 {[
-                  { label: "Update Skills", icon: Star, onClick: () => redirect("settings") },
                   { label: "Browse Jobs", icon: Briefcase, onClick: () => redirect("jobs") },
                   { label: "View Messages", icon: MessageCircle, onClick: () => redirect("messages") },
                 ].map((action) => (
@@ -261,21 +237,6 @@ export default function CandidateDashboard() {
                     <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gray-400" />
                   </button>
                 ))}
-              </div>
-            </Card>
-
-            {/* Skills Card */}
-            <Card>
-              <CardHeader>
-                <CardTitle>My Skills</CardTitle>
-                <button className="text-xs text-blue-600 hover:text-blue-700">Edit</button>
-              </CardHeader>
-              <div className="flex flex-wrap gap-2">
-                {candidate?.skills?.map((skill) => (
-                  <span key={skill} className="px-2.5 py-1 text-xs font-medium bg-blue-50 text-blue-700 rounded-lg border border-blue-200">
-                    {skill}
-                  </span>
-                )) || <span className="text-xs text-gray-400">No skills added yet</span>}
               </div>
             </Card>
           </div>
@@ -307,7 +268,7 @@ export default function CandidateDashboard() {
 
 // ── Tab Sub-components ────────────────────────────────────────────────────────
 
-function OverviewTab({ redirect, myApplications }: {
+function OverviewTab({ redirect: _redirect, myApplications }: {
   redirect: (page: string) => void;
   myApplications: any[];
 }) {
@@ -317,7 +278,7 @@ function OverviewTab({ redirect, myApplications }: {
       <Card>
         <CardHeader>
           <CardTitle>Application Activity</CardTitle>
-          <button className="text-xs text-blue-600" onClick={() => redirect("jobs")}>Browse jobs →</button>
+          <button className="text-xs text-blue-600" onClick={() => _redirect("jobs")}>Browse jobs →</button>
         </CardHeader>
         <div className="h-52">
           <ResponsiveContainer width="100%" height="100%">
@@ -346,9 +307,9 @@ function OverviewTab({ redirect, myApplications }: {
         </CardHeader>
         <div className="space-y-3">
           {myApplications.length === 0 ? (
-            <div className="text-center py-8 text-gray-500 text-sm">No applications yet</div>
+            <div className="text-center py-8 text-gray-500text-sm">No applications yet</div>
           ) : (
-            myApplications.map((app) => {
+            myApplications.map((app: any) => {
               const config = APPLICATION_STATUS_CONFIG[app.status as keyof typeof APPLICATION_STATUS_CONFIG] || APPLICATION_STATUS_CONFIG.applied;
               return (
                 <div key={app._id} className="flex items-center gap-4 p-3 rounded-xl border border-gray-100 hover:border-gray-200 hover:bg-gray-50 transition-all cursor-pointer">
@@ -372,7 +333,7 @@ function OverviewTab({ redirect, myApplications }: {
   );
 }
 
-function ApplicationsTab({ redirect, applications }: {
+function ApplicationsTab({ redirect: _redirect, applications }: {
   redirect: (page: string) => void;
   applications: any[];
 }) {
@@ -383,10 +344,10 @@ function ApplicationsTab({ redirect, applications }: {
           icon={<Briefcase className="w-8 h-8" />}
           title="No applications yet"
           description="Start applying to jobs that match your skills and experience."
-          action={<Button variant="primary" onClick={() => redirect("jobs")}>Browse Jobs</Button>}
+          action={<Button variant="primary" onClick={() => _redirect("jobs")}>Browse Jobs</Button>}
         />
       ) : (
-        applications.map((app) => {
+        applications.map((app: any) => {
           const config = APPLICATION_STATUS_CONFIG[app.status as keyof typeof APPLICATION_STATUS_CONFIG] || APPLICATION_STATUS_CONFIG.applied;
           return (
             <Card key={app._id} hoverable>
@@ -433,7 +394,7 @@ function ApplicationsTab({ redirect, applications }: {
 
                   <div className="flex items-center justify-between mt-4">
                     <p className="text-xs text-gray-400">Updated {timeAgo(app.updatedAt)}</p>
-                    <Button variant="ghost" size="xs" onClick={() => redirect("job-detail")}>
+                    <Button variant="ghost" size="xs" onClick={() => _redirect("job-detail")}>
                       View Details →
                     </Button>
                   </div>
@@ -447,7 +408,7 @@ function ApplicationsTab({ redirect, applications }: {
   );
 }
 
-function SavedJobsTab({ redirect, savedJobs }: {
+function SavedJobsTab({ redirect: _redirect, savedJobs }: {
   redirect: (page: string) => void;
   savedJobs: any[];
 }) {
@@ -458,11 +419,11 @@ function SavedJobsTab({ redirect, savedJobs }: {
           icon={<Bookmark className="w-8 h-8" />}
           title="No saved jobs"
           description="Bookmark interesting jobs to apply later."
-          action={<Button variant="primary" onClick={() => redirect("jobs")}>Browse Jobs</Button>}
+          action={<Button variant="primary" onClick={() => _redirect("jobs")}>Browse Jobs</Button>}
         />
       ) : (
         <div className="grid grid-cols-1 gap-4">
-          {savedJobs.map((job) => (
+          {savedJobs.map((job: any) => (
             <Card key={job._id} padding="md" hoverable className="border-gray-100">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
@@ -475,7 +436,7 @@ function SavedJobsTab({ redirect, savedJobs }: {
                   </div>
                   <div className="flex items-center justify-between mt-4">
                     <p className="text-xs text-gray-400">Posted {timeAgo(job.createdAt)}</p>
-                    <Button variant="ghost" size="xs" onClick={() => redirect(`jobs/${job._id}`)}>
+                    <Button variant="ghost" size="xs" onClick={() => _redirect(`jobs/${job._id}`)}>
                       View Details →
                     </Button>
                   </div>
@@ -489,7 +450,21 @@ function SavedJobsTab({ redirect, savedJobs }: {
   );
 }
 
+// ── Unified Profile Tab ───────────────────────────────────────────────────────
+
 function ProfileTab({ profile }: { profile: any }) {
+  return (
+    <div className="space-y-6">
+      <ProfileInfoSection profile={profile} />
+      <SkillsSection profile={profile} />
+      <WorkExperienceSection profile={profile} />
+      <EducationSection profile={profile} />
+      <ResumeSection profile={profile} />
+    </div>
+  );
+}
+
+function ProfileInfoSection({ profile }: { profile: any }) {
   const dispatch = useAppDispatch();
   const [editing, setEditing] = useState(false);
   const [formData, setFormData] = useState({
@@ -516,14 +491,14 @@ function ProfileTab({ profile }: { profile: any }) {
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    
+
     try {
       await dispatch(uploadAvatar(file)).unwrap();
-      alert("Avatar uploaded successfully!");
+      toast.success("Avatar uploaded successfully!");
     } catch (err) {
       console.error("Failed to upload avatar:", err);
       const errorMessage = err instanceof Error ? err.message : "Failed to upload avatar";
-      alert(errorMessage);
+      toast.error(errorMessage);
     }
   };
 
@@ -540,7 +515,7 @@ function ProfileTab({ profile }: { profile: any }) {
       <div className="space-y-6">
         <div className="flex items-center gap-6">
           <div className="relative">
-            <Avatar name={profile?.name || "User"} size="xl" />
+            <Avatar src={profile?.avatar} name={profile?.name || "User"} size="xl" />
             <input
               type="file"
               accept="image/*"
@@ -614,7 +589,7 @@ function ProfileTab({ profile }: { profile: any }) {
   );
 }
 
-function SkillsTab({ profile }: { profile: any }) {
+function SkillsSection({ profile }: { profile: any }) {
   const dispatch = useAppDispatch();
   const [newSkill, setNewSkill] = useState("");
 
@@ -642,7 +617,8 @@ function SkillsTab({ profile }: { profile: any }) {
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex items-center gap-2">
+        <Star className="w-5 h-5 text-amber-500" />
         <CardTitle>Skills</CardTitle>
       </CardHeader>
       <div className="space-y-4">
@@ -661,7 +637,7 @@ function SkillsTab({ profile }: { profile: any }) {
                 <Trash2 className="w-3 h-3" />
               </button>
             </span>
-          )) || <span className="text-sm text-gray-400">No skills added yet</span>}
+          )) || <span className="text-sm text-gray-400">No skills added yet. Use the field below to add your skills.</span>}
         </div>
         <div className="flex gap-2">
           <input
@@ -671,29 +647,243 @@ function SkillsTab({ profile }: { profile: any }) {
             onChange={(e) => setNewSkill(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddSkill())}
           />
-          <Button onClick={handleAddSkill}>Add</Button>
+          <Button onClick={handleAddSkill} icon={<Plus className="w-4 h-4" />}>Add</Button>
         </div>
       </div>
     </Card>
   );
 }
 
-function ResumeTab({ profile }: { profile: any }) {
+function WorkExperienceSection({ profile }: { profile: any }) {
+  const dispatch = useAppDispatch();
+  const [showForm, setShowForm] = useState(false);
+  const [formData, setFormData] = useState({
+    title: "",
+    company: "",
+    startDate: "",
+    endDate: "",
+    description: "",
+  });
+
+  const handleAdd = async () => {
+    if (!formData.title || !formData.company || !formData.startDate) return;
+    try {
+      await dispatch(addWorkExperience(formData)).unwrap();
+      setShowForm(false);
+      setFormData({ title: "", company: "", startDate: "", endDate: "", description: "" });
+      alert("Work experience added successfully!");
+    } catch (err) {
+      console.error("Failed to add work experience:", err);
+      alert("Failed to add work experience");
+    }
+  };
+
+  const handleRemove = async (_id: string) => {
+    try {
+      await dispatch(removeWorkExperience(_id)).unwrap();
+    } catch (err) {
+      console.error("Failed to remove work experience:", err);
+      alert("Failed to remove work experience");
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader className="flex items-center gap-2">
+        <Briefcase className="w-5 h-5 text-blue-500" />
+        <div className="flex items-center justify-between flex-1">
+          <CardTitle>Work Experience</CardTitle>
+          <Button variant="ghost" size="sm" icon={<Plus className="w-4 h-4" />} onClick={() => setShowForm(!showForm)}>
+            {showForm ? "Cancel" : "Add"}
+          </Button>
+        </div>
+      </CardHeader>
+      <div className="space-y-4">
+        {showForm && (
+          <div className="p-4 bg-gray-50 rounded-lg space-y-3">
+            <input
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Job Title"
+              value={formData.title}
+              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+            />
+            <input
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Company"
+              value={formData.company}
+              onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+            />
+            <div className="grid grid-cols-2 gap-2">
+              <input
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Start Date"
+                value={formData.startDate}
+                onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+              />
+              <input
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="End Date (optional)"
+                value={formData.endDate}
+                onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+              />
+            </div>
+            <textarea
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Description (optional)"
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              rows={3}
+            />
+            <Button onClick={handleAdd}>Add Experience</Button>
+          </div>
+        )}
+        {profile?.workExperience && profile.workExperience.length > 0 ? (
+          profile.workExperience.map((exp: any, index: number) => (
+            <div key={index} className="p-4 bg-gray-
+50 rounded-lg flex items-start justify-between group">
+              <div>
+                <h4 className="text-sm font-semibold text-gray-900">{exp.title}</h4>
+                <p className="text-sm text-gray-600">{exp.company}</p>
+                <p className="text-xs text-gray-500 mt-1">{exp.startDate} - {exp.endDate || "Present"}</p>
+                {exp.description && <p className="text-xs text-gray-400 mt-1">{exp.description}</p>}
+              </div>
+              <button
+                onClick={() => handleRemove(exp._id || index)}
+                className="text-gray-400 hover:text-red-600 transition-colors opacity-0 group-hover:opacity-100"
+                title="Remove experience"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+          ))
+        ) : (
+          <div className="text-center py-8 text-gray-500 text-sm">
+            No work experience added yet
+          </div>
+        )}
+      </div>
+    </Card>
+  );
+}
+
+function EducationSection({ profile }: { profile: any }) {
+  const dispatch = useAppDispatch();
+  const [showForm, setShowForm] = useState(false);
+  const [formData, setFormData] = useState({
+    degree: "",
+    institution: "",
+    year: "",
+    field: "",
+  });
+
+  const handleAdd = async () => {
+    if (!formData.degree || !formData.institution || !formData.year) return;
+    try {
+      await dispatch(addEducation(formData)).unwrap();
+      setShowForm(false);
+      setFormData({ degree: "", institution: "", year: "", field: "" });
+      alert("Education added successfully!");
+    } catch (err) {
+      console.error("Failed to add education:", err);
+      alert("Failed to add education");
+    }
+  };
+
+  const handleRemove = async (educationId: string) => {
+    try {
+      await dispatch(removeEducation(educationId)).unwrap();
+    } catch (err) {
+      console.error("Failed to remove education:", err);
+      alert("Failed to remove education");
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader className="flex items-center gap-2">
+        <GraduationCap className="w-5 h-5 text-purple-500" />
+        <div className="flex items-center justify-between flex-1">
+          <CardTitle>Education</CardTitle>
+          <Button variant="ghost" size="sm" icon={<Plus className="w-4 h-4" />} onClick={() => setShowForm(!showForm)}>
+            {showForm ? "Cancel" : "Add"}
+          </Button>
+        </div>
+      </CardHeader>
+      <div className="space-y-4">
+        {showForm && (
+          <div className="p-4 bg-gray-50 rounded-lg space-y-3">
+            <input
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Degree (e.g., B.Tech Computer Science)"
+              value={formData.degree}
+              onChange={(e) => setFormData({ ...formData, degree: e.target.value })}
+            />
+            <input
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Institution"
+              value={formData.institution}
+              onChange={(e) => setFormData({ ...formData, institution: e.target.value })}
+            />
+            <div className="grid grid-cols-2 gap-2">
+              <input
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Year (e.g., 2020)"
+                value={formData.year}
+                onChange={(e) => setFormData({ ...formData, year: e.target.value })}
+              />
+              <input
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Field (optional)"
+                value={formData.field}
+                onChange={(e) => setFormData({ ...formData, field: e.target.value })}
+              />
+            </div>
+            <Button onClick={handleAdd}>Add Education</Button>
+          </div>
+        )}
+        {profile?.education && profile.education.length > 0 ? (
+          profile.education.map((edu: any, index: number) => (
+            <div key={index} className="p-4 bg-gray-50 rounded-lg flex items-start justify-between group">
+              <div>
+                <h4 className="text-sm font-semibold text-gray-900">{edu.degree}</h4>
+                <p className="text-sm text-gray-600">{edu.institution}</p>
+                <p className="text-xs text-gray-500 mt-1">{edu.year} {edu.field && `• ${edu.field}`}</p>
+              </div>
+              <button
+                onClick={() => handleRemove(edu._id || index)}
+                className="text-gray-400 hover:text-red-600 transition-colors opacity-0 group-hover:opacity-100"
+                title="Remove education"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+          ))
+        ) : (
+          <div className="text-center py-8 text-gray-500 text-sm">
+            No education added yet
+          </div>
+        )}
+      </div>
+    </Card>
+  );
+}
+
+function ResumeSection({ profile }: { profile: any }) {
   const dispatch = useAppDispatch();
   const [uploading, setUploading] = useState(false);
 
   const handleResumeUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    
+
     setUploading(true);
     try {
       await dispatch(uploadResume(file)).unwrap();
-      alert("Resume uploaded successfully!");
+      toast.success("Resume uploaded successfully!");
     } catch (err) {
       console.error("Failed to upload resume:", err);
       const errorMessage = err instanceof Error ? err.message : "Failed to upload resume";
-      alert(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setUploading(false);
     }
@@ -701,7 +891,8 @@ function ResumeTab({ profile }: { profile: any }) {
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex items-center gap-2">
+        <FileText className="w-5 h-5 text-red-500" />
         <CardTitle>Resume</CardTitle>
       </CardHeader>
       <div className="space-y-4">
@@ -750,211 +941,6 @@ function ResumeTab({ profile }: { profile: any }) {
             {uploading ? "Uploading..." : profile?.resumeUrl ? "Update Resume" : "Upload Resume"}
           </Button>
         </div>
-      </div>
-    </Card>
-  );
-}
-
-function EducationTab({ profile }: { profile: any }) {
-  const dispatch = useAppDispatch();
-  const [showForm, setShowForm] = useState(false);
-  const [formData, setFormData] = useState({
-    degree: "",
-    institution: "",
-    year: "",
-    field: "",
-  });
-
-  const handleAdd = async () => {
-    if (!formData.degree || !formData.institution || !formData.year) return;
-    try {
-      await dispatch(addEducation(formData)).unwrap();
-      setShowForm(false);
-      setFormData({ degree: "", institution: "", year: "", field: "" });
-      alert("Education added successfully!");
-    } catch (err) {
-      console.error("Failed to add education:", err);
-      alert("Failed to add education");
-    }
-  };
-
-  const handleRemove = async (educationId: string) => {
-    try {
-      await dispatch(removeEducation(educationId)).unwrap();
-    } catch (err) {
-      console.error("Failed to remove education:", err);
-      alert("Failed to remove education");
-    }
-  };
-
-  return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle>Education</CardTitle>
-          <Button variant="ghost" size="sm" icon={<Edit3 className="w-4 h-4" />} onClick={() => setShowForm(!showForm)}>
-            {showForm ? "Cancel" : "Add"}
-          </Button>
-        </div>
-      </CardHeader>
-      <div className="space-y-4">
-        {showForm && (
-          <div className="p-4 bg-gray-50 rounded-lg space-y-3">
-            <input
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Degree (e.g., B.Tech Computer Science)"
-              value={formData.degree}
-              onChange={(e) => setFormData({ ...formData, degree: e.target.value })}
-            />
-            <input
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Institution"
-              value={formData.institution}
-              onChange={(e) => setFormData({ ...formData, institution: e.target.value })}
-            />
-            <input
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Year (e.g., 2020)"
-              value={formData.year}
-              onChange={(e) => setFormData({ ...formData, year: e.target.value })}
-            />
-            <input
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Field (optional)"
-              value={formData.field}
-              onChange={(e) => setFormData({ ...formData, field: e.target.value })}
-            />
-            <Button onClick={handleAdd}>Add Education</Button>
-          </div>
-        )}
-        {profile?.education && profile.education.length > 0 ? (
-          profile.education.map((edu: any, index: number) => (
-            <div key={index} className="p-4 bg-gray-50 rounded-lg flex items-start justify-between">
-              <div>
-                <h4 className="text-sm font-semibold text-gray-900">{edu.degree}</h4>
-                <p className="text-sm text-gray-600">{edu.institution}</p>
-                <p className="text-xs text-gray-500 mt-1">{edu.year} {edu.field && `• ${edu.field}`}</p>
-              </div>
-              <button
-                onClick={() => handleRemove(edu._id)}
-                className="text-gray-400 hover:text-red-600 transition-colors"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            </div>
-          ))
-        ) : (
-          <div className="text-center py-8 text-gray-500 text-sm">
-            No education added yet
-          </div>
-        )}
-      </div>
-    </Card>
-  );
-}
-
-function ExperienceTab({ profile }: { profile: any }) {
-  const dispatch = useAppDispatch();
-  const [showForm, setShowForm] = useState(false);
-  const [formData, setFormData] = useState({
-    title: "",
-    company: "",
-    startDate: "",
-    endDate: "",
-    description: "",
-  });
-
-  const handleAdd = async () => {
-    if (!formData.title || !formData.company || !formData.startDate) return;
-    try {
-      await dispatch(addWorkExperience(formData)).unwrap();
-      setShowForm(false);
-      setFormData({ title: "", company: "", startDate: "", endDate: "", description: "" });
-      alert("Work experience added successfully!");
-    } catch (err) {
-      console.error("Failed to add work experience:", err);
-      alert("Failed to add work experience");
-    }
-  };
-
-  const handleRemove = async (experienceId: string) => {
-    try {
-      await dispatch(removeWorkExperience(experienceId)).unwrap();
-    } catch (err) {
-      console.error("Failed to remove work experience:", err);
-      alert("Failed to remove work experience");
-    }
-  };
-
-  return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle>Work Experience</CardTitle>
-          <Button variant="ghost" size="sm" icon={<Edit3 className="w-4 h-4" />} onClick={() => setShowForm(!showForm)}>
-            {showForm ? "Cancel" : "Add"}
-          </Button>
-        </div>
-      </CardHeader>
-      <div className="space-y-4">
-        {showForm && (
-          <div className="p-4 bg-gray-50 rounded-lg space-y-3">
-            <input
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Job Title"
-              value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-            />
-            <input
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Company"
-              value={formData.company}
-              onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-            />
-            <input
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Start Date (e.g., Jan 2020)"
-              value={formData.startDate}
-              onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-            />
-            <input
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="End Date (optional, e.g., Present)"
-              value={formData.endDate}
-              onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-            />
-            <textarea
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Description (optional)"
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              rows={3}
-            />
-            <Button onClick={handleAdd}>Add Experience</Button>
-          </div>
-        )}
-        {profile?.workExperience && profile.workExperience.length > 0 ? (
-          profile.workExperience.map((exp: any, index: number) => (
-            <div key={index} className="p-4 bg-gray-50 rounded-lg flex items-start justify-between">
-              <div>
-                <h4 className="text-sm font-semibold text-gray-900">{exp.title}</h4>
-                <p className="text-sm text-gray-600">{exp.company}</p>
-                <p className="text-xs text-gray-500 mt-1">{exp.startDate} - {exp.endDate || "Present"}</p>
-                {exp.description && <p className="text-xs text-gray-400 mt-1">{exp.description}</p>}
-              </div>
-              <button
-                onClick={() => handleRemove(exp._id)}
-                className="text-gray-400 hover:text-red-600 transition-colors"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            </div>
-          ))
-        ) : (
-          <div className="text-center py-8 text-gray-500 text-sm">
-            No work experience added yet
-          </div>
-        )}
       </div>
     </Card>
   );

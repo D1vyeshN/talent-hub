@@ -1,32 +1,19 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npm run *)",
-      "Bash(node *)",
-      "Bash(nodemon *)",
-      "Bash(ts-node *)",
-      "Bash(git status)",
-      "Bash(git diff)",
-      "Bash(ls *)",
-      "Bash(cat *)",
-      "Bash(npx tsc *)",
-      "Bash(curl *)",
-      "mcp__plugin_chrome-devtools-mcp_chrome-devtools__list_pages"
+      "Bash(*)",
+      "Edit(*)",
+      "Write(*)"
     ],
     "deny": [
       "Bash(sudo *)",
       "Bash(rm -rf *)",
-      "Bash(format *)",
       "Bash(del /s /q *)"
     ],
     "ask": [
-      "Bash(npm install)",
-      "Bash(npm i *)",
-      "Bash(git commit *)",
       "Bash(git push *)",
-      "Bash(rm *)",
-      "Bash(rmdir *)"
+      "Bash(rm *)"
     ],
-    "defaultMode": "auto"
+    "defaultMode": "acceptEdits"
   }
 }

@@ -146,7 +146,7 @@ export function NavbarSection() {
                     aria-expanded={profileDropdownOpen}
                     aria-haspopup="true"
                   >
-                    <Avatar name={user.name} size="sm" />
+                    <Avatar src={user.avatar} name={user.name} size="sm" />
                     <div className="hidden sm:block text-left">
                       <p className="text-sm font-medium text-gray-800 leading-tight">
                         {user.name}
