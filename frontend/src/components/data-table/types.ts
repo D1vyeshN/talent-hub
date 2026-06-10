@@ -6,7 +6,7 @@ export interface DataTableProps<TData, TValue> {
   totalRows: number;
   page: number;
   pageSize: number;
-  loading?: boolean;
+  isFetching?: boolean;
   onPageChange: (page: number) => void;
   onPageSizeChange?: (pageSize: number) => void;
   onSortChange?: (sort: { field: string; direction: "asc" | "desc" }) => void;

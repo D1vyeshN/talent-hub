@@ -15,6 +15,15 @@ export const adminService = {
   verifyCompany: (companyId: string): Promise<Company> =>
     apiClient.patch<Company>(`/api/admin/companies/${companyId}/verify`, {}),
 
+  deleteCompany: (companyId: string): Promise<void> =>
+    apiClient.delete<void>(`/api/admin/companies/${companyId}`),
+
+  deleteUser: (userId: string): Promise<void> =>
+    apiClient.delete<void>(`/api/admin/users/${userId}`),
+
+  deleteJob: (jobId: string): Promise<void> =>
+    apiClient.delete<void>(`/api/admin/jobs/${jobId}`),
+
   toggleJobFeatured: (jobId: string): Promise<Job> =>
     apiClient.patch<Job>(`/api/admin/jobs/${jobId}/feature`, {}),
 

@@ -1,14 +1,28 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { DataTable } from "@/components/data-table/data-table";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Eye, Edit, Star, Trash2, Building2, MapPin, Calendar, Users } from "lucide-react";
+import {
+  Star,
+  Trash2,
+  Building2,
+  MapPin,
+  Calendar,
+  Users,
+  Eye,
+  StarOff,
+} from "lucide-react";
 import { adminService } from "@/features/admin/admin.service";
 import type { Job } from "@/types";
 
-const columns = [
+const columns = (handlers: {
+  onView: (job: Job) => void;
+  onToggleFeatured: (job: Job) => void;
+  onDelete: (job: Job) => void;
+}) => [
   {
     accessorKey: "title",
     header: "Title",
@@ -32,8 +46,8 @@ const columns = [
           row.original.status === "active"
             ? "success"
             : row.original.status === "draft"
-            ? "warning"
-            : "error"
+              ? "warning"
+              : "error"
         }
       >
         {row.original.status}
@@ -61,10 +75,33 @@ const columns = [
     header: "Actions",
     cell: ({ row }: { row: { original: Job } }) => (
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="sm" icon={<Eye className="h-4 w-4" />} title="View" />
-        <Button variant="ghost" size="sm" icon={<Edit className="h-4 w-4" />} title="Edit" />
-        <Button variant="ghost" size="sm" icon={<Star className="h-4 w-4" />} title={row.original.isFeatured ? "Unfeature" : "Feature"} />
-        <Button variant="ghost" size="sm" icon={<Trash2 className="h-4 w-4" />} title="Delete" />
+        <Button
+          variant="ghost"
+          size="sm"
+          icon={<Eye className="h-4 w-4" />}
+          title="View"
+          onClick={() => handlers.onView(row.original)}
+        />
+        <Button
+          variant="ghost"
+          size="sm"
+          icon={
+            row.original.isFeatured ? (
+              <StarOff className="h-4 w-4" />
+            ) : (
+              <Star className="h-4 w-4" />
+            )
+          }
+          title={row.original.isFeatured ? "Unfeature" : "Feature"}
+          onClick={() => handlers.onToggleFeatured(row.original)}
+        />
+        <Button
+          variant="ghost"
+          size="sm"
+          icon={<Trash2 className="h-4 w-4" />}
+          title="Delete"
+          onClick={() => handlers.onDelete(row.original)}
+        />
       </div>
     ),
   },
@@ -121,11 +158,17 @@ export default function AdminJobsPage() {
   const [page, setPage] = useState(1);
   const [pageSize] = useState(10);
   const [totalRows, setTotalRows] = useState(0);
+  const [searchQuery, setSearchQuery] = useState("");
+  const router = useRouter();
 
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await adminService.getJobs({ page, pageSize });
+      const response = await adminService.getJobs({
+        page,
+        pageSize,
+        search: searchQuery,
+      });
       setData(response.data);
       setTotalRows(response.total);
     } catch (error) {
@@ -133,7 +176,38 @@ export default function AdminJobsPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, pageSize]);
+  }, [page, pageSize, searchQuery]);
+
+  const handleViewJob = (job: Job) => {
+    router.push(`/jobs/${job._id}`);
+  };
+
+  const handleToggleFeaturedJob = async (job: Job) => {
+    try {
+      await adminService.toggleJobFeatured(job._id);
+      await loadData();
+    } catch (error) {
+      console.error("Failed to toggle job featured status:", error);
+      // Note: We don't set error state here as the loadData function doesn't use it
+      // In a real app, you might want to handle this differently
+    }
+  };
+
+  const handleDeleteJob = async (job: Job) => {
+    try {
+      await adminService.deleteJob(job._id);
+      await loadData();
+    } catch (error) {
+      console.error("Failed to delete job:", error);
+      // Note: We don't set error state here as the loadData function doesn't use it
+      // In a real app, you might want to handle this differently
+    }
+  };
+
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    setPage(1);        
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -147,18 +221,25 @@ export default function AdminJobsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Jobs</h1>
-          <p className="text-gray-600 mt-1">Manage job listings and applications</p>
+          <p className="text-gray-600 mt-1">
+            Manage job listings and applications
+          </p>
         </div>
       </div>
 
       <DataTable
-        columns={columns}
+        columns={columns({
+          onView: handleViewJob,
+          onToggleFeatured: handleToggleFeaturedJob,
+          onDelete: handleDeleteJob,
+        })}
         data={data}
         totalRows={totalRows}
         page={page}
         pageSize={pageSize}
-        loading={loading}
+        isFetching={loading}
         onPageChange={setPage}
+        onSearch={handleSearch}
         searchPlaceholder="Search jobs..."
         expandable={true}
         renderExpandedContent={renderExpandedContent}

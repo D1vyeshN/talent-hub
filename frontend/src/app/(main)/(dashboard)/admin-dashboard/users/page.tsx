@@ -4,17 +4,15 @@ import { useState, useEffect, useCallback } from "react";
 import { DataTable } from "@/components/data-table/data-table";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Eye, Edit, Ban, Shield, Mail, Calendar } from "lucide-react";
+import { Ban, Trash2, Mail, Calendar } from "lucide-react";
 import { adminService } from "@/features/admin/admin.service";
 import type { User } from "@/types";
 import type { RowSelectionState, ExpandedState } from "@tanstack/react-table";
 import type { ColumnDef } from "@tanstack/react-table";
 
 const columns = (handlers: {
-  onView: (user: User) => void;
-  onEdit: (user: User) => void;
   onBlock: (user: User) => void;
-  onMakeAdmin: (user: User) => void;
+  onDelete: (user: User) => void;
 }): ColumnDef<User, unknown>[] => [
   {
     accessorKey: "name",
@@ -61,14 +59,10 @@ const columns = (handlers: {
     header: "Actions",
     cell: ({ row }: { row: { original: User } }) => (
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="sm" icon={<Eye className="h-4 w-4" />} title="View" onClick={() => handlers.onView(row.original)} />
-        <Button variant="ghost" size="sm" icon={<Edit className="h-4 w-4" />} title="Edit" onClick={() => handlers.onEdit(row.original)} />
         {row.original.role !== "admin" && (
           <Button variant="ghost" size="sm" icon={<Ban className="h-4 w-4" />} title={row.original.isBlocked ? "Unblock" : "Block"} onClick={() => handlers.onBlock(row.original)} />
         )}
-        {row.original.role === "recruiter" && (
-          <Button variant="ghost" size="sm" icon={<Shield className="h-4 w-4" />} title="Make Admin" onClick={() => handlers.onMakeAdmin(row.original)} />
-        )}
+        <Button variant="ghost" size="sm" icon={<Trash2 className="h-4 w-4" />} title="Delete" onClick={() => handlers.onDelete(row.original)} />
       </div>
     ),
   },
@@ -158,14 +152,6 @@ export default function AdminUsersPage() {
     setPage(1);
   };
 
-  const handleViewUser = (user: User) => {
-    console.log("View user:", user);
-  };
-
-  const handleEditUser = (user: User) => {
-    console.log("Edit user:", user);
-  };
-
   const handleBlockUser = async (user: User) => {
     try {
       await adminService.toggleUserBan(user._id);
@@ -176,15 +162,19 @@ export default function AdminUsersPage() {
     }
   };
 
-  const handleMakeAdmin = async (user: User) => {
-    console.log("Make admin:", user);
+  const handleDeleteUser = async (user: User) => {
+    try {
+      await adminService.deleteUser(user._id);
+      await loadData();
+    } catch (error) {
+      console.error("Failed to delete user:", error);
+      setError("Failed to delete user.");
+    }
   };
 
   const tableColumns = columns({
-    onView: handleViewUser,
-    onEdit: handleEditUser,
     onBlock: handleBlockUser,
-    onMakeAdmin: handleMakeAdmin,
+    onDelete: handleDeleteUser,
   });
 
   useEffect(() => {
@@ -215,7 +205,7 @@ export default function AdminUsersPage() {
         totalRows={totalRows}
         page={page}
         pageSize={pageSize}
-        loading={loading}
+        isFetching={loading}
         onPageChange={setPage}
         onPageSizeChange={handlePageSizeChange}
         onSearch={handleSearch}

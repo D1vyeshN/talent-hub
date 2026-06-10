@@ -3,7 +3,6 @@
 import {
   useReactTable,
   getCoreRowModel,
-  getPaginationRowModel,
   getSortedRowModel,
   flexRender,
   SortingState,
@@ -12,12 +11,10 @@ import {
   ExpandedState,
 } from "@tanstack/react-table";
 import { useState, useCallback, useEffect } from "react";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight, Loader2 } from "lucide-react";
 import { DataTableProps } from "./types";
 import { DataTableToolbar } from "./data-table-toolbar";
 import { DataTablePagination } from "./data-table-pagination";
-import { DataTableSkeleton } from "./data-table-skeleton";
-import { DataTableEmpty } from "./data-table-empty";
 
 export function DataTable<TData, TValue>({
   columns,
@@ -25,7 +22,7 @@ export function DataTable<TData, TValue>({
   totalRows,
   page,
   pageSize,
-  loading = false,
+  isFetching = false,
   onPageChange,
   onPageSizeChange,
   onSortChange,
@@ -65,9 +62,10 @@ export function DataTable<TData, TValue>({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getExpandedRowModel: getExpandedRowModel(),
+    manualPagination: true,
+    pageCount: Math.ceil((totalRows || 0) / pageSize),
     onSortingChange: (updater) => {
       const newSorting = typeof updater === "function" ? updater(sorting) : updater;
       setSorting(newSorting);
@@ -120,14 +118,6 @@ export function DataTable<TData, TValue>({
     setRowSelection({});
   };
 
-  if (loading) {
-    return <DataTableSkeleton rows={pageSize} />;
-  }
-
-  if (!data || data.length === 0) {
-    return <DataTableEmpty />;
-  }
-
   return (
     <div className="space-y-4">
       {/* Toolbar */}
@@ -143,7 +133,15 @@ export function DataTable<TData, TValue>({
       )}
 
       {/* Table */}
-      <div className="border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+      <div className="border border-gray-200 rounded-xl overflow-hidden shadow-sm relative">
+        {isFetching && (
+          <div className="absolute inset-0 bg-white/60 backdrop-blur-sm flex items-center justify-center z-10">
+            <div className="flex items-center gap-3">
+              <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
+              <span className="text-gray-600 font-medium">Loading...</span>
+            </div>
+          </div>
+        )}
         <table className="w-full">
           <thead className="bg-gradient-to-r from-blue-50 to-blue-100 border-b border-blue-200">
             {table.getHeaderGroups().map((headerGroup) => (
@@ -183,7 +181,21 @@ export function DataTable<TData, TValue>({
             ))}
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {table.getRowModel().rows.map((row) => (
+            {table.getRowModel().rows.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={
+                    columns.length +
+                    (selectable ? 1 : 0) +
+                    (expandable ? 1 : 0)
+                  }
+                  className="px-4 py-12 text-center text-gray-500"
+                >
+                  No data available
+                </td>
+              </tr>
+            ) : (
+              table.getRowModel().rows.map((row) => (
               <>
                 <tr
                   key={row.id}
@@ -234,7 +246,7 @@ export function DataTable<TData, TValue>({
                   </tr>
                 )}
               </>
-            ))}
+            )))}
           </tbody>
         </table>
       </div>

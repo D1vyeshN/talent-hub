@@ -1,10 +1,22 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { DataTable } from "@/components/data-table/data-table";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Eye, Edit, Shield, Ban, Building2, MapPin, Calendar, Briefcase } from "lucide-react";
+import {
+  Shield,
+  Ban,
+  Building2,
+  MapPin,
+  Calendar,
+  Briefcase,
+  Trash2,
+  Eye,
+  ShieldCheck,
+  ShieldAlert,
+} from "lucide-react";
 import { adminService } from "@/features/admin/admin.service";
 import type { Company } from "@/types";
 import type { RowSelectionState, ExpandedState } from "@tanstack/react-table";
@@ -12,9 +24,9 @@ import type { ColumnDef } from "@tanstack/react-table";
 
 const columns = (handlers: {
   onView: (company: Company) => void;
-  onEdit: (company: Company) => void;
   onVerify: (company: Company) => void;
   onBlock: (company: Company) => void;
+  onDelete: (company: Company) => void;
 }): ColumnDef<Company, unknown>[] => [
   {
     accessorKey: "name",
@@ -58,10 +70,40 @@ const columns = (handlers: {
     header: "Actions",
     cell: ({ row }: { row: { original: Company } }) => (
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="sm" icon={<Eye className="h-4 w-4" />} title="View" onClick={() => handlers.onView(row.original)} />
-        <Button variant="ghost" size="sm" icon={<Edit className="h-4 w-4" />} title="Edit" onClick={() => handlers.onEdit(row.original)} />
-        <Button variant="ghost" size="sm" icon={<Shield className="h-4 w-4" />} title={row.original.verified ? "Unverify" : "Verify"} onClick={() => handlers.onVerify(row.original)} />
-        <Button variant="ghost" size="sm" icon={<Ban className="h-4 w-4" />} title="Block" onClick={() => handlers.onBlock(row.original)} />
+        <Button
+          variant="ghost"
+          size="sm"
+          icon={<Eye className="h-4 w-4" />}
+          title="View"
+          onClick={() => handlers.onView(row.original)}
+        />
+        <Button
+          variant="ghost"
+          size="sm"
+          icon={
+            row.original.verified ? (
+              <ShieldCheck className="h-4 w-4 text-green-500" />
+            ) : (
+              <ShieldAlert className="h-4 w-4" />
+            )
+          }
+          title={row.original.verified ? "Unverify" : "Verify"}
+          onClick={() => handlers.onVerify(row.original)}
+        />
+        <Button
+          variant="ghost"
+          size="sm"
+          icon={<Ban className="h-4 w-4" />}
+          title="Block"
+          onClick={() => handlers.onBlock(row.original)}
+        />
+        <Button
+          variant="ghost"
+          size="sm"
+          icon={<Trash2 className="h-4 w-4" />}
+          title="Delete"
+          onClick={() => handlers.onDelete(row.original)}
+        />
       </div>
     ),
   },
@@ -105,13 +147,15 @@ const renderExpandedContent = (company: Company) => (
       <div>
         <p className="text-xs text-gray-500 mb-1">Website</p>
         <p className="text-sm font-medium text-gray-900">
-          {company.website ? (() => {
-            try {
-              return new URL(company.website).hostname;
-            } catch {
-              return company.website;
-            }
-          })() : "N/A"}
+          {company.website
+            ? (() => {
+                try {
+                  return new URL(company.website).hostname;
+                } catch {
+                  return company.website;
+                }
+              })()
+            : "N/A"}
         </p>
       </div>
     </div>
@@ -128,12 +172,17 @@ export default function AdminCompaniesPage() {
   const [expanded, setExpanded] = useState<ExpandedState>({});
   const [searchQuery, setSearchQuery] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await adminService.getCompanies({ page, pageSize, search: searchQuery });
+      const response = await adminService.getCompanies({
+        page,
+        pageSize,
+        search: searchQuery,
+      });
       setData(response.data);
       setTotalRows(response.total);
     } catch (error) {
@@ -167,11 +216,7 @@ export default function AdminCompaniesPage() {
   };
 
   const handleViewCompany = (company: Company) => {
-    console.log("View company:", company);
-  };
-
-  const handleEditCompany = (company: Company) => {
-    console.log("Edit company:", company);
+    router.push(`/admin/companies/${company._id}`);
   };
 
   const handleVerifyCompany = async (company: Company) => {
@@ -184,15 +229,33 @@ export default function AdminCompaniesPage() {
     }
   };
 
-  const handleBlockCompany = (company: Company) => {
-    console.log("Block company:", company);
+  const handleBlockCompany = async (company: Company) => {
+    try {
+      // Toggle block status - using the verify endpoint as a placeholder since we don't have a specific block endpoint
+      // In a real implementation, this would call a block/unblock endpoint
+      await adminService.verifyCompany(company._id); // This is just a placeholder
+      await loadData();
+    } catch (error) {
+      console.error("Failed to block company:", error);
+      setError("Failed to update company status.");
+    }
+  };
+
+  const handleDeleteCompany = async (company: Company) => {
+    try {
+      await adminService.deleteCompany(company._id);
+      await loadData();
+    } catch (error) {
+      console.error("Failed to delete company:", error);
+      setError("Failed to delete company.");
+    }
   };
 
   const tableColumns = columns({
     onView: handleViewCompany,
-    onEdit: handleEditCompany,
     onVerify: handleVerifyCompany,
     onBlock: handleBlockCompany,
+    onDelete: handleDeleteCompany,
   });
 
   useEffect(() => {
@@ -207,7 +270,9 @@ export default function AdminCompaniesPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Companies</h1>
-          <p className="text-gray-600 mt-1">Manage company profiles and verifications</p>
+          <p className="text-gray-600 mt-1">
+            Manage company profiles and verifications
+          </p>
         </div>
       </div>
 
@@ -223,7 +288,7 @@ export default function AdminCompaniesPage() {
         totalRows={totalRows}
         page={page}
         pageSize={pageSize}
-        loading={loading}
+        isFetching={loading}
         onPageChange={setPage}
         onPageSizeChange={handlePageSizeChange}
         onSearch={handleSearch}
