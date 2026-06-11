@@ -3,6 +3,7 @@ import { ApplicationStatus } from "../../shared/types/index";
 
 export interface IApplication extends Document {
   jobId: mongoose.Types.ObjectId;
+  job: mongoose.Types.ObjectId;
   candidateId: mongoose.Types.ObjectId;
   status: ApplicationStatus;
   appliedAt: Date;
@@ -30,5 +31,15 @@ const ApplicationSchema = new Schema<IApplication>(
 
 // One application per candidate per job
 ApplicationSchema.index({ jobId: 1, candidateId: 1 }, { unique: true });
+
+ApplicationSchema.virtual("job", {
+  ref: "Job",
+  localField: "jobId",
+  foreignField: "_id",
+  justOne: true,
+});
+
+ApplicationSchema.set("toJSON", { virtuals: true });
+ApplicationSchema.set("toObject", { virtuals: true });
 
 export const Application = mongoose.model<IApplication>("Application", ApplicationSchema);

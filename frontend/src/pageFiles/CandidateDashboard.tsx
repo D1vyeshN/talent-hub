@@ -24,6 +24,7 @@ import {
   fetchCandidateProfile, fetchApplications, uploadResume, fetchSavedJobs,
   updateProfile, addSkill, removeSkill, uploadAvatar, addEducation, removeEducation, addWorkExperience, removeWorkExperience
 } from "@/store/slices/candidateSlice";
+import { Application } from "@/types";
 
 export default function CandidateDashboard() {
   const dispatch = useAppDispatch();
@@ -270,7 +271,7 @@ export default function CandidateDashboard() {
 
 function OverviewTab({ redirect: _redirect, myApplications }: {
   redirect: (page: string) => void;
-  myApplications: any[];
+  myApplications: Application[];
 }) {
   return (
     <div className="space-y-6">
@@ -394,7 +395,7 @@ function ApplicationsTab({ redirect: _redirect, applications }: {
 
                   <div className="flex items-center justify-between mt-4">
                     <p className="text-xs text-gray-400">Updated {timeAgo(app.updatedAt)}</p>
-                    <Button variant="ghost" size="xs" onClick={() => _redirect("job-detail")}>
+                    <Button variant="ghost" size="xs" onClick={() => _redirect(`/jobs/${app.jobId}`)}>
                       View Details →
                     </Button>
                   </div>

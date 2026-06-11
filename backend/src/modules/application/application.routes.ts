@@ -49,4 +49,12 @@ router.get(
   ApplicationController.getApplicationById
 );
 
+// Recruiter analytics
+router.get(
+  "/stats/recruiter",
+  authenticate,
+  authorizeRoles("recruiter"),
+  ApplicationController.getApplicationStats
+);
+
 export default router;

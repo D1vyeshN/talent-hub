@@ -415,6 +415,54 @@ const MOCK_USERS = [
     company: "Razorpay",
     designation: "Tech Recruiter",
   },
+  {
+    name: "Amit Verma",
+    email: "amit@swiggy.com",
+    password: "password123",
+    role: "recruiter",
+    company: "Swiggy",
+    designation: "HR Manager",
+  },
+  {
+    name: "Neha Gupta",
+    email: "neha@zepto.in",
+    password: "password123",
+    role: "recruiter",
+    company: "Zepto",
+    designation: "Tech Recruiter",
+  },
+  {
+    name: "Rajesh Kumar",
+    email: "rajesh@cred.club",
+    password: "password123",
+    role: "recruiter",
+    company: "CRED",
+    designation: "Senior Recruiter",
+  },
+  {
+    name: "Sunita Reddy",
+    email: "sunita@phonepe.com",
+    password: "password123",
+    role: "recruiter",
+    company: "PhonePe",
+    designation: "Talent Acquisition",
+  },
+  {
+    name: "Vikas Mehta",
+    email: "vikas@meesho.com",
+    password: "password123",
+    role: "recruiter",
+    company: "Meesho",
+    designation: "HR Lead",
+  },
+  {
+    name: "Anjali Singh",
+    email: "anjali@microsoft.com",
+    password: "password123",
+    role: "recruiter",
+    company: "Microsoft",
+    designation: "Staffing Manager",
+  },
 ];
 
 const MOCK_APPLICATIONS = [
@@ -570,19 +618,18 @@ async function seedDatabase(clearExisting: boolean = false) {
     // 2. Create companies (need a user as owner)
     logger.info("Creating companies...");
     const companies = await Company.insertMany(
-      MOCK_COMPANIES.map((company) => ({
+      MOCK_COMPANIES.map((company, index) => ({
         ...company,
-        owner: users[1]._id, // Use first recruiter as owner
+        owner: recruiters[index % recruiters.length]._id, // Assign each company to unique recruiter
       }))
     );
     logger.info(`✅ Created ${companies.length} companies`);
 
-    // 3. Update recruiters with companyId
+    // 3. Update recruiters with companyId (1:1 mapping)
     logger.info("Updating recruiters with company IDs...");
-    for (let i = 0; i < recruiters.length; i++) {
-      const companyIndex = i % companies.length;
+    for (let i = 0; i < Math.min(recruiters.length, companies.length); i++) {
       await Recruiter.findByIdAndUpdate(recruiters[i]._id, {
-        companyId: companies[companyIndex]._id,
+        companyId: companies[i]._id,
       });
     }
     logger.info("✅ Updated recruiters with company IDs");
@@ -593,16 +640,19 @@ async function seedDatabase(clearExisting: boolean = false) {
       MOCK_JOBS.map((job, index) => ({
         ...job,
         company: companies[index % companies.length]._id,
-        recruiter: recruiters[0]._id, // Use first recruiter
+        recruiter: recruiters[index % recruiters.length]._id, // Distribute jobs among recruiters
       }))
     );
     logger.info(`✅ Created ${jobs.length} jobs`);
 
     // 5. Update recruiters with posted jobs
     logger.info("Updating recruiters with posted jobs...");
-    await Recruiter.findByIdAndUpdate(recruiters[0]._id, {
-      postedJobs: jobs.map((job) => job._id),
-    });
+    for (let i = 0; i < recruiters.length; i++) {
+      const recruiterJobs = jobs.filter((job) => job.recruiter.toString() === recruiters[i]._id.toString());
+      await Recruiter.findByIdAndUpdate(recruiters[i]._id, {
+        postedJobs: recruiterJobs.map((job) => job._id),
+      });
+    }
     logger.info("✅ Updated recruiters with posted jobs");
 
     // 6. Create applications
@@ -631,9 +681,9 @@ async function seedDatabase(clearExisting: boolean = false) {
     // 8. Create notifications
     logger.info("Creating notifications...");
     await Notification.insertMany(
-      MOCK_NOTIFICATIONS.map((notif) => ({
+      MOCK_NOTIFICATIONS.map((notif, index) => ({
         ...notif,
-        userId: candidates[0]._id, // Use first candidate
+        userId: candidates[index % candidates.length]._id, // Distribute among candidates
       }))
     );
     logger.info(`✅ Created ${MOCK_NOTIFICATIONS.length} notifications`);

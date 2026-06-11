@@ -6,6 +6,7 @@ import { buildPaginatedResponse } from "../../utils/pagination";
 import { Notification } from "../notification/notification.model";
 import mongoose from "mongoose";
 import { ApplicationStatus } from "@/shared/types";
+import { createNotification } from "../notification/notification.service";
 
 export const applyToJob = async (
   candidateId: string,
@@ -25,12 +26,11 @@ export const applyToJob = async (
   ]);
 
   // Trigger notification (fire-and-forget)
-  Notification.create({
-    userId: job.recruiter,
+  createNotification({
+    userId: job.recruiter.toString(),
     type: "application_update",
     title: "New Application",
     message: `A candidate applied to your job: ${job.title}`,
-    read: false,
     actionUrl: `/applications/${application._id}`,
   }).catch(console.error);
 
@@ -46,13 +46,44 @@ export const updateApplicationStatus = async (
   const application = await Application.findById(applicationId).populate("jobId");
   if (!application) throw new ApiError(404, "Application not found");
 
-  const job = application.jobId as unknown as { recruiter: mongoose.Types.ObjectId };
+  const job = application.jobId as unknown as { recruiter: mongoose.Types.ObjectId; title: string };
   if (job.recruiter.toString() !== recruiterId)
     throw new ApiError(403, "Not authorized");
 
+  const oldStatus = application.status;
   application.status = status as ApplicationStatus;
   if (notes) application.notes = notes;
-  return application.save();
+  const updatedApplication = await application.save();
+
+  // Send notification to candidate when status changes
+  if (oldStatus !== status) {
+    let notificationType: "application_update" | "interview_scheduled" = "application_update";
+    let title = "Application Update";
+    let message = `Your application for ${job.title} has been updated to ${status}`;
+
+    if (status === "interview") {
+      notificationType = "interview_scheduled";
+      title = "Interview Scheduled";
+      message = `Congratulations! You have an interview scheduled for ${job.title}`;
+    } else if (status === "offer") {
+      title = "Job Offer";
+      message = `You have received a job offer for ${job.title}`;
+    } else if (status === "rejected") {
+      title = "Application Update";
+      message = `Your application for ${job.title} has been reviewed`;
+    }
+
+    // Create notification for candidate (fire-and-forget)
+    createNotification({
+      userId: application.candidateId.toString(),
+      type: notificationType,
+      title,
+      message,
+      actionUrl: `/applications/${application._id}`,
+    }).catch(console.error);
+  }
+
+  return updatedApplication;
 };
 
 export const getCandidateApplications = async (
@@ -63,7 +94,7 @@ export const getCandidateApplications = async (
   const skip = (page - 1) * pageSize;
   const [data, total] = await Promise.all([
     Application.find({ candidateId })
-      .populate({ path: "jobId", populate: { path: "company", select: "name logo" } })
+      .populate({ path: "job", populate: { path: "company", select: "name logo" } })
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(pageSize),
@@ -136,4 +167,87 @@ export const withdrawApplication = async (
   ]);
 
   return application;
+};
+
+export const getApplicationStats = async (recruiterId: string) => {
+  // Get all jobs for this recruiter
+  const jobs = await Job.find({ recruiter: recruiterId }).select("_id");
+  const jobIds = jobs.map((job) => job._id);
+
+  if (jobIds.length === 0) {
+    return {
+      totalApplications: 0,
+      byStatus: {
+        applied: 0,
+        screening: 0,
+        interview: 0,
+        offer: 0,
+        rejected: 0,
+        hired: 0,
+      },
+      byJob: [],
+    };
+  }
+
+  // Get application counts by status
+  const statusStats = await Application.aggregate([
+    { $match: { jobId: { $in: jobIds } } },
+    {
+      $group: {
+        _id: "$status",
+        count: { $sum: 1 },
+      },
+    },
+  ]);
+
+  // Get application counts by job
+  const jobStats = await Application.aggregate([
+    { $match: { jobId: { $in: jobIds } } },
+    {
+      $group: {
+        _id: "$jobId",
+        count: { $sum: 1 },
+      },
+    },
+    {
+      $lookup: {
+        from: "jobs",
+        localField: "_id",
+        foreignField: "_id",
+        as: "job",
+      }
+    },
+    {
+      $unwind: "$job",
+    },
+    {
+      $project: {
+        jobId: "$_id",
+        jobTitle: "$job.title",
+        count: 1,
+      },
+    },
+  ]);
+
+  const totalApplications = await Application.countDocuments({ jobId: { $in: jobIds } });
+
+  // Build status stats object
+  const byStatus = {
+    applied: 0,
+    screening: 0,
+    interview: 0,
+    offer: 0,
+    rejected: 0,
+    hired: 0,
+  };
+
+  statusStats.forEach((stat: any) => {
+    byStatus[stat._id as keyof typeof byStatus] = stat.count;
+  });
+
+  return {
+    totalApplications,
+    byStatus,
+    byJob: jobStats,
+  };
 };

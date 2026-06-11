@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { DataTable } from "@/components/data-table/data-table";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Ban, Trash2, Mail, Calendar } from "lucide-react";
+import { Ban, Trash2, Mail, Calendar, Shield } from "lucide-react";
 import { adminService } from "@/features/admin/admin.service";
 import type { User } from "@/types";
 import type { RowSelectionState, ExpandedState } from "@tanstack/react-table";

@@ -3,6 +3,13 @@ import { ApiError } from "../../utils/ApiError";
 import { buildPaginatedResponse } from "../../utils/pagination";
 import { NotificationType } from "../../shared/types/index";
 
+// Global io instance for socket notifications (will be set from socket.ts)
+let io: any = null;
+
+export const setSocketIO = (socketIO: any) => {
+  io = socketIO;
+};
+
 // ─── Get notifications for a user ────────────────────────────────────────────
 export const getUserNotifications = async (
   userId: string,
@@ -65,5 +72,16 @@ export const createNotification = async (data: {
   actionUrl?: string;
   avatar?: string;
 }) => {
-  return Notification.create({ ...data, read: false });
+  const notification = await Notification.create({ ...data, read: false });
+
+  // Emit notification via socket if io instance is available
+  if (io) {
+    io.to(data.userId).emit("new_notification", notification);
+    
+    // Also emit updated unread count
+    const unreadCount = await Notification.countDocuments({ userId: data.userId, read: false });
+    io.to(data.userId).emit("unread_count", { unreadCount });
+  }
+
+  return notification;
 };

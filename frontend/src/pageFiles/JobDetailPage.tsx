@@ -10,7 +10,8 @@ import { Modal } from "@/components/ui/Modal";
 import { formatSalaryRange, timeAgo, getJobTypeBadgeColor, cn } from "@/lib/utils";
 import type { Job, User } from "@/types";
 import { jobsService } from "@/features/jobs/services/jobs.service";
-import { apiClient } from "@/shared/lib/apiClient";
+import { applyToJob } from "@/features/applications/services/application.service";
+import { getCandidateProfile } from "@/features/candidate/services/candidate.service";
 
 // Helper component to render company logo with fallback
 function CompanyLogo({ logo, name, size = "md" }: { logo?: string; name: string; size?: "sm" | "md" | "lg" }) {
@@ -65,6 +66,8 @@ export default function JobDetailPage() {
   const [applying, setApplying] = useState(false);
   const [applied, setApplied] = useState(false);
   const [coverLetter, setCoverLetter] = useState("");
+  const [applyError, setApplyError] = useState<string | null>(null);
+  const [candidateResume, setCandidateResume] = useState<string>("");
 
 
 
@@ -77,10 +80,9 @@ export default function JobDetailPage() {
         setError(null);
         const data = await jobsService.getById(jobId);
         setJob(data);
-        // Fetch recruiter details
+        // Recruiter data is already populated in the job response from backend
         if (data.recruiter) {
-          const recruiterData = await apiClient.get<User>(`/api/users/${data.recruiter}`);
-          setRecruiter(recruiterData);
+          setRecruiter(data.recruiter);
         }
       } catch (err: any) {
         setError(err.message || "Failed to load job");
@@ -91,13 +93,40 @@ export default function JobDetailPage() {
 
     fetchJob();
   }, [jobId]);
+
+  useEffect(() => {
+    // Fetch candidate profile to get resume URL and check if already applied
+    const fetchCandidateProfile = async () => {
+      try {
+        const candidate = await getCandidateProfile();
+        setCandidateResume(candidate.resumeUrl || "");
+        // Check if this job is already in candidate's applied jobs
+        if (candidate.appliedJobs && candidate.appliedJobs.includes(jobId)) {
+          setApplied(true);
+        }
+      } catch (err) {
+        // User might not be logged in or not a candidate
+        console.log("Could not fetch candidate profile:", err);
+      }
+    };
+
+    fetchCandidateProfile();
+  }, [jobId]);
   
   const handleApply = async () => {
     setApplying(true);
-    await new Promise((r) => setTimeout(r, 1800));
-    setApplying(false);
-    setApplied(true);
-    setApplyModalOpen(false);
+    setApplyError(null);
+    try {
+      // Use candidate's resume URL from their profile
+      await applyToJob(jobId, { coverLetter, resumeUrl: candidateResume });
+      setApplied(true);
+      setApplyModalOpen(false);
+      setCoverLetter("");
+    } catch (err: any) {
+      setApplyError(err.message || "Failed to submit application. Please try again.");
+    } finally {
+      setApplying(false);
+    }
   };
 
   if (loading) {
@@ -406,11 +435,27 @@ export default function JobDetailPage() {
           {/* Resume Section */}
           <div>
             <p className="text-sm font-medium text-gray-700 mb-2">Resume</p>
-            <div className="border-2 border-dashed border-gray-200 rounded-xl p-5 text-center bg-gray-50">
-              <div className="text-2xl mb-2">📄</div>
-              <p className="text-sm font-medium text-gray-700">resume-aryan-sharma.pdf</p>
-              <p className="text-xs text-gray-400 mt-1">Currently selected • <span className="text-blue-600 cursor-pointer hover:underline">Change resume</span></p>
-            </div>
+            {candidateResume ? (
+              <div className="border-2 border-dashed border-gray-200 rounded-xl p-5 text-center bg-gray-50">
+                <div className="text-2xl mb-2">📄</div>
+                <p className="text-sm font-medium text-gray-700">Resume from profile</p>
+                <p className="text-xs text-gray-400 mt-1">Currently selected • <span className="text-blue-600 cursor-pointer hover:underline">Update in profile</span></p>
+              </div>
+            ) : (
+              <div className="border-2 border-dashed border-gray-200 rounded-xl p-5 text-center bg-gray-50">
+                <div className="text-2xl mb-2">📄</div>
+                <p className="text-sm font-medium text-gray-700">No resume uploaded</p>
+                <p className="text-xs text-gray-400 mt-1">Please upload a resume in your profile to apply</p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-3"
+                  onClick={() => router.push("/candidate-dashboard")}
+                >
+                  Go to Profile
+                </Button>
+              </div>
+            )}
           </div>
 
           {/* Cover Letter */}
@@ -439,6 +484,13 @@ export default function JobDetailPage() {
               <option>3+ months notice</option>
             </select>
           </div>
+
+          {/* Error Message */}
+          {applyError && (
+            <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+              <p className="text-sm text-red-800">{applyError}</p>
+            </div>
+          )}
 
           {/* Notice */}
           <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">

@@ -3,6 +3,7 @@ import uiReducer from "./slices/uiSlice";
 import authReducer, { logout } from "@/features/auth/store/authSlice";
 import recruiterProfileReducer from "@/features/recruiterProfile/store/recruiterProfileSlice";
 import candidateReducer from "./slices/candidateSlice";
+import applicationReducer from "@/features/applications/store/applicationSlice";
 import { setUnauthorizedHandler } from "@/shared/lib/apiClient";
 
 export const store = configureStore({
@@ -11,6 +12,7 @@ export const store = configureStore({
     ui: uiReducer,
     recruiterProfile: recruiterProfileReducer,
     candidate: candidateReducer,
+    application: applicationReducer,
   },
   devTools: true,
   middleware: (getDefaultMiddleware) =>

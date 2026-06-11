@@ -50,7 +50,8 @@ export const toggleSaveJob = createAsyncThunk(
 export const fetchApplications = createAsyncThunk(
   "candidate/fetchApplications",
   async ({ page = 1, pageSize = 10 }: { page?: number; pageSize?: number } = {}) => {
-    return await CandidateService.getCandidateApplications(page, pageSize);
+    const response = await CandidateService.getCandidateApplications(page, pageSize);
+    return response.data;
   }
 );
 
@@ -195,7 +196,7 @@ const candidateSlice = createSlice({
       })
       .addCase(fetchApplications.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.applications = action.payload.data;
+        state.applications = action.payload;
       })
       .addCase(fetchApplications.rejected, (state, action) => {
         state.isLoading = false;

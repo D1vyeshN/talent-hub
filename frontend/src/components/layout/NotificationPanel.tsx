@@ -1,10 +1,12 @@
 import { Bell, BellOff, Check, CheckCheck, MessageCircle, X } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { closeNotificationPanel } from "@/store/slices/uiSlice";
-import { MOCK_NOTIFICATIONS } from "@/lib/mockData";
+import { notificationService } from "@/features/notifications/services/notification.service";
 import { timeAgo } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import type { NotificationType } from "@/types";
+import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 const notificationIcons: Record<NotificationType, React.ReactNode> = {
   application_update: <Check className="w-4 h-4 text-blue-600" />,
@@ -24,7 +26,63 @@ const notificationIconBg: Record<NotificationType, string> = {
 
 export function NotificationPanel() {
   const dispatch = useAppDispatch();
+  const router = useRouter();
   const { notificationPanelOpen } = useAppSelector((s) => s.ui);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [loading, setLoading] = useState(false);
+
+  const fetchNotifications = useCallback(async () => {
+    try {
+      setLoading(true);
+      const data = await notificationService.getNotifications({ page: 1, pageSize: 10 });
+      setNotifications(data.data);
+      const unreadData = await notificationService.getUnreadCount();
+      setUnreadCount(unreadData.unreadCount);
+    } catch (error) {
+      console.error("Failed to fetch notifications:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (notificationPanelOpen) {
+      // Use setTimeout to avoid synchronous setState in effect
+      const timer = setTimeout(() => {
+        fetchNotifications();
+      }, 0);
+      return () => clearTimeout(timer);
+    }
+  }, [notificationPanelOpen, fetchNotifications]);
+
+  const handleMarkAllRead = async () => {
+    try {
+      await notificationService.markAllAsRead();
+      setNotifications(notifications.map((n) => ({ ...n, read: true })));
+      setUnreadCount(0);
+    } catch (error) {
+      console.error("Failed to mark all as read:", error);
+    }
+  };
+
+  const handleMarkAsRead = async (notificationId: string, actionUrl?: string) => {
+    try {
+      await notificationService.markAsRead(notificationId);
+      setNotifications(notifications.map((n) => 
+        n._id === notificationId ? { ...n, read: true } : n
+      ));
+      setUnreadCount(Math.max(0, unreadCount - 1));
+      
+      // Navigate to actionUrl if provided
+      if (actionUrl) {
+        dispatch(closeNotificationPanel());
+        router.push(actionUrl);
+      }
+    } catch (error) {
+      console.error("Failed to mark as read:", error);
+    }
+  };
 
   if (!notificationPanelOpen) return null;
 
@@ -40,11 +98,14 @@ export function NotificationPanel() {
           <div>
             <h2 className="text-base font-semibold text-gray-900">Notifications</h2>
             <p className="text-xs text-gray-500 mt-0.5">
-              {MOCK_NOTIFICATIONS.filter((n) => !n.read).length} unread
+              {unreadCount} unread
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <button className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors text-xs">
+            <button 
+              onClick={handleMarkAllRead}
+              className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors text-xs"
+            >
               Mark all read
             </button>
             <button
@@ -58,15 +119,20 @@ export function NotificationPanel() {
 
         {/* Notifications List */}
         <div className="overflow-y-auto flex-1">
-          {MOCK_NOTIFICATIONS.length === 0 ? (
+          {loading ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <p className="text-sm text-gray-500">Loading...</p>
+            </div>
+          ) : notifications.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <BellOff className="w-8 h-8 text-gray-300 mb-2" />
               <p className="text-sm text-gray-500">No notifications yet</p>
             </div>
           ) : (
-            MOCK_NOTIFICATIONS.map((notification) => (
+            notifications.map((notification: any) => (
               <div
-                key={notification.id}
+                key={notification._id}
+                onClick={() => handleMarkAsRead(notification._id, notification.actionUrl)}
                 className={cn(
                   "flex gap-3 px-5 py-4 hover:bg-gray-50 cursor-pointer transition-colors border-b border-gray-50 last:border-0",
                   !notification.read && "bg-blue-50/50"
@@ -75,9 +141,9 @@ export function NotificationPanel() {
                 {/* Icon */}
                 <div className={cn(
                   "w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5",
-                  notificationIconBg[notification.type]
+                  notificationIconBg[notification.type as NotificationType]
                 )}>
-                  {notificationIcons[notification.type]}
+                  {notificationIcons[notification.type as NotificationType]}
                 </div>
 
                 {/* Content */}

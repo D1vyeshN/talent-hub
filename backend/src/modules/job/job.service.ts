@@ -3,6 +3,7 @@ import { ApiError } from "../../utils/ApiError";
 import { buildPaginatedResponse } from "../../utils/pagination";
 import { JobFilters } from "../../shared/types/index";
 import { CreateJobPayload, UpdateJobPayload } from "./job.validation";
+import { createNotification } from "../notification/notification.service";
 
 export const createJob = async (
   recruiterId: string,
@@ -37,7 +38,7 @@ export const createJob = async (
   return job;
 };
 
-export const getJobById = async (jobId: string) => {
+export const getJobById = async (jobId: string, viewerId?: string) => {
   const job = await Job.findByIdAndUpdate(
     jobId,
     { $inc: { viewsCount: 1 } },
@@ -47,6 +48,20 @@ export const getJobById = async (jobId: string) => {
     .populate("recruiter", "name email avatar");
 
   if (!job) throw new ApiError(404, "Job not found");
+
+  // Create profile view notification for recruiter if viewerId is provided and is not the recruiter
+  if (viewerId && job.recruiter && job.recruiter.toString() !== viewerId) {
+    // Only notify occasionally to avoid spam (e.g., every 10th view or use a more sophisticated strategy)
+    // For now, we'll create a notification but this could be enhanced with throttling
+    createNotification({
+      userId: job.recruiter.toString(),
+      type: "profile_view",
+      title: "Profile Viewed",
+      message: `A candidate viewed your job: ${job.title}`,
+      actionUrl: `/jobs/${jobId}`,
+    }).catch(console.error);
+  }
+
   return job;
 };
 
@@ -86,12 +101,12 @@ export const getJobs = async (
   const [data, total] = await Promise.all([
     Job.find(query)
       .populate("company", "name logo location verified")
+      .populate("recruiter", "name email avatar")
       .sort({ isFeatured: -1, postedAt: -1 })
       .skip(skip)
       .limit(pageSize),
     Job.countDocuments(query),
   ]);
-  console.log(data,await Job.find())
   return buildPaginatedResponse(data, total, page, pageSize);
 };
 

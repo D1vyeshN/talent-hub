@@ -56,3 +56,9 @@ export const withdrawApplication = asyncHandler(async (req: AuthRequest, res: Re
   await ApplicationService.withdrawApplication(req.params.id as string, req.userId!);
   res.json(new ApiResponse(200, null, "Application withdrawn successfully"));
 });
+
+// GET /api/v1/applications/stats/recruiter  (recruiter analytics)
+export const getApplicationStats = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const stats = await ApplicationService.getApplicationStats(req.userId!);
+  res.json(new ApiResponse(200, stats, "Application stats fetched successfully"));
+});

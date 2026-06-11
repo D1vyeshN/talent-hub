@@ -3,6 +3,7 @@ import { Conversation } from "./conversation.model";
 import { ApiError } from "../../utils/ApiError";
 import { buildPaginatedResponse } from "../../utils/pagination";
 import mongoose from "mongoose";
+import { createNotification } from "../notification/notification.service";
 
 // ─── Get or create a conversation between two users ───────────────────────────
 export const getOrCreateConversation = async (
@@ -56,6 +57,15 @@ export const sendMessage = async (
     $inc: { unreadCount: 1 },
     updatedAt:   new Date(),
   });
+
+  // Create notification for receiver (fire-and-forget)
+  createNotification({
+    userId: receiverId,
+    type: "new_message",
+    title: "New message",
+    message: `You have a new message from ${senderId}`,
+    actionUrl: `/messages/${conversation._id}`,
+  }).catch(console.error);
 
   return message;
 };

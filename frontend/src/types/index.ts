@@ -84,7 +84,7 @@ export interface Job {
   viewsCount: number;
   isFeatured: boolean;
   isRemote: boolean;
-  recruiter: string; // recruiter _id
+  recruiter: User; // Recruiter user object (populated from backend)
   category: string;
 }
 
