@@ -8,6 +8,16 @@ import { Check, CheckCheck, Bell, BellOff, Trash2 } from "lucide-react";
 import type { NotificationType, Notification } from "@/types";
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSelector, useDispatch } from "react-redux";
+import {
+  fetchNotifications,
+  fetchUnreadCount,
+  markAsRead,
+  markAllAsRead,
+  deleteNotification,
+  clearError,
+} from "@/features/notifications/store/notificationSlice";
+import type { RootState } from "@/store";
 
 const notificationIcons: Record<NotificationType, React.ReactNode> = {
   application_update: <Check className="w-4 h-4 text-blue-600" />,
@@ -27,40 +37,40 @@ const notificationIconBg: Record<NotificationType, string> = {
 
 export default function NotificationsPage() {
   const router = useRouter();
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [loading, setLoading] = useState(false);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  const dispatch = useDispatch();
 
-  const fetchNotifications = useCallback(async () => {
-    try {
-      setLoading(true);
-      const data = await notificationService.getNotifications({ page, pageSize: 10 });
-      setNotifications(data.data);
-      setTotalPages(data.totalPages);
-      const unreadData = await notificationService.getUnreadCount();
-      setUnreadCount(unreadData.unreadCount);
-    } catch (error) {
-      console.error("Failed to fetch notifications:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, [page]);
+  // Selectors
+  const notifications = useSelector((state: RootState) => state.notification.notifications);
+  const unreadCount = useSelector((state: RootState) => state.notification.unreadCount);
+  const isLoading = useSelector((state: RootState) => state.notification.isLoading);
+  const error = useSelector((state: RootState) => state.notification.error);
+  const pagination = useSelector((state: RootState) => state.notification.pagination);
+
+  const [page, setPage] = useState(pagination.page);
+  const [totalPages, setTotalPages] = useState(pagination.totalPages);
+
+  const fetchData = useCallback(async () => {
+    dispatch(fetchNotifications({ page, pageSize: 10 }));
+    dispatch(fetchUnreadCount());
+  }, [dispatch, page]);
 
   useEffect(() => {
     // Use setTimeout to avoid synchronous setState in effect
     const timer = setTimeout(() => {
-      fetchNotifications();
+      fetchData();
     }, 0);
     return () => clearTimeout(timer);
-  }, [fetchNotifications]);
+  }, [fetchData]);
+
+  useEffect(() => {
+    setPage(pagination.page);
+    setTotalPages(pagination.totalPages);
+  }, [pagination.page, pagination.totalPages]);
 
   const handleMarkAllRead = async () => {
     try {
-      await notificationService.markAllAsRead();
-      setNotifications(notifications.map((n) => ({ ...n, read: true })));
-      setUnreadCount(0);
+      await dispatch(markAllAsRead());
+      // Unread count is already set to 0 by the reducer
     } catch (error) {
       console.error("Failed to mark all as read:", error);
     }
@@ -68,12 +78,10 @@ export default function NotificationsPage() {
 
   const handleMarkAsRead = async (notificationId: string, actionUrl?: string) => {
     try {
-      await notificationService.markAsRead(notificationId);
-      setNotifications(notifications.map((n) => 
-        n._id === notificationId ? { ...n, read: true } : n
-      ));
-      setUnreadCount(Math.max(0, unreadCount - 1));
-      
+      await dispatch(markAsRead(notificationId));
+      // After marking as read, refetch unread count to keep in sync
+      dispatch(fetchUnreadCount());
+
       // Navigate to actionUrl if provided
       if (actionUrl) {
         router.push(actionUrl);
@@ -85,14 +93,22 @@ export default function NotificationsPage() {
 
   const handleDelete = async (notificationId: string) => {
     try {
-      await notificationService.deleteNotification(notificationId);
-      setNotifications(notifications.filter((n) => n._id !== notificationId));
-      const unreadData = await notificationService.getUnreadCount();
-      setUnreadCount(unreadData.unreadCount);
+      await dispatch(deleteNotification(notificationId));
+      // After deletion, refetch unread count
+      dispatch(fetchUnreadCount());
     } catch (error) {
       console.error("Failed to delete notification:", error);
     }
   };
+
+  // Optional: show error toast or something
+  useEffect(() => {
+    if (error) {
+      console.error("Notification error:", error);
+      // Optionally clear error after logging
+      dispatch(clearError());
+    }
+  }, [error, dispatch]);
 
   return (
     <div className="space-y-6">
@@ -111,7 +127,7 @@ export default function NotificationsPage() {
               {unreadCount} unread notification{unreadCount !== 1 ? "s" : ""}
             </p>
           </div>
-          <button 
+          <button
             onClick={handleMarkAllRead}
             className="text-xs text-blue-600 font-medium hover:text-blue-700 transition-colors"
           >
@@ -119,7 +135,7 @@ export default function NotificationsPage() {
           </button>
         </div>
 
-        {loading ? (
+        {isLoading ? (
           <div className="p-12 flex flex-col items-center justify-center text-center">
             <p className="text-sm text-gray-500">Loading...</p>
           </div>
@@ -148,7 +164,7 @@ export default function NotificationsPage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-3">
-                    <div 
+                    <div
                       className="flex-1"
                       onClick={() => handleMarkAsRead(n._id, n.actionUrl)}
                     >

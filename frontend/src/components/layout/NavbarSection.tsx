@@ -14,6 +14,13 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Avatar } from "@/components/ui/Avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import {
   toggleDarkMode,
@@ -46,7 +53,6 @@ export function NavbarSection() {
   const currentPage = pathname?.replace(/^\//, "");
   const { user, isAuthenticated } = useAppSelector((s) => s.auth);
   const { isDarkMode } = useAppSelector((s) => s.ui);
-  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const unreadCount = MOCK_NOTIFICATIONS.filter((n) => !n.read).length;
@@ -139,75 +145,62 @@ export function NavbarSection() {
                 </button>
 
                 {/* Profile Dropdown */}
-                <div className="relative">
-                  <button
-                    onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-                    className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-xl hover:bg-gray-100 transition-colors"
-                    aria-expanded={profileDropdownOpen}
-                    aria-haspopup="true"
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-xl hover:bg-gray-100 transition-colors">
+                      <Avatar src={user.avatar} name={user.name} size="sm" />
+                      <div className="hidden sm:block text-left">
+                        <p className="text-sm font-medium text-gray-800 leading-tight">
+                          {user.name}
+                        </p>
+                        <p className="text-xs text-gray-500 capitalize">
+                          {user.role}
+                        </p>
+                      </div>
+                      <ChevronDown className="w-4 h-4 text-gray-400" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    align="end"
+                    className="w-52 rounded-xl shadow-xl bg-white border-gray-200 p-0 py-1.5"
                   >
-                    <Avatar src={user.avatar} name={user.name} size="sm" />
-                    <div className="hidden sm:block text-left">
-                      <p className="text-sm font-medium text-gray-800 leading-tight">
+                    <div className="px-4 py-2.5 border-b border-gray-100">
+                      <p className="text-sm font-semibold text-gray-900">
                         {user.name}
                       </p>
-                      <p className="text-xs text-gray-500 capitalize">
-                        {user.role}
-                      </p>
+                      <p className="text-xs text-gray-500">{user.email}</p>
                     </div>
-                    <ChevronDown className="w-4 h-4 text-gray-400" />
-                  </button>
-
-                  {profileDropdownOpen && (
-                    <>
-                      <div
-                        className="fixed inset-0 z-10"
-                        onClick={() => setProfileDropdownOpen(false)}
-                      />
-                      <div className="absolute right-0 top-full mt-1 w-52 bg-white rounded-xl shadow-xl border border-gray-200 py-1.5 z-20">
-                        <div className="px-4 py-2.5 border-b border-gray-100">
-                          <p className="text-sm font-semibold text-gray-900">
-                            {user.name}
-                          </p>
-                          <p className="text-xs text-gray-500">{user.email}</p>
-                        </div>
-                        <button
-                          onClick={() => {
-                            redirect(
-                              user.role === "recruiter"
-                                ? "/recruiter-dashboard"
-                                : user.role === "admin" ? "/admin-dashboard" : "/candidate-dashboard",
-                            );
-                            setProfileDropdownOpen(false);
-                          }}
-                          className="w-full flex items-center gap-2.5 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                        >
-                          <User className="w-4 h-4" /> My Dashboard
-                        </button>
-                        <button
-                          onClick={() => {
-                            redirect("/settings");
-                            setProfileDropdownOpen(false);
-                          }}
-                          className="w-full flex items-center gap-2.5 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                        >
-                          <Settings className="w-4 h-4" /> Settings
-                        </button>
-                        <div className="border-t border-gray-100 mt-1 pt-1">
-                          <button
-                            onClick={() => {
-                              dispatch(logout()).then(() => redirect("/"));
-                              setProfileDropdownOpen(false);
-                            }}
-                            className="w-full flex items-center gap-2.5 px-4 py-2 text-sm text-red-600 hover:bg-red-50"
-                          >
-                            <LogOut className="w-4 h-4" /> Sign Out
-                          </button>
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </div>
+                    <DropdownMenuItem
+                      className="w-full rounded-none px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 focus:bg-gray-50 focus:text-gray-700 cursor-pointer"
+                      onClick={() =>
+                        redirect(
+                          user.role === "recruiter"
+                            ? "/recruiter-dashboard"
+                            : user.role === "admin"
+                              ? "/admin-dashboard"
+                              : "/candidate-dashboard",
+                        )
+                      }
+                    >
+                      <User className="w-4 h-4" /> My Dashboard
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="w-full rounded-none px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 focus:bg-gray-50 focus:text-gray-700 cursor-pointer"
+                      onClick={() => redirect("/settings")}
+                    >
+                      <Settings className="w-4 h-4" /> Settings
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator className="bg-gray-100" />
+                    <DropdownMenuItem
+                      className="w-full rounded-none px-4 py-2 text-sm text-red-600 hover:bg-red-50 focus:bg-red-50 focus:text-red-600 cursor-pointer"
+                      onClick={() => {
+                        dispatch(logout()).then(() => redirect("/"));
+                      }}
+                    >
+                      <LogOut className="w-4 h-4" /> Sign Out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </>
             ) : (
               <div className="flex items-center gap-2">
