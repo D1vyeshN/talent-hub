@@ -55,7 +55,7 @@ export function NavbarSection() {
   const { isDarkMode } = useAppSelector((s) => s.ui);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const unreadCount = MOCK_NOTIFICATIONS.filter((n) => !n.read).length;
+  const { unreadCount } = useAppSelector((s) => s.notification);
   const navLinks = [
     { label: "Find Jobs", page: "jobs" as Page },
     { label: "Companies", page: "companies" as Page },
@@ -64,7 +64,9 @@ export function NavbarSection() {
       page:
         user?.role === "recruiter"
           ? ("recruiter-dashboard" as Page)
-          : user?.role === "admin" ? "admin-dashboard" as Page : ("candidate-dashboard" as Page),
+          : user?.role === "admin"
+            ? ("admin-dashboard" as Page)
+            : ("candidate-dashboard" as Page),
       authOnly: true,
     },
   ];
@@ -73,6 +75,19 @@ export function NavbarSection() {
     <header className="sticky top-0 z-40 w-full bg-white/95 backdrop-blur-sm border-b border-gray-200 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
+          {/* Mobile Menu Toggle */}
+          <button
+            className="md:hidden p-2 rounded-lg text-gray-500 hover:bg-gray-100"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Toggle menu"
+          >
+            {mobileMenuOpen ? (
+              <X className="w-5 h-5" />
+            ) : (
+              <Menu className="w-5 h-5" />
+            )}
+          </button>
+
           {/* Logo */}
           <button
             onClick={() => redirect("/")}
@@ -115,19 +130,6 @@ export function NavbarSection() {
 
           {/* Right Side Actions */}
           <div className="flex items-center gap-2">
-            {/* Dark mode toggle */}
-            <button
-              onClick={() => dispatch(toggleDarkMode())}
-              className="p-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors"
-              aria-label="Toggle dark mode"
-            >
-              {isDarkMode ? (
-                <Sun className="w-5 h-5" />
-              ) : (
-                <Moon className="w-5 h-5" />
-              )}
-            </button>
-
             {isAuthenticated && user ? (
               <>
                 {/* Notifications */}
@@ -143,7 +145,6 @@ export function NavbarSection() {
                     </span>
                   )}
                 </button>
-
                 {/* Profile Dropdown */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -220,19 +221,6 @@ export function NavbarSection() {
                 </Button>
               </div>
             )}
-
-            {/* Mobile Menu Toggle */}
-            <button
-              className="md:hidden p-2 rounded-lg text-gray-500 hover:bg-gray-100"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              aria-label="Toggle menu"
-            >
-              {mobileMenuOpen ? (
-                <X className="w-5 h-5" />
-              ) : (
-                <Menu className="w-5 h-5" />
-              )}
-            </button>
           </div>
         </div>
       </div>

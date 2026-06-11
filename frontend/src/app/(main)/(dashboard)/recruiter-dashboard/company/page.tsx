@@ -61,7 +61,6 @@ export default function CompanyPage() {
       // Get recruiter profile to find company ID
       const recruiter = await recruiterService.getMyProfile();
       if (recruiter.companyId) {
-        console.log("Recruiter company ID:", recruiter.companyId);
         const companyData = await companyService.getById(recruiter.companyId);
         setCompany(companyData);
         setFormData({

@@ -1,4 +1,5 @@
 import Navbar from "@/components/layout/Navbar";
+import { NotificationPanel } from "@/components/layout/NotificationPanel";
 
 export default function MainLayout({
   children,
@@ -8,6 +9,7 @@ export default function MainLayout({
   return (
     <>
       <Navbar />
+      <NotificationPanel />
       {children}
     </>
   );

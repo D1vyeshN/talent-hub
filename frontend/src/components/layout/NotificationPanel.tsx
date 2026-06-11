@@ -1,12 +1,20 @@
+"use client"
 import { Bell, BellOff, Check, CheckCheck, MessageCircle, X } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { closeNotificationPanel } from "@/store/slices/uiSlice";
-import { notificationService } from "@/features/notifications/services/notification.service";
+import {
+  fetchNotifications,
+  fetchUnreadCount,
+  markAsRead,
+  markAllAsRead,
+  clearError,
+} from "@/features/notifications/store/notificationSlice";
 import { timeAgo } from "@/lib/utils";
 import { cn } from "@/lib/utils";
-import type { NotificationType } from "@/types";
-import { useCallback, useEffect, useState } from "react";
+import type { NotificationType, Notification } from "@/types";
+import { useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import type { RootState } from "@/store";
 
 const notificationIcons: Record<NotificationType, React.ReactNode> = {
   application_update: <Check className="w-4 h-4 text-blue-600" />,
@@ -28,39 +36,41 @@ export function NotificationPanel() {
   const dispatch = useAppDispatch();
   const router = useRouter();
   const { notificationPanelOpen } = useAppSelector((s) => s.ui);
-  const [notifications, setNotifications] = useState<any[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [loading, setLoading] = useState(false);
 
-  const fetchNotifications = useCallback(async () => {
-    try {
-      setLoading(true);
-      const data = await notificationService.getNotifications({ page: 1, pageSize: 10 });
-      setNotifications(data.data);
-      const unreadData = await notificationService.getUnreadCount();
-      setUnreadCount(unreadData.unreadCount);
-    } catch (error) {
-      console.error("Failed to fetch notifications:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  // Selectors for notifications data
+  const notifications = useAppSelector((state: RootState) => state.notification.notifications);
+  const unreadCount = useAppSelector((state: RootState) => state.notification.unreadCount);
+  const isLoading = useAppSelector((state: RootState) => state.notification.isLoading);
+  const error = useAppSelector((state: RootState) => state.notification.error);
+  const pagination = useAppSelector((state: RootState) => state.notification.pagination);
+
+  const fetchData = useCallback(async () => {
+    dispatch(fetchNotifications({ page: 1, pageSize: 10 }));
+    dispatch(fetchUnreadCount());
+  }, [dispatch]);
 
   useEffect(() => {
     if (notificationPanelOpen) {
       // Use setTimeout to avoid synchronous setState in effect
       const timer = setTimeout(() => {
-        fetchNotifications();
+        fetchData();
       }, 0);
       return () => clearTimeout(timer);
     }
-  }, [notificationPanelOpen, fetchNotifications]);
+  }, [notificationPanelOpen, fetchData]);
+
+  // Clear error when it's shown
+  useEffect(() => {
+    if (error) {
+      console.error("Notification error:", error);
+      dispatch(clearError());
+    }
+  }, [error, dispatch]);
 
   const handleMarkAllRead = async () => {
     try {
-      await notificationService.markAllAsRead();
-      setNotifications(notifications.map((n) => ({ ...n, read: true })));
-      setUnreadCount(0);
+      await dispatch(markAllAsRead()).unwrap();
+      // Unread count is already set to 0 by the reducer
     } catch (error) {
       console.error("Failed to mark all as read:", error);
     }
@@ -68,12 +78,10 @@ export function NotificationPanel() {
 
   const handleMarkAsRead = async (notificationId: string, actionUrl?: string) => {
     try {
-      await notificationService.markAsRead(notificationId);
-      setNotifications(notifications.map((n) => 
-        n._id === notificationId ? { ...n, read: true } : n
-      ));
-      setUnreadCount(Math.max(0, unreadCount - 1));
-      
+      await dispatch(markAsRead(notificationId)).unwrap();
+      // After marking as read, refetch unread count to keep in sync
+      dispatch(fetchUnreadCount());
+
       // Navigate to actionUrl if provided
       if (actionUrl) {
         dispatch(closeNotificationPanel());
@@ -89,20 +97,17 @@ export function NotificationPanel() {
   return (
     <>
       <div
-        className="fixed inset-0 z-40 bg-black/20 backdrop-blur-sm"
+        className="fixed inset-0 z-40"
         onClick={() => dispatch(closeNotificationPanel())}
       />
-      <div className="fixed right-4 top-20 w-96 bg-white rounded-2xl shadow-2xl border border-gray-200 z-50 max-h-[80vh] flex flex-col">
+      <div className="fixed top-0 right-0 w-full h-dvh lg:h-fit lg:right-4 lg:top-14 lg:w-96 bg-white lg:rounded-2xl shadow-2xl border border-gray-200 z-50 lg:max-h-[80vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
           <div>
             <h2 className="text-base font-semibold text-gray-900">Notifications</h2>
-            <p className="text-xs text-gray-500 mt-0.5">
-              {unreadCount} unread
-            </p>
           </div>
           <div className="flex items-center gap-2">
-            <button 
+            <button
               onClick={handleMarkAllRead}
               className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors text-xs"
             >
@@ -119,7 +124,7 @@ export function NotificationPanel() {
 
         {/* Notifications List */}
         <div className="overflow-y-auto flex-1">
-          {loading ? (
+          {isLoading ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <p className="text-sm text-gray-500">Loading...</p>
             </div>
@@ -129,7 +134,7 @@ export function NotificationPanel() {
               <p className="text-sm text-gray-500">No notifications yet</p>
             </div>
           ) : (
-            notifications.map((notification: any) => (
+            notifications.map((notification: Notification) => (
               <div
                 key={notification._id}
                 onClick={() => handleMarkAsRead(notification._id, notification.actionUrl)}
@@ -141,9 +146,9 @@ export function NotificationPanel() {
                 {/* Icon */}
                 <div className={cn(
                   "w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5",
-                  notificationIconBg[notification.type as NotificationType]
+                  notificationIconBg[notification.type]
                 )}>
-                  {notificationIcons[notification.type as NotificationType]}
+                  {notificationIcons[notification.type]}
                 </div>
 
                 {/* Content */}

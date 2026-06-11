@@ -8,67 +8,96 @@ import { createCompanySchema, updateCompanySchema } from "./company.validation";
 import { uploadToCloudinary } from "../../utils/cloudinaryUpload";
 
 // GET /api/v1/companies
-export const getAllCompanies = asyncHandler(async (req: Request, res: Response) => {
-  const { page, pageSize } = getPagination(req.query);
-  const industry = req.query.industry as string | undefined;
-  const verified = req.query.verified === "true" ? true : undefined;
+export const getAllCompanies = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { page, pageSize } = getPagination(req.query);
+    const industry = req.query.industry as string | undefined;
+    const verified = req.query.verified === "true" ? true : undefined;
 
-  const result = await CompanyService.getAllCompanies(page, pageSize, industry, verified);
-  res.json(new ApiResponse(200, result, "Companies fetched successfully"));
-});
+    const result = await CompanyService.getAllCompanies(
+      page,
+      pageSize,
+      industry,
+      verified,
+    );
+    res.json(new ApiResponse(200, result, "Companies fetched successfully"));
+  },
+);
 
 // GET /api/v1/companies/:id
-export const getCompanyById = asyncHandler(async (req: Request, res: Response) => {
-  const company = await CompanyService.getCompanyById(req.params.id as string);
-  res.json(new ApiResponse(200, company, "Company fetched successfully"));
-});
+export const getCompanyById = asyncHandler(
+  async (req: Request, res: Response) => {
+    const company = await CompanyService.getCompanyById(
+      req.params.id as string,
+    );
+    res.json(new ApiResponse(200, company, "Company fetched successfully"));
+  },
+);
 
 // POST /api/v1/companies
-export const createCompany = asyncHandler(async (req: AuthRequest, res: Response) => {
-  let logoUrl = req.body.logo || "";
+export const createCompany = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
+    let logoUrl = req.body.logo || "";
 
-  // Handle file upload if present
-  if (req.file) {
-    const uploadResult = await uploadToCloudinary(req.file, "company-logos");
-    logoUrl = uploadResult.url;
-  }
+    // Handle file upload if present
+    if (req.file) {
+      const uploadResult = await uploadToCloudinary(req.file, "company-logos");
+      logoUrl = uploadResult.url;
+    }
 
-  const input = createCompanySchema.parse({
-    ...req.body,
-    logo: logoUrl,
-  });
-  // Convert foundedYear to number if present
-  if (input.foundedYear) {
-    (input as any).foundedYear = parseInt(input.foundedYear);
-  }
-  const company = await CompanyService.createCompany(req.userId!, input);
-  res.status(201).json(new ApiResponse(201, company, "Company created successfully"));
-});
+    const input = createCompanySchema.parse({
+      ...req.body,
+      logo: logoUrl,
+    });
+    // Convert foundedYear to number if present
+    if (input.foundedYear) {
+      (input as any).foundedYear = parseInt(input.foundedYear);
+    }
+    const company = await CompanyService.createCompany(req.userId!, input);
+    res
+      .status(201)
+      .json(new ApiResponse(201, company, "Company created successfully"));
+  },
+);
 
 // PUT /api/v1/companies/:id
-export const updateCompany = asyncHandler(async (req: AuthRequest, res: Response) => {
-  let logoUrl = req.body.logo || "";
+export const updateCompany = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
+    let logoUrl = req.body.logo || "";
 
-  // Handle file upload if present
-  if (req.file) {
-    const uploadResult = await uploadToCloudinary(req.file, "company-logos");
-    logoUrl = uploadResult.url;
-  }
+    // Handle file upload if present
+    if (req.file) {
+      const uploadResult = await uploadToCloudinary(req.file, "company-logos");
+      logoUrl = uploadResult.url;
+    }
+    const benefits = req.body.benefits ? req.body.benefits.split(",") : [];
 
-  const input = updateCompanySchema.parse({
-    ...req.body,
-    logo: logoUrl,
-  });
-  // Convert foundedYear to number if present
-  if (input.foundedYear) {
-    (input as any).foundedYear = parseInt(input.foundedYear);
-  }
-  const company = await CompanyService.updateCompany(req.params.id as string, req.userId!, input);
-  res.json(new ApiResponse(200, company, "Company updated successfully"));
-});
+    const input = updateCompanySchema.parse({
+      ...req.body,
+      logo: logoUrl,
+      benefits,
+    });
+    // Convert foundedYear to number if present
+    if (input.foundedYear) {
+      (input as any).foundedYear = parseInt(input.foundedYear);
+    }
+    const company = await CompanyService.updateCompany(
+      req.params.id as string,
+      req.userId!,
+      input,
+    );
+    res.json(new ApiResponse(200, company, "Company updated successfully"));
+  },
+);
 
 // DELETE /api/v1/companies/:id
-export const deleteCompany = asyncHandler(async (req: AuthRequest, res: Response) => {
-  await CompanyService.deleteCompany(req.params.id as string, req.userId!, req.userRole!);
-  res.json(new ApiResponse(200, null, "Company deleted successfully"));
-});
+export const deleteCompany = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
+    await CompanyService.deleteCompany(
+      req.params.id as string,
+      req.userId!,
+      req.userRole!,
+    );
+    res.json(new ApiResponse(200, null, "Company deleted successfully"));
+  },
+);
