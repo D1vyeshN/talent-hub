@@ -1,6 +1,6 @@
 "use client"
 import { useState, useEffect, useRef } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Building2, CheckCircle, Globe, MapPin, Star, Users, Calendar, Briefcase } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -13,6 +13,7 @@ import type { Company } from "@/types";
 
 export default function CompanyProfilePage() {
   const params = useParams();
+  const router = useRouter();
   const companyId = params.id as string;
   const [company, setCompany] = useState<Company | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -103,7 +104,7 @@ export default function CompanyProfilePage() {
         )}
         {/* Back */}
         <button
-          onClick={() => redirect("companies")}
+          onClick={() => router.back()}
           className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 mb-6"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -209,7 +210,7 @@ export default function CompanyProfilePage() {
               <div className="space-y-3">
                 {companyJobs.map((job) => (
                   <div
-                    key={job.id}
+                    key={job._id}
                     className="group flex items-center gap-4 p-4 rounded-xl border border-gray-100 hover:border-blue-200 hover:bg-blue-50/30 cursor-pointer transition-all"
                     onClick={() => redirect("job-detail")}
                   >

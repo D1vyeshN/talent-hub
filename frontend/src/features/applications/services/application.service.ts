@@ -1,3 +1,4 @@
+import { recruiterService } from "@/features/recruiter/recruiter.service";
 import { apiClient } from "@/shared/lib/apiClient";
 import type { Application, ApplicationStatus } from "@/types";
 
@@ -29,10 +30,11 @@ export const getCandidateApplications = async (
  */
 export const applyToJob = async (
   jobId: string,
+  companyId: string,
   data: { coverLetter?: string; resumeUrl?: string }
 ): Promise<Application> => {
   try {
-    return await apiClient.post<Application>("/api/application", { jobId, ...data });
+    return await apiClient.post<Application>("/api/application", { jobId, companyId, ...data });
   } catch (error: any) {
     console.error("Failed to apply to job:", error);
     if (error.response?.status === 409) {
@@ -127,31 +129,27 @@ export const updateApplicationStatus = async (
 
 /**
  * Get all applications for recruiter across all jobs
- * Note: This fetches applications for each job the recruiter has posted
+ * This ensures recruiter only sees applications for their own company's jobs
  */
 export const getAllRecruiterApplications = async (
-  jobIds: string[],
   params: { page?: number; pageSize?: number } = {}
 ): Promise<Application[]> => {
   try {
-    if (jobIds.length === 0) return [];
-    
-    // Fetch applications for each job in parallel
-    const applicationPromises = jobIds.map((jobId) =>
-      getJobApplications(jobId, params).then((response) => response.data).catch((error) => {
-        console.error(`Failed to fetch applications for job ${jobId}:`, error);
-        return []; // Return empty array for failed requests to not block other jobs
-      })
-    );
-    
-    const results = await Promise.all(applicationPromises);
-    // Flatten all applications into a single array
-    return results.flat();
+    // 1. Get recruiter profile to get their companyId
+    const recruiter = await recruiterService.getProfile();
+    if (!recruiter.companyId) {
+      console.warn("Recruiter has no company assigned");
+      return [];
+    }
+
+    // 2. Fetch applications filtered by companyId directly from backend
+    return await apiClient.get<Application[]>(`/api/application/company/${recruiter.companyId}`, params);
   } catch (error: any) {
     console.error("Failed to fetch recruiter applications:", error);
     throw new Error(error.message || "Failed to load applications");
   }
 };
+
 
 /**
  * Get application analytics/stats for recruiter

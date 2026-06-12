@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Building2, Globe, MapPin, Users, Calendar, CheckCircle, Edit3, Plus, Trash2 } from "lucide-react";
 import { companyService } from "@/features/company/services/company.service";
-import { recruiterService } from "@/features/recruiter/services/recruiter.service";
+import { recruiterService } from "@/features/recruiter/recruiter.service";
 import { validateCompanyForm, getFieldError, COMPANY_SIZE_OPTIONS } from "@/features/company/validation/company.validation";
 import { getCompanyAvatarColor, getCompanyAvatarInitial } from "@/lib/companyAvatar";
 import type { Company } from "@/types";
@@ -59,7 +59,7 @@ export default function CompanyPage() {
     try {
       setIsLoading(true);
       // Get recruiter profile to find company ID
-      const recruiter = await recruiterService.getMyProfile();
+      const recruiter = await recruiterService.getProfile();
       if (recruiter.companyId) {
         const companyData = await companyService.getById(recruiter.companyId);
         setCompany(companyData);
@@ -148,7 +148,7 @@ export default function CompanyPage() {
         logoFile || undefined
       );
       // Assign company to recruiter
-      await recruiterService.assignCompany({ companyId: newCompany._id });
+      await recruiterService.assignCompany(newCompany._id);
       setCompany(newCompany);
       setIsEditing(false);
       setLogoFile(null);

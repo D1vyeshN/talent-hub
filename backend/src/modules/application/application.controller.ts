@@ -8,10 +8,11 @@ import { createApplicationSchema, updateStatusSchema } from "./application.valid
 
 // POST /api/v1/applications
 export const applyToJob = asyncHandler(async (req: AuthRequest, res: Response) => {
-  const input       = createApplicationSchema.parse(req.body);
+  const input = createApplicationSchema.parse(req.body);
   const application = await ApplicationService.applyToJob(
     req.userId!,
     input.jobId,
+    input.companyId,
     { coverLetter: input.coverLetter, resumeUrl: input.resumeUrl }
   );
   res.status(201).json(new ApiResponse(201, application, "Application submitted successfully"));
@@ -35,6 +36,15 @@ export const getJobApplications = asyncHandler(async (req: AuthRequest, res: Res
   res.json(new ApiResponse(200, result, "Applications fetched successfully"));
 });
 
+// GET /api/v1/applications/company/:companyId
+export const getCompanyApplications = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const { page, pageSize } = getPagination(req.query);
+  const result = await ApplicationService.getCompanyApplications(
+    req.params.companyId as string, page, pageSize
+  );
+  res.json(new ApiResponse(200, result, "Applications fetched successfully"));
+});
+
 // PATCH /api/v1/applications/:id/status  (recruiter)
 export const updateStatus = asyncHandler(async (req: AuthRequest, res: Response) => {
   const { status, notes } = updateStatusSchema.parse(req.body);
@@ -47,7 +57,7 @@ export const updateStatus = asyncHandler(async (req: AuthRequest, res: Response)
 // GET /api/v1/applications/:id
 export const getApplicationById = asyncHandler(async (req: AuthRequest, res: Response) => {
   const application = await ApplicationService.getApplicationById(
-    req.params.id as string, req.userId!, req.userRole! );
+    req.params.id as string, req.userId!, req.userRole!);
   res.json(new ApiResponse(200, application, "Application fetched successfully"));
 });
 

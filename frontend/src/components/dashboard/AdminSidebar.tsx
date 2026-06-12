@@ -205,7 +205,7 @@ export function AdminSidebar() {
           </button>
         </div>
 
-        <div className="absolute -right-8 bottom-10 z-50 bg-white border border-gray-600 rounded-lg">
+        <div className="absolute lg:hidden -right-8 bottom-10 z-50 bg-white border border-gray-600 rounded-lg">
           <button
             onClick={() => {
               setMobileOpen(!mobileOpen);

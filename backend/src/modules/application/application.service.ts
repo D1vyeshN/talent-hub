@@ -7,20 +7,25 @@ import { Notification } from "../notification/notification.model";
 import mongoose from "mongoose";
 import { ApplicationStatus } from "@/shared/types";
 import { createNotification } from "../notification/notification.service";
+import { Company } from "../company/company.model";
 
 export const applyToJob = async (
   candidateId: string,
   jobId: string,
+  companyId: string,
   data: { coverLetter?: string; resumeUrl?: string }
 ) => {
   const job = await Job.findById(jobId);
   if (!job || job.status !== "active") throw new ApiError(400, "Job is not available");
 
+  const company = await Company.findById(companyId);
+  if (!company) throw new ApiError(404, "Company not found");
+
   const existing = await Application.findOne({ jobId, candidateId });
   if (existing) throw new ApiError(409, "You already applied to this job");
 
   const [application] = await Promise.all([
-    Application.create({ jobId, candidateId, ...data }),
+    Application.create({ jobId, companyId, candidateId, ...data }),
     Job.findByIdAndUpdate(jobId, { $inc: { applicantsCount: 1 } }),
     Candidate.findByIdAndUpdate(candidateId, { $addToSet: { appliedJobs: jobId } }),
   ]);
@@ -43,10 +48,15 @@ export const updateApplicationStatus = async (
   status: string,
   notes?: string
 ) => {
-  const application = await Application.findById(applicationId).populate("jobId");
+  const application = await Application.findById(applicationId)
+    .populate('candidate', 'name email avatar')
+    .populate('job', 'title company recruiter')
+    .populate('company', 'name logo');
+
   if (!application) throw new ApiError(404, "Application not found");
 
-  const job = application.jobId as unknown as { recruiter: mongoose.Types.ObjectId; title: string };
+  const job = application.job as unknown as { recruiter: mongoose.Types.ObjectId; title: string };
+
   if (job.recruiter.toString() !== recruiterId)
     throw new ApiError(403, "Not authorized");
 
@@ -101,6 +111,25 @@ export const getCandidateApplications = async (
     Application.countDocuments({ candidateId }),
   ]);
   return buildPaginatedResponse(data, total, page, pageSize);
+};
+
+export const getCompanyApplications = async (companyId: string, page: number, pageSize: number) => {
+  try {
+    // Get all applications for this company
+    const applications = await Application.find({ companyId })
+      .populate('candidate', 'name email avatar')
+      .populate('job', 'title company')
+      .populate('company', 'name logo')
+      .sort({ appliedAt: -1 })
+      .skip((page - 1) * pageSize)
+      .limit(pageSize);
+
+    const total = await Application.countDocuments({ companyId });
+
+    return buildPaginatedResponse(applications, total, Number(page), Number(pageSize));
+  } catch (error) {
+    throw new ApiError(500, "Failed to fetch applications");
+  }
 };
 
 export const getJobApplications = async (

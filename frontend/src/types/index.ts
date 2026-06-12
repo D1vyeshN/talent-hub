@@ -11,6 +11,8 @@ export interface User {
   isVerified: boolean;
   isBlocked: boolean;
   createdAt: string;
+  company?: string;
+  designation?: string;
 }
 
 export interface Candidate extends User {
@@ -91,11 +93,12 @@ export interface Job {
 export interface Application {
   _id: string;
   jobId: string;
-  job: Job;
+  job?: Job;
+  companyId: string;
   candidateId: string;
   candidate?: Candidate;
   status: ApplicationStatus;
-  appliedAt: string;
+  createdAt: string;
   updatedAt: string;
   coverLetter?: string;
   resumeUrl?: string;

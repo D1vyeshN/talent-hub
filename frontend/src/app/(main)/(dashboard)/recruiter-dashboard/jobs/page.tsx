@@ -7,7 +7,7 @@ import {
   fetchJobs,
   updateJobStatus,
   removeJob,
-} from "@/features/recruiterProfile/store/recruiterProfileSlice";
+} from "@/features/recruiter/recruiterSlice";
 import {
   Briefcase,
   Edit3,
@@ -26,6 +26,7 @@ import { Modal } from "@/components/ui/Modal";
 import { timeAgo } from "@/lib/utils";
 import Image from "next/image";
 import { JobStatus } from "@/types";
+import { Avatar } from "@/components/ui/Avatar";
 
 function CompanyLogo({ logo, name, size = "md" }: { logo?: string; name: string; size?: "sm" | "md" | "lg" }) {
   const sizeClasses = {
@@ -72,7 +73,7 @@ export default function JobsPage() {
   const dispatch = useAppDispatch();
   const router = useRouter();
   const { jobs: myJobs, isLoading } = useAppSelector(
-    (s) => s.recruiterProfile
+    (s) => s.recruiter
   );
   const [statusDropdownOpen, setStatusDropdownOpen] = useState<string | null>(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -144,16 +145,6 @@ export default function JobsPage() {
           <p className="text-sm text-gray-500 mb-4">
             Post your first job to start receiving applications.
           </p>
-          {/* <Button
-            variant="primary"
-            icon={<Plus className="w-4 h-4" />}
-            onClick={() => {
-              const { redirect } = require("next/navigation");
-              redirect("/recruiter-dashboard/jobs/post");
-            }}
-          >
-            Post a Job
-          </Button> */}
         </Card>
       )}
 
@@ -163,7 +154,7 @@ export default function JobsPage() {
           {myJobs.map((job) => (
             <Card key={job._id} hoverable>
               <div className="flex items-start gap-4">
-                <CompanyLogo logo={job.company?.logo} name={job.company?.name || "Company"} size="md" />
+                <Avatar src={job.company?.logo} name={job.company?.name || "Company"} size="md" shape="squre" />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-3">
                     <div>

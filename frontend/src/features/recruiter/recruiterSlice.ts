@@ -2,12 +2,12 @@ import {
   createSlice,
   createAsyncThunk,
 } from "@reduxjs/toolkit";
-import { recruiterProfileService } from "@/features/recruiterProfile/services/recruiterProfile.service";
+import { recruiterService } from "@/features/recruiter/recruiter.service";
 import { Application, ApplicationStatus, Candidate, Job, JobStatus } from "@/types";
 
 /* ─── State ──────────────────────────────────────────────────────────── */
 
-interface RecruiterProfileState {
+interface RecruiterState {
   jobs: Job[];
   applications: Application[];
   candidates: Candidate[];
@@ -25,7 +25,7 @@ interface RecruiterProfileState {
   error: string | null;
 }
 
-const initialState: RecruiterProfileState = {
+const initialState: RecruiterState = {
   jobs: [],
   applications: [],
   candidates: [],
@@ -38,10 +38,10 @@ const initialState: RecruiterProfileState = {
 /* ─── Thunks ─────────────────────────────────────────────────────────── */
 
 export const fetchDashboard = createAsyncThunk(
-  "recruiterProfile/fetchDashboard",
+  "recruiter/fetchDashboard",
   async (_void, { rejectWithValue }) => {
     try {
-      return await recruiterProfileService.getDashboard();
+      return await recruiterService.getDashboard();
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to load dashboard";
       return rejectWithValue(message);
@@ -50,10 +50,10 @@ export const fetchDashboard = createAsyncThunk(
 );
 
 export const fetchJobs = createAsyncThunk(
-  "recruiterProfile/fetchJobs",
+  "recruiter/fetchJobs",
   async (_void, { rejectWithValue }) => {
     try {
-      const response = await recruiterProfileService.getJobs();
+      const response = await recruiterService.getJobs();
       // Service returns paginated response { data, total, page, pageSize, totalPages }
       // Extract the data array for the slice
       return response.data;
@@ -65,10 +65,10 @@ export const fetchJobs = createAsyncThunk(
 );
 
 export const fetchApplications = createAsyncThunk(
-  "recruiterProfile/fetchApplications",
+  "recruiter/fetchApplications",
   async (_void, { rejectWithValue }) => {
     try {
-      return await recruiterProfileService.getApplications();
+      return await recruiterService.getApplications();
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to load applications";
       return rejectWithValue(message);
@@ -77,10 +77,10 @@ export const fetchApplications = createAsyncThunk(
 );
 
 export const fetchCandidates = createAsyncThunk(
-  "recruiterProfile/fetchCandidates",
+  "recruiter/fetchCandidates",
   async (_void, { rejectWithValue }) => {
     try {
-      return await recruiterProfileService.getCandidates();
+      return await recruiterService.getCandidates();
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to load candidates";
       return rejectWithValue(message);
@@ -89,13 +89,13 @@ export const fetchCandidates = createAsyncThunk(
 );
 
 export const updateJobStatus = createAsyncThunk(
-  "recruiterProfile/updateJobStatus",
+  "recruiter/updateJobStatus",
   async (
     { jobId, status }: { jobId: string; status: JobStatus },
     { rejectWithValue },
   ) => {
     try {
-      const response = await recruiterProfileService.updateJobStatus(jobId, status);
+      const response = await recruiterService.updateJobStatus(jobId, status);
       return response.data;
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to update job status";
@@ -105,10 +105,10 @@ export const updateJobStatus = createAsyncThunk(
 );
 
 export const removeJob = createAsyncThunk(
-  "recruiterProfile/removeJob",
+  "recruiter/removeJob",
   async (jobId: string, { rejectWithValue }) => {
     try {
-      await recruiterProfileService.deleteJob(jobId);
+      await recruiterService.deleteJob(jobId);
       return jobId;
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to delete job";
@@ -118,13 +118,13 @@ export const removeJob = createAsyncThunk(
 );
 
 export const updateApplicationStatus = createAsyncThunk(
-  "recruiterProfile/updateApplicationStatus",
+  "recruiter/updateApplicationStatus",
   async (
     { applicationId, status }: { applicationId: string; status: ApplicationStatus },
     { rejectWithValue },
   ) => {
     try {
-      return await recruiterProfileService.updateApplicationStatus(applicationId, status);
+      return await recruiterService.updateApplicationStatus(applicationId, status);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to update application";
       return rejectWithValue(message);
@@ -133,10 +133,10 @@ export const updateApplicationStatus = createAsyncThunk(
 );
 
 export const toggleSaveCandidate = createAsyncThunk(
-  "recruiterProfile/toggleSaveCandidate",
+  "recruiter/toggleSaveCandidate",
   async (candidateId: string, { rejectWithValue }) => {
     try {
-      await recruiterProfileService.saveCandidate(candidateId);
+      await recruiterService.saveCandidate(candidateId);
       return candidateId;
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to save candidate";
@@ -147,8 +147,8 @@ export const toggleSaveCandidate = createAsyncThunk(
 
 /* ─── Slice ──────────────────────────────────────────────────────────── */
 
-const recruiterProfileSlice = createSlice({
-  name: "recruiterProfile",
+const recruiterSlice = createSlice({
+  name: "recruiter",
   initialState,
   reducers: {
     clearError(state) {
@@ -271,5 +271,5 @@ const recruiterProfileSlice = createSlice({
 
 /* ─── Exports ─────────────────────────────────────────────────────────── */
 
-export const { clearError, clearJobs } = recruiterProfileSlice.actions;
-export default recruiterProfileSlice.reducer;
+export const { clearError, clearJobs } = recruiterSlice.actions;
+export default recruiterSlice.reducer;

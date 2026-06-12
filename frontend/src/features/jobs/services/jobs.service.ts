@@ -60,6 +60,7 @@ export interface JobQueryParams {
   page?: number;
   pageSize?: number;
   isRemote?: boolean;
+  companyId?: string;
 }
 
 export interface PaginatedJobsResponse {

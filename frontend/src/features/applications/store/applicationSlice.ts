@@ -50,11 +50,11 @@ export const fetchCandidateApplications = createAsyncThunk(
 export const applyToJob = createAsyncThunk(
   "application/applyToJob",
   async (
-    { jobId, data }: { jobId: string; data: { coverLetter?: string; resumeUrl?: string } },
+    { jobId, companyId, data }: { jobId: string; companyId: string; data: { coverLetter?: string; resumeUrl?: string } },
     { rejectWithValue }
   ) => {
     try {
-      return await applicationService.applyToJob(jobId, data);
+      return await applicationService.applyToJob(jobId, companyId, data);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to apply to job";
       return rejectWithValue(message);
@@ -93,9 +93,10 @@ export const fetchJobApplications = createAsyncThunk(
 
 export const fetchAllRecruiterApplications = createAsyncThunk(
   "application/fetchAllRecruiterApplications",
-  async (jobIds: string[], { rejectWithValue }) => {
+  async (_, { rejectWithValue }) => {
     try {
-      return await applicationService.getAllRecruiterApplications(jobIds);
+      const response: any = await applicationService.getAllRecruiterApplications();
+      return response.data;
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to load applications";
       return rejectWithValue(message);

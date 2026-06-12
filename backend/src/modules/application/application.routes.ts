@@ -35,6 +35,13 @@ router.get(
   ApplicationController.getJobApplications
 );
 
+router.get(
+  '/company/:companyId', 
+  authenticate, 
+  authorizeRoles("recruiter"),
+  ApplicationController.getCompanyApplications
+);
+
 router.patch(
   "/:id/status",
   authenticate,

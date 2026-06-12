@@ -140,7 +140,7 @@ export default function CandidateApplicationsPage() {
             )}
           </div>
         ) : (
-          filtered.map((app: Application) => {
+          filtered?.map((app: Application) => {
             const job = app.job || { title: "Unknown Job", company: { name: "Unknown Company", logo: "" } };
             const config = APPLICATION_STATUS_CONFIG[app.status as keyof typeof APPLICATION_STATUS_CONFIG] || APPLICATION_STATUS_CONFIG.applied;
             

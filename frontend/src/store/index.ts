@@ -1,7 +1,7 @@
 import { configureStore } from "@reduxjs/toolkit";
 import uiReducer from "./slices/uiSlice";
 import authReducer, { logout } from "@/features/auth/store/authSlice";
-import recruiterProfileReducer from "@/features/recruiterProfile/store/recruiterProfileSlice";
+import recruiterReducer from "@/features/recruiter/recruiterSlice";
 import candidateReducer from "./slices/candidateSlice";
 import applicationReducer from "@/features/applications/store/applicationSlice";
 import notificationReducer from "@/features/notifications/store/notificationSlice";
@@ -11,7 +11,7 @@ export const store = configureStore({
   reducer: {
     auth: authReducer,
     ui: uiReducer,
-    recruiterProfile: recruiterProfileReducer,
+    recruiter: recruiterReducer,
     candidate: candidateReducer,
     application: applicationReducer,
     notification: notificationReducer,

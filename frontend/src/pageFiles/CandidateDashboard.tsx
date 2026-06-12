@@ -315,7 +315,7 @@ function OverviewTab({ redirect: _redirect, myApplications }: {
               return (
                 <div key={app._id} className="flex items-center gap-4 p-3 rounded-xl border border-gray-100 hover:border-gray-200 hover:bg-gray-50 transition-all cursor-pointer">
                   <div className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center text-xl flex-shrink-0">
-                    {app.job?.company?.logo || "🏢"}
+                    <Avatar src={app.job?.company?.logo} name={app.job?.company?.name}/> 
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-gray-900 truncate">{app.job?.title || "Unknown Job"}</p>

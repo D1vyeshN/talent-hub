@@ -57,7 +57,7 @@ export interface RecruiterCandidate {
   location: string;
 }
 
-export const recruiterProfileService = {
+export const recruiterService = {
   /** GET /api/recruiter/me — get my profile */
   getProfile: (): Promise<Recruiter> =>
     apiClient.get<Recruiter>("/api/recruiter/me"),

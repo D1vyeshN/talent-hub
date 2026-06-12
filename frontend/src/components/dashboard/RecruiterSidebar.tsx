@@ -54,13 +54,13 @@ export function RecruiterSidebar() {
       exact: true,
       section: "Jobs",
     },
-    {
-      label: "Post a Job",
-      icon: <Plus className="w-5 h-5" />,
-      href: "/recruiter-dashboard/jobs/post",
-      exact: true,
-      section: "Jobs",
-    },
+    // {
+    //   label: "Post a Job",
+    //   icon: <Plus className="w-5 h-5" />,
+    //   href: "/recruiter-dashboard/jobs/post",
+    //   exact: true,
+    //   section: "Jobs",
+    // },
     {
       label: "Applications",
       icon: <Users className="w-5 h-5" />,
@@ -68,20 +68,20 @@ export function RecruiterSidebar() {
       exact: true,
       section: "Candidates",
     },
-    {
-      label: "Candidates",
-      icon: <Search className="w-5 h-5" />,
-      href: "/recruiter-dashboard/candidates",
-      exact: true,
-      section: "Candidates",
-    },
-    {
-      label: "Interviews",
-      icon: <Calendar className="w-5 h-5" />,
-      href: "/recruiter-dashboard/interviews",
-      exact: true,
-      section: "Candidates",
-    },
+    // {
+    //   label: "Candidates",
+    //   icon: <Search className="w-5 h-5" />,
+    //   href: "/recruiter-dashboard/candidates",
+    //   exact: true,
+    //   section: "Candidates",
+    // },
+    // {
+    //   label: "Interviews",
+    //   icon: <Calendar className="w-5 h-5" />,
+    //   href: "/recruiter-dashboard/interviews",
+    //   exact: true,
+    //   section: "Candidates",
+    // },
     {
       label: "Messages",
       icon: <MessageSquare className="w-5 h-5" />,
@@ -257,7 +257,7 @@ export function RecruiterSidebar() {
             return items;
           })()}
         </nav>
-        <div className="absolute -right-8 bottom-10 z-50 bg-white border border-gray-600 rounded-lg">
+        <div className="absolute lg:hidden -right-8 bottom-10 z-50 bg-white border border-gray-600 rounded-lg">
           <button
             onClick={() => {
               setMobileOpen(!mobileOpen);

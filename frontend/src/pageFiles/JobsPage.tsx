@@ -11,6 +11,7 @@ import { formatSalaryRange, timeAgo, getJobTypeBadgeColor, cn } from "@/lib/util
 import type { JobType, JobLevel, Job } from "@/types";
 import { jobsService } from "@/features/jobs/services/jobs.service";
 import Image from "next/image";
+import { Avatar } from "@/components/ui/Avatar";
 
 function CompanyLogo({ logo, name, size = "md" }: { logo?: string; name: string; size?: "sm" | "md" | "lg" }) {
   const sizeClasses = {
@@ -407,8 +408,9 @@ export default function JobsPage() {
                     >
                       <div className="flex items-start gap-4">
                         {/* Logo */}
-                        <CompanyLogo logo={job.company?.logo} name={job.company?.name || "Company"} size="md" />
+                        {/* <CompanyLogo logo={job.company?.logo} name={job.company?.name || "Company"} size="md" /> */}
 
+<Avatar src={job?.company?.logo} name={job?.company?.name}/> 
                         {/* Content */}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between gap-3">

@@ -112,13 +112,13 @@ export default function JobDetailPage() {
 
     fetchCandidateProfile();
   }, [jobId]);
-  
-  const handleApply = async () => {
+
+  const handleApply = async (jobDetails: Job) => {
     setApplying(true);
     setApplyError(null);
     try {
       // Use candidate's resume URL from their profile
-      await applyToJob(jobId, { coverLetter, resumeUrl: candidateResume });
+      await applyToJob(jobId, jobDetails?.company?._id as string, { coverLetter, resumeUrl: candidateResume });
       setApplied(true);
       setApplyModalOpen(false);
       setCoverLetter("");
@@ -509,7 +509,7 @@ export default function JobDetailPage() {
               size="md"
               fullWidth
               loading={applying}
-              onClick={handleApply}
+              onClick={() => handleApply(job as Job)}
             >
               Submit Application
             </Button>

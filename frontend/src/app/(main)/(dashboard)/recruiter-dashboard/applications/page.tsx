@@ -1,10 +1,21 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import {
+  useReactTable,
+  getCoreRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  getFilteredRowModel,
+  ColumnDef,
+  SortingState,
+  ColumnFiltersState,
+  flexRender,
+} from "@tanstack/react-table";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import {
   fetchJobs,
-} from "@/features/recruiterProfile/store/recruiterProfileSlice";
+} from "@/features/recruiter/recruiterSlice";
 import {
   fetchAllRecruiterApplications,
   updateApplicationStatus,
@@ -15,30 +26,64 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Avatar } from "@/components/ui/Avatar";
 import { Input } from "@/components/ui/Input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 import { Eye, CheckCircle, XCircle, ArrowUpDown, Download } from "lucide-react";
-import type { Application } from "@/types";
+import type { Application, ApplicationStatus, Candidate } from "@/types";
+import { TooltipWrapper } from "@/components/shared/TooltipWrapper";
 
 export default function ApplicationsPage() {
   const dispatch = useAppDispatch();
-  const { jobs } = useAppSelector((s) => s.recruiterProfile);
   const { recruiterApplications, isLoading } = useAppSelector((s) => s.application);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [sorting, setSorting] = useState<SortingState>([{ id: "createdAt", desc: true }]);
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [globalFilter, setGlobalFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [sortBy, setSortBy] = useState<string>("appliedAt");
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
 
   useEffect(() => {
-    // Fetch recruiter's jobs first, then fetch applications for each job
     dispatch(fetchJobs());
   }, [dispatch]);
 
   useEffect(() => {
-    // Once jobs are loaded, fetch applications for all jobs
-    if (jobs.length > 0) {
-      const jobIds = jobs.map((job) => job._id);
-      dispatch(fetchAllRecruiterApplications(jobIds));
+    dispatch(fetchAllRecruiterApplications());
+  }, [dispatch]);
+
+  const downloadResume = async (data: Application) => {
+
+    const res = await fetch(data.resumeUrl as string);
+    if (data.status === "applied") {
+      dispatch(updateApplicationStatus({ applicationId: data._id, status: "screening" }));
     }
-  }, [jobs, dispatch]);
+    const blob = await res.blob();
+
+    const blobUrl = window.URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = blobUrl;
+
+    a.download = `${data.candidate?.name.replace(/\s+/g, "_") || "candidate"}_resume.pdf`;
+
+    document.body.appendChild(a);
+    a.click();
+
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(blobUrl);
+  };
 
   const filters = [
     { id: "all", label: "All Applications" },
@@ -47,56 +92,207 @@ export default function ApplicationsPage() {
     { id: "interview", label: "Interview" },
     { id: "offer", label: "Offer" },
     { id: "rejected", label: "Rejected" },
+    { id: "hired", label: "Hired" },
   ];
 
-  const filtered = recruiterApplications.filter((a: Application) => {
-    const candidate = a.candidate || { name: "Unknown Candidate" };
-    const matchesSearch =
-      !searchQuery ||
-      candidate.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      a.job?.title?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === "all" || a.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  }).sort((a: Application, b: Application) => {
-    let comparison = 0;
-    
-    if (sortBy === "appliedAt") {
-      comparison = new Date(a.appliedAt).getTime() - new Date(b.appliedAt).getTime();
-    } else if (sortBy === "candidateName") {
-      const candidateA = a.candidate?.name || "";
-      const candidateB = b.candidate?.name || "";
-      comparison = candidateA.localeCompare(candidateB);
-    } else if (sortBy === "jobTitle") {
-      const jobA = a.job?.title || "";
-      const jobB = b.job?.title || "";
-      comparison = jobA.localeCompare(jobB);
-    } else if (sortBy === "status") {
-      comparison = a.status.localeCompare(b.status);
-    }
-    
-    return sortOrder === "asc" ? comparison : -comparison;
+  const columns: ColumnDef<Application>[] = [
+    {
+      accessorKey: "candidate",
+      header: "Candidate",
+      cell: ({ row }) => {
+        const candidate = (row.original.candidate as Candidate) || { name: "Unknown Candidate", experience: 0, avatar: "" };
+        return (
+          <div className="flex items-center gap-3">
+            <Avatar src={candidate.avatar} name={candidate.name} size="sm" />
+            <div>
+              <p className="text-sm font-medium text-gray-900">{candidate.name}</p>
+            </div>
+          </div>
+        );
+      },
+      sortingFn: (rowA, rowB) => {
+        const nameA = (rowA.original.candidate as Candidate)?.name || "";
+        const nameB = (rowB.original.candidate as Candidate)?.name || "";
+        return nameA.localeCompare(nameB);
+      },
+    },
+    {
+      accessorKey: "jobTitle",
+      header: "Position",
+      cell: ({ row }) => (
+        <p className="text-sm text-gray-700">{row.original.job?.title || "Unknown role"}</p>
+      ),
+      sortingFn: (rowA, rowB) => {
+        const jobA = rowA.original.job?.title || "";
+        const jobB = rowB.original.job?.title || "";
+        return jobA.localeCompare(jobB);
+      },
+    },
+    {
+      accessorKey: "createdAt",
+      header: "Applied",
+      cell: ({ row }) => (
+        <p className="text-xs text-gray-500">{new Date(row.original.createdAt).toLocaleDateString()}</p>
+      ),
+    },
+    {
+      accessorKey: "status",
+      header: "Status",
+      cell: ({ row }) => {
+        const config = APPLICATION_STATUS_CONFIG[row.original.status as keyof typeof APPLICATION_STATUS_CONFIG] || APPLICATION_STATUS_CONFIG.applied;
+        return (
+          <span
+            className={cn(
+              "text-xs font-medium px-2.5 py-1 rounded-full",
+              config.color,
+              config.bg,
+            )}
+          >
+            {config.label}
+          </span>
+        );
+      },
+    },
+    {
+      id: "actions",
+      header: "Actions",
+      cell: ({ row }) => {
+        const app = row.original;
+        const switchStatus = (status: ApplicationStatus, isStatus = false) => {
+          if (status === "applied") {
+            return isStatus ? "interview" : "Move to Interview";
+          }
+          if (status === "screening") {
+            return isStatus ? "interview" : "Move to Interview";
+          }
+          if (status === "interview") {
+            return isStatus ? "offer" : "Move to Offer";
+          }
+          if (status === "offer") {
+            return isStatus ? "hired" : "Move to Hired";
+          }
+
+          return "Move to Screening";
+        };
+        return (
+          <div className="flex justify-center gap-1">
+            <TooltipWrapper message="View Profile">
+              <Button variant="ghost" size="xs" onClick={() => {
+                if (app.status === "applied") {
+                  handleStatusUpdate(app._id, "screening");
+                }
+              }}>
+                <a href={app.resumeUrl} target="_blank" rel="noopener noreferrer">
+                  <Eye className="w-3.5 h-3.5" />
+                </a>
+              </Button>
+            </TooltipWrapper>
+            <TooltipWrapper message="Download Resume">
+              <Button variant="ghost" size="xs" onClick={() => downloadResume(app)}>
+                <Download className="w-3.5 h-3.5" />
+              </Button>
+            </TooltipWrapper>
+            {app.status !== "rejected" && app.status !== "hired" && (
+              <>
+                <TooltipWrapper message={switchStatus(app.status)}>
+                  <Button
+                    variant="ghost"
+                    size="xs"
+                    className="text-green-600 hover:bg-green-50"
+                    onClick={() => handleStatusUpdate(app._id, switchStatus(app.status, true) as ApplicationStatus)}
+                  >
+                    <CheckCircle className="w-3.5 h-3.5" />
+                  </Button>
+                </TooltipWrapper>
+
+                <TooltipWrapper message="Reject Application">
+                  <Button
+                    variant="ghost"
+                    size="xs"
+                    className="text-red-500 hover:bg-red-50"
+                    onClick={() => handleStatusUpdate(app._id, "rejected")}
+                  >
+                    <XCircle className="w-3.5 h-3.5" />
+                  </Button>
+                </TooltipWrapper>
+              </>
+            )}
+
+          </div>
+        );
+      },
+    },
+  ];
+
+  const table = useReactTable({
+    data: recruiterApplications || [],
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    onGlobalFilterChange: setGlobalFilter,
+    onPaginationChange: setPagination,
+    state: {
+      sorting,
+      columnFilters,
+      globalFilter,
+      pagination,
+    },
+    globalFilterFn: (row, columnId, value) => {
+      const candidate = (row.original.candidate as Candidate) ?? {
+        name: "Unknown Candidate",
+      };
+
+      const searchValue = String(value).toLowerCase();
+
+      const candidateMatch =
+        candidate.name?.toLowerCase().includes(searchValue) ?? false;
+
+      const jobTitle = row.original.job?.title ?? "";
+      const jobMatch = jobTitle.toLowerCase().includes(searchValue);
+
+      return candidateMatch || jobMatch;
+    },
+    initialState: {
+      pagination: { pageIndex: 0, pageSize: 10 },
+    },
   });
 
-  const handleStatusUpdate = (applicationId: string, newStatus: string) => {
-    dispatch(updateApplicationStatus({ applicationId, status: newStatus as any }));
+  // Update column filters when status filter changes
+  useEffect(() => {
+    if (statusFilter === "all") {
+      setColumnFilters([]);
+    } else {
+      setColumnFilters([{ id: "status", value: statusFilter }]);
+    }
+    // Reset pagination when filter changes
+    setPagination({ pageIndex: 0, pageSize: 10 });
+  }, [statusFilter]);
+
+  const handleStatusUpdate = (applicationId: string, newStatus: ApplicationStatus) => {
+    dispatch(updateApplicationStatus({ applicationId, status: newStatus }));
   };
 
   const handleExport = () => {
-    // Create CSV from filtered applications
+    const rows = table.getFilteredRowModel().rows;
     const headers = ["Candidate Name", "Job Title", "Status", "Applied Date", "Email"];
-    const rows = filtered.map((app: Application) => [
+    const rowData = rows.map((row) => row.original);
+    const rowsForExport = rowData.map((app: Application) => [
       app.candidate?.name || "Unknown",
       app.job?.title || "Unknown",
       app.status,
-      new Date(app.appliedAt).toLocaleDateString(),
+      new Date(app.createdAt).toLocaleDateString(),
       app.candidate?.email || "N/A",
     ]);
-    
+
     const csvContent = [
       headers.join(","),
-      ...rows.map((row) => row.map((cell) => `"${cell}"`).join(",")),
+      ...rowsForExport.map((row) => row.map((cell) => `"${cell}"`).join(",")),
     ].join("\n");
-    
+
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
@@ -107,6 +303,7 @@ export default function ApplicationsPage() {
     link.click();
     document.body.removeChild(link);
   };
+
 
   return (
     <div className="space-y-6">
@@ -122,7 +319,7 @@ export default function ApplicationsPage() {
           variant="outline"
           size="md"
           onClick={handleExport}
-          disabled={filtered.length === 0}
+          disabled={table.getFilteredRowModel().rows.length === 0}
         >
           <Download className="w-4 h-4 mr-2" />
           Export CSV
@@ -134,10 +331,10 @@ export default function ApplicationsPage() {
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="flex-1">
             <Input
-              label="Search"
+              // label="Search"
               placeholder="Search by name or job title..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              value={globalFilter}
+              onChange={(e) => setGlobalFilter(e.target.value)}
             />
           </div>
           <div className="flex gap-2 flex-wrap">
@@ -156,134 +353,133 @@ export default function ApplicationsPage() {
               </button>
             ))}
           </div>
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            className="px-3 py-2 text-xs font-medium rounded-lg border border-gray-200 bg-white text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="appliedAt">Sort by Date</option>
-            <option value="candidateName">Sort by Candidate</option>
-            <option value="jobTitle">Sort by Job</option>
-            <option value="status">Sort by Status</option>
-          </select>
-          <button
-            onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
-            className="px-3 py-2 text-xs font-medium rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-100 transition-colors flex items-center gap-1"
-          >
-            <ArrowUpDown className="w-3.5 h-3.5" />
-            {sortOrder === "asc" ? "Asc" : "Desc"}
-          </button>
         </div>
       </Card>
 
       {/* Table */}
       <Card padding="none">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="border-b border-gray-100 bg-gray-50">
-                <th className="px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Candidate
-                </th>
-                <th className="px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Position
-                </th>
-                <th className="px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Applied
-                </th>
-                <th className="px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {isLoading ? (
-                <tr>
-                  <td colSpan={5} className="px-5 py-12 text-center text-gray-500 text-sm">
-                    Loading applications...
-                  </td>
-                </tr>
-              ) : filtered.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="px-5 py-12 text-center text-gray-500 text-sm">
-                    No applications match your filters.
-                  </td>
-                </tr>
-              ) : (
-                filtered.map((app: Application) => {
-                  const candidate = app.candidate || { name: "Unknown Candidate", experience: 0, avatar: "" };
-                  const config = APPLICATION_STATUS_CONFIG[app.status as keyof typeof APPLICATION_STATUS_CONFIG] || APPLICATION_STATUS_CONFIG.applied;
-                  return (
-                    <tr
-                      key={app._id}
-                      className={cn(
-                        "border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors",
-                      )}
-                    >
-                      <td className="px-5 py-4">
-                        <div className="flex items-center gap-3">
-                          <Avatar src={(candidate as any).avatar} name={candidate.name} size="sm" />
-                          <div>
-                            <p className="text-sm font-medium text-gray-900">{candidate.name}</p>
-                            <p className="text-xs text-gray-400">{candidate.experience || "N/A"} yrs exp</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-5 py-4">
-                        <p className="text-sm text-gray-700">{app.job?.title || "Unknown role"}</p>
-                      </td>
-                      <td className="px-5 py-4">
-                        <p className="text-xs text-gray-500">{new Date(app.appliedAt).toLocaleDateString()}</p>
-                      </td>
-                      <td className="px-5 py-4">
-                        <span
-                          className={cn(
-                            "text-xs font-medium px-2.5 py-1 rounded-full",
-                            config.color,
-                            config.bg,
-                          )}
+        <Table>
+          <TableHeader>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map((header) => (
+                  <TableHead
+                    key={header.id}
+                    className={cn(
+                      "px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider",
+                      header.id === "actions" && "text-center"
+                    )}
+                  >
+                    {header.isPlaceholder
+                      ? null
+                      : header.column.getToggleSortingHandler() ? (
+                        <button
+                          onClick={header.column.getToggleSortingHandler()}
+                          className="flex items-center gap-1 hover:text-gray-700"
                         >
-                          {config.label}
-                        </span>
-                      </td>
-                      <td className="px-5 py-4">
-                        <div className="flex justify-end gap-1">
-                          <Button variant="ghost" size="xs">
-                            <Eye className="w-3.5 h-3.5" />
-                          </Button>
-                          {app.status !== "rejected" && app.status !== "offer" && (
-                            <>
-                              <Button
-                                variant="ghost"
-                                size="xs"
-                                className="text-green-600 hover:bg-green-50"
-                                onClick={() => handleStatusUpdate(app._id, "interview")}
-                              >
-                                <CheckCircle className="w-3.5 h-3.5" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="xs"
-                                className="text-red-500 hover:bg-red-50"
-                                onClick={() => handleStatusUpdate(app._id, "rejected")}
-                              >
-                                <XCircle className="w-3.5 h-3.5" />
-                              </Button>
-                            </>
+                          {flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
                           )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
+                          {header.column.getIsSorted() === "asc" ? (
+                            <ArrowUpDown className="w-3 h-3" />
+                          ) : header.column.getIsSorted() === "desc" ? (
+                            <ArrowUpDown className="w-3 h-3 rotate-180" />
+                          ) : null}
+                        </button>
+                      )
+                        : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
+                  </TableHead>
+                ))}
+              </TableRow>
+            ))}
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+              <TableRow>
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center"
+                >
+                  Loading applications...
+                </TableCell>
+              </TableRow>
+            ) : table.getRowModel().rows.length === 0 ? (
+              <TableRow>
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center"
+                >
+                  No applications match your filters.
+                </TableCell>
+              </TableRow>
+            ) : (
+              table.getRowModel().rows.map((row) => (
+                <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id} className="px-5 py-4">
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
       </Card>
+
+      {/* Pagination */}
+      {table.getFilteredRowModel().rows.length !== 0 && (
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-gray-500 w-1/3">
+            Showing {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1} to{" "}
+            {Math.min(
+              (table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize,
+              table.getFilteredRowModel().rows.length
+            )}{" "}
+            of {table.getFilteredRowModel().rows.length} results
+          </div>
+          <Pagination className="w-2/3 justify-end">
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  onClick={() => table.previousPage()}
+                  className={
+                    !table.getCanPreviousPage()
+                      ? "pointer-events-none opacity-50"
+                      : "cursor-pointer"
+                  }
+                />
+              </PaginationItem>
+              {table.getPageCount() > 0 &&
+                Array.from({ length: table.getPageCount() }).map((_, i) => (
+                  <PaginationItem key={i}>
+                    <PaginationLink
+                      onClick={() => table.setPageIndex(i)}
+                      isActive={table.getState().pagination.pageIndex === i}
+                      className="cursor-pointer"
+                    >
+                      {i + 1}
+                    </PaginationLink>
+                  </PaginationItem>
+                ))}
+              <PaginationItem>
+                <PaginationNext
+                  onClick={() => table.nextPage()}
+                  className={
+                    !table.getCanNextPage()
+                      ? "pointer-events-none opacity-50"
+                      : "cursor-pointer"
+                  }
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        </div>
+      )}
     </div>
   );
 }

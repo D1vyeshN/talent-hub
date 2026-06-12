@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 
-interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: "primary" | "secondary" | "outline" | "ghost" | "danger" | "success";
   size?: "xs" | "sm" | "md" | "lg";
   loading?: boolean;
@@ -10,7 +10,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   fullWidth?: boolean;
 }
 
-const variantClasses: Record<string, string> = {
+export const variantClasses: Record<string, string> = {
   primary: "bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500 shadow-sm",
   secondary: "bg-gray-100 text-gray-700 hover:bg-gray-200 focus:ring-gray-400",
   outline: "border border-gray-300 text-gray-700 hover:bg-gray-50 focus:ring-gray-400 bg-white",

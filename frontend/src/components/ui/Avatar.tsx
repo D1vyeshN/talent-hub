@@ -1,4 +1,5 @@
 import { cn, getInitials } from "@/lib/utils";
+import Image from "next/image";
 
 interface AvatarProps {
   name: string;
@@ -7,6 +8,7 @@ interface AvatarProps {
   className?: string;
   showStatus?: boolean;
   status?: "online" | "offline" | "away";
+  shape?: "circle" | "squre";
 }
 
 const sizeClasses: Record<string, string> = {
@@ -15,6 +17,14 @@ const sizeClasses: Record<string, string> = {
   md: "w-10 h-10 text-sm",
   lg: "w-12 h-12 text-base",
   xl: "w-16 h-16 text-lg",
+};
+
+const imageSize = {
+  xs: { width: 24, height: 24 },
+  sm: { width: 32, height: 32 },
+  md: { width: 40, height: 40 },
+  lg: { width: 48, height: 48 },
+  xl: { width: 64, height: 64 },
 };
 
 const statusColors: Record<string, string> = {
@@ -34,22 +44,25 @@ function getAvatarColor(name: string): string {
 }
 
 export function Avatar({
-  name, src, size = "md", className, showStatus = false, status = "offline",
+  name, src, size = "md", className, showStatus = false, status = "offline", shape = "circle",
 }: AvatarProps) {
   const initials = getInitials(name);
   const colorClass = getAvatarColor(name);
   return (
     <div className={cn("relative inline-flex flex-shrink-0", className)}>
-      {src ? (
-        <img
+      {src && /^https?:\/\/.+/i.test(src) ? (
+        <Image
           src={src}
           alt={name}
-          className={cn("rounded-full object-cover", sizeClasses[size])}
+          className={cn("object-cover", sizeClasses[size], shape === "squre" ? "rounded-lg" : "rounded-full")}
+          width={imageSize[size].width}
+          height={imageSize[size].height}
         />
       ) : (
         <div
           className={cn(
-            "rounded-full flex items-center justify-center font-semibold text-white",
+            "flex items-center justify-center font-semibold text-white",
+            shape === "squre" ? "rounded-lg" : "rounded-full",
             sizeClasses[size],
             colorClass
           )}

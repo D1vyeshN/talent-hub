@@ -5,7 +5,7 @@ import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import {
   fetchDashboard,
   clearError,
-} from "@/features/recruiterProfile/store/recruiterProfileSlice";
+} from "@/features/recruiter/recruiterSlice";
 import {
   BarChart3,
   CheckCircle,
@@ -88,7 +88,7 @@ export default function RecruiterDashboardHome() {
     analytics,
     isLoading,
     error,
-  } = useAppSelector((s) => s.recruiterProfile);
+  } = useAppSelector((s) => s.recruiter);
   const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   useEffect(() => {

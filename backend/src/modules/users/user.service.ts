@@ -14,7 +14,7 @@ import type { CreateUserDto, UpdateUserDto, UserFilterDto, IUser } from "./user.
 
 async function enrichWithProfile(user: IUser): Promise<IUser> {
   // For now return the raw IUser (no profile data yet).
-  // ── Phase D: import candidateProfile.service.getByUserId() and recruiterProfile.service.getByUserId()
+  // ── Phase D: import candidateProfile.service.getByUserId() and recruiter.service.getByUserId()
   // ── Merge profile fields into response based on user.role.
   return user;
 }

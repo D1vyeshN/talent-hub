@@ -9,11 +9,13 @@ import { Card } from "@/components/ui/Card";
 import { cn } from "@/lib/utils";
 import { ChevronRight } from "lucide-react";
 import { jobsService, CreateJobPayload } from "@/features/jobs/services/jobs.service";
+import { useAppSelector } from "@/store/hooks";
 
 type Step = 1 | 2 | 3;
 
 export default function PostJobPage() {
   const router = useRouter();
+  const { user } = useAppSelector(state => state.auth);
   const [step, setStep] = useState<Step>(1);
   const [posting, setPosting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -139,7 +141,7 @@ export default function PostJobPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Post a New Job</h1>
           <p className="text-sm text-gray-500 mt-0.5">
-            {MOCK_RECRUITER.company} · {MOCK_RECRUITER.designation}
+            {user?.company} · {user?.designation}
           </p>
         </div>
       </div>
