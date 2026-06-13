@@ -1,5 +1,5 @@
 "use client"
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Image from "next/image";
 import { ArrowLeft, Bookmark, BookmarkCheck, Briefcase, Building2, CheckCircle, Clock, DollarSign, ExternalLink, Globe, MapPin, Share2, Star, Users } from "lucide-react";
@@ -8,59 +8,20 @@ import { Badge } from "@/components/ui/Badge";
 import { Avatar } from "@/components/ui/Avatar";
 import { Modal } from "@/components/ui/Modal";
 import { formatSalaryRange, timeAgo, getJobTypeBadgeColor, cn } from "@/lib/utils";
-import type { Job, User } from "@/types";
-import { jobsService } from "@/features/jobs/services/jobs.service";
+import type { Job } from "@/types";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { fetchJobById } from "@/features/jobs/jobSlice";
 import { applyToJob } from "@/features/applications/services/application.service";
 import { getCandidateProfile } from "@/features/candidate/services/candidate.service";
 
-// Helper component to render company logo with fallback
-function CompanyLogo({ logo, name, size = "md" }: { logo?: string; name: string; size?: "sm" | "md" | "lg" }) {
-  const sizeClasses = {
-    sm: "w-10 h-10 text-lg",
-    md: "w-12 h-12 text-2xl",
-    lg: "w-20 h-20 text-4xl",
-  };
-
-  const isUrl = logo && (logo.startsWith("http://") || logo.startsWith("https://") || logo.startsWith("/"));
-
-  if (isUrl) {
-    return (
-      <div className={`${sizeClasses[size]} bg-gray-50 rounded-xl flex items-center justify-center overflow-hidden flex-shrink-0`}>
-        <Image
-          src={logo}
-          alt={name}
-          width={size === "lg" ? 80 : size === "md" ? 48 : 40}
-          height={size === "lg" ? 80 : size === "md" ? 48 : 40}
-          className="w-full h-full object-cover"
-        />
-      </div>
-    );
-  }
-
-  // Fallback: show company name initials or emoji
-  const initials = name
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
-
-  return (
-    <div className={`${sizeClasses[size]} bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl flex items-center justify-center flex-shrink-0`}>
-      <span className="font-semibold text-blue-600">{initials}</span>
-    </div>
-  );
-}
 
 export default function JobDetailPage() {
   const router = useRouter();
   const params = useParams();
   const jobId = params.id as string;
-
-  const [job, setJob] = useState<Job | null>(null);
-  const [recruiter, setRecruiter] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const dispatch = useAppDispatch();
+  const { currentJob, isLoading, error } = useAppSelector((state) => state.job);
+  const recruiter = useMemo(() => currentJob?.recruiter || null, [currentJob]);
   const [saved, setSaved] = useState(false);
   const [applyModalOpen, setApplyModalOpen] = useState(false);
   const [applying, setApplying] = useState(false);
@@ -69,30 +30,13 @@ export default function JobDetailPage() {
   const [applyError, setApplyError] = useState<string | null>(null);
   const [candidateResume, setCandidateResume] = useState<string>("");
 
-
+  const job = currentJob as Job;
 
   useEffect(() => {
     if (!jobId) return;
 
-    const fetchJob = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const data = await jobsService.getById(jobId);
-        setJob(data);
-        // Recruiter data is already populated in the job response from backend
-        if (data.recruiter) {
-          setRecruiter(data.recruiter);
-        }
-      } catch (err: any) {
-        setError(err.message || "Failed to load job");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchJob();
-  }, [jobId]);
+    dispatch(fetchJobById(jobId));
+  }, [jobId, dispatch]);
 
   useEffect(() => {
     // Fetch candidate profile to get resume URL and check if already applied
@@ -129,7 +73,7 @@ export default function JobDetailPage() {
     }
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -142,7 +86,7 @@ export default function JobDetailPage() {
     );
   }
 
-  if (error || !job) {
+  if (error || !currentJob) {
     return (
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -157,7 +101,7 @@ export default function JobDetailPage() {
     );
   }
 
-  const similarJobs: Job[] = []; // TODO: Fetch similar jobs from backend
+  const otherJobs: Job[] = []; // TODO: Fetch other jobs from backend
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -177,7 +121,7 @@ export default function JobDetailPage() {
             {/* Job Header Card */}
             <div className="bg-white border border-gray-200 rounded-2xl p-6">
               <div className="flex items-start gap-5">
-                <CompanyLogo logo={job.company.logo} name={job.company.name} size="lg" />
+                <Avatar src={job.company.logo} name={job.company.name} size="lg" shape="squre"/>
                 <div className="flex-1">
                   <div className="flex items-start justify-between">
                     <div>
@@ -305,29 +249,29 @@ export default function JobDetailPage() {
               </div>
             </div>
 
-            {/* Similar Jobs */}
-            <div className="bg-white border border-gray-200 rounded-2xl p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Similar Jobs</h2>
+            {/* Other Jobs */}
+            {otherJobs.length > 0 && <div className="bg-white border border-gray-200 rounded-2xl p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Other Jobs</h2>
               <div className="space-y-4">
-                {similarJobs.map((sj) => (
+                {otherJobs.map((job) => (
                   <div
-                    key={sj._id}
+                    key={job._id}
                     className="flex items-center gap-4 p-4 rounded-xl border border-gray-100 hover:border-blue-200 hover:bg-blue-50/30 cursor-pointer transition-all"
-                    onClick={() => router.push(`/jobs/${sj._id}`)}
+                    onClick={() => router.push(`/jobs/${job._id}`)}
                   >
-                    <CompanyLogo logo={sj.company.logo} name={sj.company.name} size="sm" />
+                    <Avatar src={job.company.logo} name={job.company.name} size="sm" shape="squre" />
                     <div className="flex-1">
-                      <p className="text-sm font-semibold text-gray-900">{sj.title}</p>
-                      <p className="text-xs text-gray-500">{sj.company.name} · {sj.location}</p>
+                      <p className="text-sm font-semibold text-gray-900">{job.title}</p>
+                      <p className="text-xs text-gray-500">{job.company.name} · {job.location}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm font-medium text-gray-900">{formatSalaryRange(sj.salary.min, sj.salary.max)}</p>
-                      <p className="text-xs text-gray-400">{timeAgo(sj.postedAt)}</p>
+                      <p className="text-sm font-medium text-gray-900">{formatSalaryRange(job.salary.min, job.salary.max)}</p>
+                      <p className="text-xs text-gray-400">{timeAgo(job.postedAt)}</p>
                     </div>
                   </div>
                 ))}
               </div>
-            </div>
+            </div>}
           </div>
 
           {/* ── Sidebar ─────────────────────────────────────── */}
@@ -337,7 +281,7 @@ export default function JobDetailPage() {
               <h3 className="text-sm font-semibold text-gray-900 mb-4">About {job.company.name}</h3>
 
               <div className="flex items-center gap-3 mb-4">
-                <CompanyLogo logo={job.company.logo} name={job.company.name} size="md" />
+                <Avatar src={job.company.logo} name={job.company.name} size="md" shape="squre" />
                 <div>
                   <p className="text-sm font-semibold text-gray-900">{job.company.name}</p>
                   <p className="text-xs text-gray-500">{job.company.industry}</p>
@@ -398,7 +342,7 @@ export default function JobDetailPage() {
               <h3 className="text-sm font-semibold text-gray-900 mb-4">Hiring Recruiter</h3>
               {recruiter ? (
                 <div className="flex items-center gap-3 mb-4">
-                  <Avatar src={recruiter.avatar} name={recruiter.name} size="md" showStatus status="online" />
+                  <Avatar src={recruiter.avatar} name={recruiter.name} size="md" />
                   <div>
                     <p className="text-sm font-semibold text-gray-900">{recruiter.name}</p>
                     <p className="text-xs text-gray-500">

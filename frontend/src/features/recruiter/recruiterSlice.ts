@@ -53,7 +53,7 @@ export const fetchJobs = createAsyncThunk(
   "recruiter/fetchJobs",
   async (_void, { rejectWithValue }) => {
     try {
-      const response = await recruiterService.getJobs();
+      const response = await recruiterService.getJobs({ page: 1, pageSize: 1000 });
       // Service returns paginated response { data, total, page, pageSize, totalPages }
       // Extract the data array for the slice
       return response.data;

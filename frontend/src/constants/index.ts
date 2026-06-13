@@ -8,7 +8,7 @@ export const JOB_TYPES: { value: JobType; label: string }[] = [
   { value: "part-time", label: "Part Time" },
   { value: "contract", label: "Contract" },
   { value: "internship", label: "Internship" },
-  { value: "remote", label: "Remote" },
+  // { value: "remote", label: "Remote" },
 ];
 
 export const JOB_LEVELS: { value: JobLevel; label: string }[] = [

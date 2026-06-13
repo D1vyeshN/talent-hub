@@ -10,7 +10,7 @@ import {
   getExpandedRowModel,
   ExpandedState,
 } from "@tanstack/react-table";
-import { useState, useCallback, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { ChevronDown, ChevronRight, Loader2 } from "lucide-react";
 import { DataTableProps } from "./types";
 import { DataTableToolbar } from "./data-table-toolbar";
@@ -20,8 +20,8 @@ export function DataTable<TData, TValue>({
   columns,
   data,
   totalRows,
-  page,
-  pageSize,
+  page = 1,
+  pageSize = 10,
   isFetching = false,
   onPageChange,
   onPageSizeChange,
@@ -111,7 +111,9 @@ export function DataTable<TData, TValue>({
   const handleRefresh = () => {
     setSearchValue("");
     setDebouncedSearchValue("");
-    onPageChange(1);
+    if (onPageChange) {
+      onPageChange(1);
+    }
   };
 
   const handleClearSelection = () => {
@@ -166,9 +168,9 @@ export function DataTable<TData, TValue>({
                     {header.isPlaceholder
                       ? null
                       : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
+                        header.column.columnDef.header,
+                        header.getContext()
+                      )}
                     {header.column.getIsSorted() === "asc" && (
                       <span className="ml-1 text-blue-600">↑</span>
                     )}
@@ -196,69 +198,71 @@ export function DataTable<TData, TValue>({
               </tr>
             ) : (
               table.getRowModel().rows.map((row) => (
-              <>
-                <tr
-                  key={row.id}
-                  className="hover:bg-blue-50/50 transition-colors"
-                >
-                  {selectable && (
-                    <td className="px-4 py-3">
-                      <input
-                        type="checkbox"
-                        checked={row.getIsSelected()}
-                        onChange={row.getToggleSelectedHandler()}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      />
-                    </td>
-                  )}
-                  {expandable && (
-                    <td className="px-4 py-3">
-                      <button
-                        onClick={() => row.toggleExpanded()}
-                        className="text-gray-500 hover:text-blue-600 transition-colors"
-                      >
-                        {row.getIsExpanded() ? (
-                          <ChevronDown className="h-4 w-4" />
-                        ) : (
-                          <ChevronRight className="h-4 w-4" />
-                        )}
-                      </button>
-                    </td>
-                  )}
-                  {row.getVisibleCells().map((cell) => (
-                    <td key={cell.id} className="px-4 py-3 text-sm text-gray-700">
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </td>
-                  ))}
-                </tr>
-                {row.getIsExpanded() && renderExpandedContent && (
-                  <tr>
-                    <td
-                      colSpan={
-                        columns.length +
-                        (selectable ? 1 : 0) +
-                        (expandable ? 1 : 0)
-                      }
-                      className="px-4 py-4 bg-blue-50/30 border-b border-blue-100"
-                    >
-                      {renderExpandedContent(row.original as TData)}
-                    </td>
+                <>
+                  <tr
+                    key={row.id}
+                    className="hover:bg-blue-50/50 transition-colors"
+                  >
+                    {selectable && (
+                      <td className="px-4 py-3">
+                        <input
+                          type="checkbox"
+                          checked={row.getIsSelected()}
+                          onChange={row.getToggleSelectedHandler()}
+                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                      </td>
+                    )}
+                    {expandable && (
+                      <td className="px-4 py-3">
+                        <button
+                          onClick={() => row.toggleExpanded()}
+                          className="text-gray-500 hover:text-blue-600 transition-colors"
+                        >
+                          {row.getIsExpanded() ? (
+                            <ChevronDown className="h-4 w-4" />
+                          ) : (
+                            <ChevronRight className="h-4 w-4" />
+                          )}
+                        </button>
+                      </td>
+                    )}
+                    {row.getVisibleCells().map((cell) => (
+                      <td key={cell.id} className="px-4 py-3 text-sm text-gray-700">
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </td>
+                    ))}
                   </tr>
-                )}
-              </>
-            )))}
+                  {row.getIsExpanded() && renderExpandedContent && (
+                    <tr>
+                      <td
+                        colSpan={
+                          columns.length +
+                          (selectable ? 1 : 0) +
+                          (expandable ? 1 : 0)
+                        }
+                        className="px-4 py-4 bg-blue-50/30 border-b border-blue-100"
+                      >
+                        {renderExpandedContent(row.original as TData)}
+                      </td>
+                    </tr>
+                  )}
+                </>
+              )))}
           </tbody>
         </table>
       </div>
 
       {/* Pagination */}
-      <DataTablePagination
-        page={page}
-        pageSize={pageSize}
-        totalRows={totalRows}
-        onPageChange={onPageChange}
-        onPageSizeChange={onPageSizeChange}
-      />
+      {onPageChange && onPageSizeChange && (
+        <DataTablePagination
+          page={page || 1}
+          pageSize={pageSize || 10}
+          totalRows={totalRows || 0}
+          onPageChange={onPageChange}
+          onPageSizeChange={onPageSizeChange}
+        />
+      )}
     </div>
   );
 }

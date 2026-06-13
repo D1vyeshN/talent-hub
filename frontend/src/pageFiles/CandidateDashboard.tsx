@@ -135,7 +135,7 @@ export default function CandidateDashboard() {
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* ── Welcome Header ─────────────────────────────────── */}
-        <div className="mb-8">
+        <div className="mb-8 flex gap-5">
           <h1 className="text-2xl font-bold text-gray-900">
             Good morning, {candidate?.name?.split(" ")[0] || "there"}! 👋
           </h1>
@@ -248,12 +248,15 @@ export default function CandidateDashboard() {
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               {statCardsData.map((stat) => (
                 <Card key={stat.title} padding="sm" className="group hover:shadow-md transition-shadow">
-                  <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center mb-3", stat.color)}>
-                    <stat.icon className={cn("w-5 h-5", stat.iconColor)} />
+                  <div className="flex items-center gap-3">
+                    <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center", stat.color)}>
+                      <stat.icon className={cn("w-5 h-5", stat.iconColor)} />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+                      <p className="text-xs font-medium text-gray-600 mt-0.5">{stat.title}</p>
+                    </div>
                   </div>
-                  <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-                  <p className="text-xs font-medium text-gray-600 mt-0.5">{stat.title}</p>
-                  <p className="text-xs text-gray-400 mt-1">{stat.change}</p>
                 </Card>
               ))}
             </div>
@@ -315,7 +318,7 @@ function OverviewTab({ redirect: _redirect, myApplications }: {
               return (
                 <div key={app._id} className="flex items-center gap-4 p-3 rounded-xl border border-gray-100 hover:border-gray-200 hover:bg-gray-50 transition-all cursor-pointer">
                   <div className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center text-xl flex-shrink-0">
-                    <Avatar src={app.job?.company?.logo} name={app.job?.company?.name}/> 
+                    <Avatar src={app.job?.company?.logo} name={app.job?.company?.name} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-gray-900 truncate">{app.job?.title || "Unknown Job"}</p>
@@ -353,9 +356,7 @@ function ApplicationsTab({ redirect: _redirect, applications }: {
           return (
             <Card key={app._id} hoverable>
               <div className="flex items-start gap-4">
-                <div className="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center text-2xl">
-                  {app.job?.company?.logo || "🏢"}
-                </div>
+                <Avatar src={app.job?.company?.logo} name={app.job?.company?.name} shape="squre" />
                 <div className="flex-1">
                   <div className="flex items-start justify-between">
                     <div>

@@ -1,153 +1,192 @@
 "use client"
-import { useState } from "react";
-import { Send, Search, MoreHorizontal, Phone, Video } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { Send, Search} from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
-import { MOCK_MESSAGES, MOCK_RECRUITER, MOCK_CANDIDATE } from "@/lib/mockData";
 import { timeAgo, cn } from "@/lib/utils";
-import { useAppSelector } from "@/store/hooks";
-
-const CONVERSATIONS = [
-  {
-    id: "conv1",
-    participant: MOCK_RECRUITER,
-    lastMessage: "Would you be open to a 30-min intro call this week?",
-    unread: 1,
-    time: "11:00 AM",
-    jobContext: "Senior Frontend Engineer @ Google",
-  },
-  {
-    id: "conv2",
-    participant: { id: "r2", name: "Ankit Gupta", email: "ankit@razorpay.com", role: "recruiter" as const, company: "Razorpay", companyId: "c2", designation: "Technical Recruiter", postedJobs: [], createdAt: "" },
-    lastMessage: "We'd love to invite you for a technical interview.",
-    unread: 0,
-    time: "Yesterday",
-    jobContext: "Full Stack Developer @ Razorpay",
-  },
-  {
-    id: "conv3",
-    participant: { id: "r3", name: "Shruti Iyer", email: "shruti@swiggy.com", role: "recruiter" as const, company: "Swiggy", companyId: "c3", designation: "HR Manager", postedJobs: [], createdAt: "" },
-    lastMessage: "Thank you for your interest in the Data Scientist role.",
-    unread: 0,
-    time: "Mon",
-    jobContext: "Data Scientist @ Swiggy",
-  },
-];
+import { useAppSelector, useAppDispatch } from "@/store/hooks";
+import {
+  fetchConversations,
+  fetchMessages,
+  sendMessage,
+  markAsRead,
+  setCurrentConversation,
+} from "@/features/message/store/messageSlice";
+import { Badge } from "@/components/ui/Badge";
 
 export default function MessagesPage() {
+  const dispatch = useAppDispatch();
   const { user } = useAppSelector((s) => s.auth);
-  const [activeConv, setActiveConv] = useState(CONVERSATIONS[0].id);
+  const {
+    conversations,
+    messages,
+    currentConversationId,
+    isLoading,
+  } = useAppSelector((s) => s.message);
+  const [activeConv, setActiveConv] = useState<string | null>(null);
   const [newMessage, setNewMessage] = useState("");
-  const [messages, setMessages] = useState(MOCK_MESSAGES);
+  const [searchConvo, setSearchConvo] = useState("");
 
-  const sendMessage = () => {
-    if (!newMessage.trim() || !user) return;
-    const msg = {
-      id: `m${Date.now()}`,
-      senderId: user.id,
-      receiverId: "r1",
-      content: newMessage.trim(),
-      sentAt: new Date().toISOString(),
-      read: false,
-    };
-    setMessages((prev) => [...prev, msg]);
-    setNewMessage("");
-  };
+  // Fetch conversations on mount
+  useEffect(() => {
+    dispatch(fetchConversations());
+  }, [dispatch]);
 
-  const activeConvData = CONVERSATIONS.find((c) => c.id === activeConv);
+  // Fetch messages when conversation changes
+  useEffect(() => {
+    if (activeConv) {
+      dispatch(setCurrentConversation(activeConv));
+      dispatch(fetchMessages({ conversationId: activeConv }));
+      dispatch(markAsRead(activeConv));
+    }
+  }, [activeConv, dispatch]);
+
+  const handleSendMessage = useCallback(async () => {
+    if (!newMessage.trim() || !user || !currentConversationId) return;
+
+    // Validation: Candidates can only reply to existing conversations
+    if (user.role === "candidate" && !conversations.find((c) => c._id === currentConversationId)) {
+      console.error("Candidates can only reply to existing conversations");
+      return;
+    }
+
+    const activeConvData = conversations.find((c) => c._id === currentConversationId);
+    if (!activeConvData) return;
+
+    const otherParticipant = activeConvData.participants.find((p) => p._id !== user._id);
+    if (!otherParticipant) return;
+
+    try {
+      await dispatch(
+        sendMessage({
+          receiverId: otherParticipant._id,
+          content: newMessage.trim(),
+          jobContext: activeConvData.jobContext?._id,
+        })
+      ).unwrap();
+      setNewMessage("");
+      dispatch(fetchMessages({ conversationId: currentConversationId as string }));
+    } catch (err) {
+      console.error("Failed to send message:", err);
+    }
+  }, [newMessage, user, currentConversationId, conversations, dispatch]);
+
+  const activeConvData = conversations.find((c) => c._id === activeConv);
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 flex gap-6 max-h-[calc(100vh-8rem)]">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 flex gap-6 h-[calc(100vh-4rem)]">
 
-        {/* ── Conversation List ──────────────────────────── */}
-        <div className="w-80 flex-shrink-0 bg-white rounded-2xl border border-gray-200 flex flex-col overflow-hidden">
-          <div className="p-4 border-b border-gray-100">
-            <h2 className="text-base font-semibold text-gray-900 mb-3">Messages</h2>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search conversations..."
-                className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50"
-              />
-            </div>
-          </div>
-
-          <div className="flex-1 overflow-y-auto">
-            {CONVERSATIONS.map((conv) => (
-              <button
-                key={conv.id}
-                onClick={() => setActiveConv(conv.id)}
-                className={cn(
-                  "w-full flex items-start gap-3 p-4 text-left hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-0",
-                  activeConv === conv.id && "bg-blue-50 border-blue-100"
-                )}
-              >
-                <Avatar src={conv.participant.avatar} name={conv.participant.name} size="md" showStatus status="online" />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-semibold text-gray-900 truncate">{conv.participant.name}</p>
-                    <span className="text-xs text-gray-400 flex-shrink-0 ml-2">{conv.time}</span>
-                  </div>
-                  <p className="text-xs text-blue-500 mt-0.5 truncate">{conv.jobContext}</p>
-                  <p className="text-xs text-gray-500 mt-0.5 truncate">{conv.lastMessage}</p>
-                </div>
-                {conv.unread > 0 && (
-                  <span className="flex-shrink-0 w-5 h-5 bg-blue-600 rounded-full text-white text-xs font-bold flex items-center justify-center">
-                    {conv.unread}
-                  </span>
-                )}
-              </button>
-            ))}
+      {/* ── Conversation List ──────────────────────────── */}
+      <div className="w-80 flex-shrink-0 bg-white rounded-2xl border border-gray-200 flex flex-col overflow-hidden">
+        <div className="p-4 border-b border-gray-100">
+          <h2 className="text-base font-semibold text-gray-900 mb-3">Messages</h2>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              value={searchConvo}
+              onChange={(e) => setSearchConvo(e.target.value)}
+              placeholder="Search conversations..."
+              className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50"
+            />
           </div>
         </div>
 
-        {/* ── Chat Window ──────────────────────────────── */}
-        <div className="flex-1 bg-white rounded-2xl border border-gray-200 flex flex-col overflow-hidden">
-          {activeConvData ? (
-            <>
-              {/* Chat Header */}
-              <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-                <div className="flex items-center gap-3">
-                  <Avatar src={activeConvData.participant.avatar} name={activeConvData.participant.name} size="md" showStatus status="online" />
-                  <div>
-                    <p className="text-sm font-semibold text-gray-900">{activeConvData.participant.name}</p>
-                    <p className="text-xs text-gray-500">
-                      {(activeConvData.participant as {designation?: string}).designation} · Re: {activeConvData.jobContext}
+        <div className="flex-1 overflow-y-auto">
+          {isLoading && conversations.length === 0 ? (
+            <div className="p-8 text-center text-gray-500 text-sm">Loading conversations...</div>
+          ) : conversations.length === 0 ? (
+            <div className="p-8 text-center text-gray-500 text-sm">No conversations yet</div>
+          ) : (
+            conversations.filter((conv) => {
+              const otherParticipant = conv.participants.find((p) => p._id !== user?._id);
+              if (!otherParticipant) return false;
+              return otherParticipant.name.toLowerCase().includes(searchConvo.toLowerCase());
+            }).map((conv) => {
+              const otherParticipant = conv.participants.find((p) => p._id !== user?._id);
+              if (!otherParticipant) return null;
+
+              return (
+                <button
+                  key={conv._id}
+                  onClick={() => setActiveConv(conv._id)}
+                  className={cn(
+                    "relative w-full flex items-start gap-3 p-4 text-left hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-0",
+                    activeConv === conv._id && "bg-blue-50 border-blue-100"
+                  )}
+                >
+                  <Avatar src={otherParticipant.avatar} name={otherParticipant.name} size="md" />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-semibold text-gray-900 truncate">{otherParticipant.name}</p>
+                      <span className="text-xs text-gray-400 shrink-0 ml-2">{timeAgo(conv.updatedAt || conv.createdAt || '')}</span>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-0.5 truncate">
+                      {conv.lastMessage ? conv.lastMessage.content : "No messages yet"}
                     </p>
                   </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
-                    <Phone className="w-5 h-5" />
-                  </button>
-                  <button className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
-                    <Video className="w-5 h-5" />
-                  </button>
-                  <button className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
-                    <MoreHorizontal className="w-5 h-5" />
-                  </button>
-                </div>
-              </div>
+                  <div className="absolute bottom-2 right-4">
+                    {(conv?.unreadCount && conv.unreadCount !== 0) ? (
+                      <Badge variant="info" className="text-xs">
+                        {conv?.unreadCount}
+                      </Badge>
+                    ) : ""}
+                  </div>
+                </button>
+              );
+            })
+          )}
+        </div>
+      </div>
 
-              {/* Job Context Banner */}
+      {/* ── Chat Window ──────────────────────────────── */}
+      <div className="flex-1 bg-white rounded-2xl border border-gray-200 flex flex-col overflow-hidden">
+        {activeConvData ? (
+          <>
+            {/* Chat Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+              <div className="flex items-center gap-3">
+                {(() => {
+                  const otherParticipant = activeConvData.participants.find((p) => p._id !== user?._id);
+                  return (
+                    <>
+                      <Avatar src={otherParticipant?.avatar} name={otherParticipant?.name || "Unknown"} size="md" showStatus status="online" />
+                      <div>
+                        <p className="text-sm font-semibold text-gray-900">{otherParticipant?.name || "Unknown"}</p>
+                        <p className="text-xs text-gray-500">
+                          {(otherParticipant as any)?.designation || otherParticipant?.role} · Re: {activeConvData.jobContext?.title || "General"}
+                        </p>
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
+            </div>
+
+            {/* Job Context Banner */}
+            {activeConvData.jobContext?.title && (
               <div className="px-5 py-2.5 bg-blue-50 border-b border-blue-100">
                 <p className="text-xs text-blue-700">
-                  💼 Regarding: <strong>{activeConvData.jobContext}</strong>
+                  💼 Regarding: <strong>{activeConvData.jobContext.title}</strong>
                 </p>
               </div>
+            )}
 
-              {/* Messages */}
-              <div className="flex-1 overflow-y-auto px-5 py-5 space-y-4">
-                {messages.map((msg) => {
-                  const isMine = user ? msg.senderId === user.id : msg.senderId === "u1";
+            {/* Messages */}
+            <div className="flex-1 overflow-y-auto px-5 py-5 space-y-4">
+              {isLoading && messages.length === 0 ? (
+                <div className="text-center text-gray-500 text-sm">Loading messages...</div>
+              ) : messages.length === 0 ? (
+                <div className="text-center text-gray-500 text-sm">No messages yet. Start the conversation!</div>
+              ) : (
+                messages.map((msg) => {
+                  const isMine = user ? msg.senderId === user._id : false;
                   const senderName = isMine
-                    ? (user?.name || MOCK_CANDIDATE.name)
-                    : activeConvData.participant.name;
+                    ? user?.name
+                    : activeConvData.participants.find((p) => p._id !== user?._id)?.name;
 
                   return (
-                    <div key={msg.id} className={cn("flex gap-3", isMine && "flex-row-reverse")}>
-                      <Avatar src={isMine ? user?.avatar : activeConvData.participant?.avatar} name={senderName} size="sm" />
+                    <div key={msg._id} className={cn("flex gap-3", isMine && "flex-row-reverse")}>
+                      <Avatar src={isMine ? user?.avatar : activeConvData.participants.find((p) => p._id !== user?._id)?.avatar} name={senderName || "Unknown"} size="sm" />
                       <div className={cn("max-w-sm", isMine && "items-end flex flex-col")}>
                         <div
                           className={cn(
@@ -163,41 +202,41 @@ export default function MessagesPage() {
                       </div>
                     </div>
                   );
-                })}
-              </div>
+                })
+              )}
+            </div>
 
-              {/* Input */}
-              <div className="p-4 border-t border-gray-100">
-                <div className="flex items-center gap-3 bg-gray-50 rounded-xl px-4 py-2.5 border border-gray-200 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100">
-                  <input
-                    type="text"
-                    placeholder="Type a message..."
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-                    className="flex-1 bg-transparent text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none"
-                  />
-                  <button
-                    onClick={sendMessage}
-                    disabled={!newMessage.trim()}
-                    className="p-2 bg-blue-600 rounded-lg text-white hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                    aria-label="Send message"
-                  >
-                    <Send className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            </>
-          ) : (
-            <div className="flex-1 flex items-center justify-center">
-              <div className="text-center">
-                <div className="text-5xl mb-4">💬</div>
-                <p className="text-base font-semibold text-gray-700">Select a conversation</p>
-                <p className="text-sm text-gray-400 mt-1">Choose a conversation to start messaging</p>
+            {/* Input */}
+            <div className="p-4 border-t border-gray-100">
+              <div className="flex items-center gap-3 bg-gray-50 rounded-xl px-4 py-2.5 border border-gray-200 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100">
+                <input
+                  type="text"
+                  placeholder="Type a message..."
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
+                  className="flex-1 bg-transparent text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none"
+                />
+                <button
+                  onClick={handleSendMessage}
+                  disabled={!newMessage.trim()}
+                  className="p-2 bg-blue-600 rounded-lg text-white hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  aria-label="Send message"
+                >
+                  <Send className="w-4 h-4" />
+                </button>
               </div>
             </div>
-          )}
-        </div>
+          </>
+        ) : (
+          <div className="flex-1 flex items-center justify-center">
+            <div className="text-center">
+              <div className="text-5xl mb-4">💬</div>
+              <p className="text-base font-semibold text-gray-700">Select a conversation</p>
+              <p className="text-sm text-gray-400 mt-1">Choose a conversation to start messaging</p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

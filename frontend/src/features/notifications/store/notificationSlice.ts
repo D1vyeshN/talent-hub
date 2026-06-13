@@ -98,6 +98,15 @@ const notificationSlice = createSlice({
     clearError(state) {
       state.error = null;
     },
+    // Socket.io event handlers
+    newNotificationReceived(state, action: PayloadAction<Notification>) {
+      state.notifications.unshift(action.payload);
+      state.unreadCount += 1;
+      state.pagination.total += 1;
+    },
+    unreadCountUpdated(state, action: PayloadAction<{ unreadCount: number }>) {
+      state.unreadCount = action.payload.unreadCount;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -176,5 +185,5 @@ const notificationSlice = createSlice({
   },
 });
 
-export const { clearError } = notificationSlice.actions;
+export const { clearError, newNotificationReceived, unreadCountUpdated } = notificationSlice.actions;
 export default notificationSlice.reducer;

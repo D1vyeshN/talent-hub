@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { DataTable } from "@/components/data-table/data-table";
+import { DataTable } from "@/components/data-table/DataTable";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import {
@@ -285,6 +285,7 @@ export default function AdminCompaniesPage() {
       <DataTable
         columns={tableColumns}
         data={data}
+        mode="server"
         totalRows={totalRows}
         page={page}
         pageSize={pageSize}

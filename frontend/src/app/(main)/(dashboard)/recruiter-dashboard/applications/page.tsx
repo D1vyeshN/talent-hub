@@ -2,15 +2,7 @@
 
 import { useState, useEffect } from "react";
 import {
-  useReactTable,
-  getCoreRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  getFilteredRowModel,
   ColumnDef,
-  SortingState,
-  ColumnFiltersState,
-  flexRender,
 } from "@tanstack/react-table";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import {
@@ -23,37 +15,20 @@ import {
 import { APPLICATION_STATUS_CONFIG } from "@/constants";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
 import { Avatar } from "@/components/ui/Avatar";
 import { Input } from "@/components/ui/Input";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
-import { Eye, CheckCircle, XCircle, ArrowUpDown, Download } from "lucide-react";
-import type { Application, ApplicationStatus, Candidate } from "@/types";
-import { TooltipWrapper } from "@/components/shared/TooltipWrapper";
+import { DataTable } from "@/components/data-table/DataTable";
+import { Eye, CheckCircle, XCircle, Download, MessageSquare } from "lucide-react";
+import type { Application, ApplicationStatus, Candidate, User } from "@/types";
+import { useRouter } from "next/navigation";
+import { newTempConversation } from "@/features/message/store/messageSlice";
 
 export default function ApplicationsPage() {
   const dispatch = useAppDispatch();
+  const router = useRouter();
   const { recruiterApplications, isLoading } = useAppSelector((s) => s.application);
-  const [sorting, setSorting] = useState<SortingState>([{ id: "createdAt", desc: true }]);
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-  const [globalFilter, setGlobalFilter] = useState("");
+  const { conversations } = useAppSelector((s) => s.message);
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
 
   useEffect(() => {
     dispatch(fetchJobs());
@@ -83,6 +58,32 @@ export default function ApplicationsPage() {
 
     document.body.removeChild(a);
     window.URL.revokeObjectURL(blobUrl);
+  };
+
+  const handleMessageCandidate = (application: Application) => {
+    const candidateId = application.candidate?._id;
+    const jobId = application.job?._id;
+    const candidate: User = {
+      _id: application?.candidate?._id || "",
+      name: application?.candidate?.name || "",
+      avatar: application?.candidate?.avatar || "",
+      role: "candidate",
+      email: application?.candidate?.email || "",
+    }
+    if (candidateId && jobId) {
+      router.push(`/recruiter-dashboard/messages`);
+      const existConversation = conversations.some((el) => el.participants.some(user => user._id === candidateId))
+      if (!existConversation) {
+        dispatch(newTempConversation({
+          _id: "temp_conversation",
+          participants: [candidate],
+          jobContext: {
+            _id: jobId,
+            title: application.job?.title || "",
+          },
+        }));
+      }
+    }
   };
 
   const filters = [
@@ -176,45 +177,42 @@ export default function ApplicationsPage() {
         };
         return (
           <div className="flex justify-center gap-1">
-            <TooltipWrapper message="View Profile">
-              <Button variant="ghost" size="xs" onClick={() => {
-                if (app.status === "applied") {
-                  handleStatusUpdate(app._id, "screening");
-                }
-              }}>
-                <a href={app.resumeUrl} target="_blank" rel="noopener noreferrer">
-                  <Eye className="w-3.5 h-3.5" />
-                </a>
-              </Button>
-            </TooltipWrapper>
-            <TooltipWrapper message="Download Resume">
-              <Button variant="ghost" size="xs" onClick={() => downloadResume(app)}>
-                <Download className="w-3.5 h-3.5" />
-              </Button>
-            </TooltipWrapper>
+            <Button variant="ghost" size="xs" onClick={() => {
+              if (app.status === "applied") {
+                handleStatusUpdate(app._id, "screening");
+              }
+            }} title="View Profile">
+              <a href={app.resumeUrl} target="_blank" rel="noopener noreferrer">
+                <Eye className="w-3.5 h-3.5" />
+              </a>
+            </Button>
+            <Button variant="ghost" size="xs" onClick={() => downloadResume(app)} title="Download Resume">
+              <Download className="w-3.5 h-3.5" />
+            </Button>
+            <Button variant="ghost" size="xs" onClick={() => handleMessageCandidate(app)} title="Message Candidate">
+              <MessageSquare className="w-3.5 h-3.5" />
+            </Button>
             {app.status !== "rejected" && app.status !== "hired" && (
               <>
-                <TooltipWrapper message={switchStatus(app.status)}>
-                  <Button
-                    variant="ghost"
-                    size="xs"
-                    className="text-green-600 hover:bg-green-50"
-                    onClick={() => handleStatusUpdate(app._id, switchStatus(app.status, true) as ApplicationStatus)}
-                  >
-                    <CheckCircle className="w-3.5 h-3.5" />
-                  </Button>
-                </TooltipWrapper>
+                <Button
+                  variant="ghost"
+                  size="xs"
+                  className="text-green-600 hover:bg-green-50"
+                  onClick={() => handleStatusUpdate(app._id, switchStatus(app.status, true) as ApplicationStatus)}
+                  title={switchStatus(app.status)}
+                >
+                  <CheckCircle className="w-3.5 h-3.5" />
+                </Button>
 
-                <TooltipWrapper message="Reject Application">
-                  <Button
-                    variant="ghost"
-                    size="xs"
-                    className="text-red-500 hover:bg-red-50"
-                    onClick={() => handleStatusUpdate(app._id, "rejected")}
-                  >
-                    <XCircle className="w-3.5 h-3.5" />
-                  </Button>
-                </TooltipWrapper>
+                <Button
+                  variant="ghost"
+                  size="xs"
+                  className="text-red-500 hover:bg-red-50"
+                  onClick={() => handleStatusUpdate(app._id, "rejected")}
+                  title="Reject Application"
+                >
+                  <XCircle className="w-3.5 h-3.5" />
+                </Button>
               </>
             )}
 
@@ -224,63 +222,17 @@ export default function ApplicationsPage() {
     },
   ];
 
-  const table = useReactTable({
-    data: recruiterApplications || [],
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
-    onGlobalFilterChange: setGlobalFilter,
-    onPaginationChange: setPagination,
-    state: {
-      sorting,
-      columnFilters,
-      globalFilter,
-      pagination,
-    },
-    globalFilterFn: (row, columnId, value) => {
-      const candidate = (row.original.candidate as Candidate) ?? {
-        name: "Unknown Candidate",
-      };
-
-      const searchValue = String(value).toLowerCase();
-
-      const candidateMatch =
-        candidate.name?.toLowerCase().includes(searchValue) ?? false;
-
-      const jobTitle = row.original.job?.title ?? "";
-      const jobMatch = jobTitle.toLowerCase().includes(searchValue);
-
-      return candidateMatch || jobMatch;
-    },
-    initialState: {
-      pagination: { pageIndex: 0, pageSize: 10 },
-    },
-  });
-
-  // Update column filters when status filter changes
-  useEffect(() => {
-    if (statusFilter === "all") {
-      setColumnFilters([]);
-    } else {
-      setColumnFilters([{ id: "status", value: statusFilter }]);
-    }
-    // Reset pagination when filter changes
-    setPagination({ pageIndex: 0, pageSize: 10 });
-  }, [statusFilter]);
-
   const handleStatusUpdate = (applicationId: string, newStatus: ApplicationStatus) => {
     dispatch(updateApplicationStatus({ applicationId, status: newStatus }));
   };
 
   const handleExport = () => {
-    const rows = table.getFilteredRowModel().rows;
+    const rows = recruiterApplications?.filter((app) => {
+      if (statusFilter === "all") return true;
+      return app.status === statusFilter;
+    }) || [];
     const headers = ["Candidate Name", "Job Title", "Status", "Applied Date", "Email"];
-    const rowData = rows.map((row) => row.original);
-    const rowsForExport = rowData.map((app: Application) => [
+    const rowsForExport = rows.map((app: Application) => [
       app.candidate?.name || "Unknown",
       app.job?.title || "Unknown",
       app.status,
@@ -305,6 +257,36 @@ export default function ApplicationsPage() {
   };
 
 
+  const renderToolbar = (props: any) => {
+    return (
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="flex-1">
+          <Input
+            placeholder="Search by name or job title..."
+            value={props.searchValue}
+            onChange={(e) => props.onSearchChange(e.target.value)}
+          />
+        </div>
+        <div className="flex gap-2 flex-wrap">
+          {filters.map((f) => (
+            <button
+              key={f.id}
+              onClick={() => setStatusFilter(f.id)}
+              className={cn(
+                "px-3 py-2 text-xs font-medium rounded-lg transition-colors",
+                statusFilter === f.id
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200",
+              )}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -319,167 +301,51 @@ export default function ApplicationsPage() {
           variant="outline"
           size="md"
           onClick={handleExport}
-          disabled={table.getFilteredRowModel().rows.length === 0}
+          disabled={!recruiterApplications || recruiterApplications.length === 0}
         >
           <Download className="w-4 h-4 mr-2" />
           Export CSV
         </Button>
       </div>
 
-      {/* Filters */}
-      <Card padding="sm">
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="flex-1">
-            <Input
-              // label="Search"
-              placeholder="Search by name or job title..."
-              value={globalFilter}
-              onChange={(e) => setGlobalFilter(e.target.value)}
-            />
-          </div>
-          <div className="flex gap-2 flex-wrap">
-            {filters.map((f) => (
-              <button
-                key={f.id}
-                onClick={() => setStatusFilter(f.id)}
-                className={cn(
-                  "px-3 py-2 text-xs font-medium rounded-lg transition-colors",
-                  statusFilter === f.id
-                    ? "bg-blue-600 text-white"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200",
-                )}
-              >
-                {f.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      </Card>
+      {/* DataTable */}
+      <DataTable<Application, any>
+        columns={columns}
+        data={recruiterApplications || []}
+        mode="client"
+        initialSorting={[{ id: "createdAt", desc: true }]}
+        initialPagination={{ pageIndex: 0, pageSize: 10 }}
+        searchable={true}
+        searchPlaceholder="Search by name or job title..."
+        isFetching={isLoading}
+        globalFilterFn={(row, columnId, value) => {
+          const candidate = (row.original.candidate as Candidate) ?? {
+            name: "Unknown Candidate",
+          };
 
-      {/* Table */}
-      <Card padding="none">
-        <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableHead
-                    key={header.id}
-                    className={cn(
-                      "px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider",
-                      header.id === "actions" && "text-center"
-                    )}
-                  >
-                    {header.isPlaceholder
-                      ? null
-                      : header.column.getToggleSortingHandler() ? (
-                        <button
-                          onClick={header.column.getToggleSortingHandler()}
-                          className="flex items-center gap-1 hover:text-gray-700"
-                        >
-                          {flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
-                          {header.column.getIsSorted() === "asc" ? (
-                            <ArrowUpDown className="w-3 h-3" />
-                          ) : header.column.getIsSorted() === "desc" ? (
-                            <ArrowUpDown className="w-3 h-3 rotate-180" />
-                          ) : null}
-                        </button>
-                      )
-                        : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center"
-                >
-                  Loading applications...
-                </TableCell>
-              </TableRow>
-            ) : table.getRowModel().rows.length === 0 ? (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center"
-                >
-                  No applications match your filters.
-                </TableCell>
-              </TableRow>
-            ) : (
-              table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className="px-5 py-4">
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </Card>
+          const searchValue = String(value).toLowerCase();
 
-      {/* Pagination */}
-      {table.getFilteredRowModel().rows.length !== 0 && (
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-gray-500 w-1/3">
-            Showing {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1} to{" "}
-            {Math.min(
-              (table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize,
-              table.getFilteredRowModel().rows.length
-            )}{" "}
-            of {table.getFilteredRowModel().rows.length} results
-          </div>
-          <Pagination className="w-2/3 justify-end">
-            <PaginationContent>
-              <PaginationItem>
-                <PaginationPrevious
-                  onClick={() => table.previousPage()}
-                  className={
-                    !table.getCanPreviousPage()
-                      ? "pointer-events-none opacity-50"
-                      : "cursor-pointer"
-                  }
-                />
-              </PaginationItem>
-              {table.getPageCount() > 0 &&
-                Array.from({ length: table.getPageCount() }).map((_, i) => (
-                  <PaginationItem key={i}>
-                    <PaginationLink
-                      onClick={() => table.setPageIndex(i)}
-                      isActive={table.getState().pagination.pageIndex === i}
-                      className="cursor-pointer"
-                    >
-                      {i + 1}
-                    </PaginationLink>
-                  </PaginationItem>
-                ))}
-              <PaginationItem>
-                <PaginationNext
-                  onClick={() => table.nextPage()}
-                  className={
-                    !table.getCanNextPage()
-                      ? "pointer-events-none opacity-50"
-                      : "cursor-pointer"
-                  }
-                />
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
-        </div>
-      )}
+          const candidateMatch =
+            candidate.name?.toLowerCase().includes(searchValue) ?? false;
+
+          const jobTitle = row.original.job?.title ?? "";
+          const jobMatch = jobTitle.toLowerCase().includes(searchValue);
+
+          return candidateMatch || jobMatch;
+        }}
+        onFilterChange={(filters) => {
+          const statusFilter = filters.find(f => f.id === "status")?.value as string;
+          if (statusFilter) {
+            setStatusFilter(statusFilter);
+          } else {
+            setStatusFilter("all");
+          }
+        }}
+        initialFilters={statusFilter === "all" ? [] : [{ id: "status", value: statusFilter }]}
+        renderToolbar={renderToolbar}
+        renderLoading={() => <div className="text-center py-8">Loading applications...</div>}
+        renderEmpty={() => <div className="text-center py-8">No applications match your filters.</div>}
+      />
     </div>
   );
 }

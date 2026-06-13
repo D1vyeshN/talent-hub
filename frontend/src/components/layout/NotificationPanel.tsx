@@ -44,20 +44,6 @@ export function NotificationPanel() {
   const error = useAppSelector((state: RootState) => state.notification.error);
   const pagination = useAppSelector((state: RootState) => state.notification.pagination);
 
-  const fetchData = useCallback(async () => {
-    dispatch(fetchNotifications({ page: 1, pageSize: 10 }));
-    dispatch(fetchUnreadCount());
-  }, [dispatch]);
-
-  useEffect(() => {
-    if (notificationPanelOpen) {
-      // Use setTimeout to avoid synchronous setState in effect
-      const timer = setTimeout(() => {
-        fetchData();
-      }, 0);
-      return () => clearTimeout(timer);
-    }
-  }, [notificationPanelOpen, fetchData]);
 
   // Clear error when it's shown
   useEffect(() => {

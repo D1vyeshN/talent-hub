@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { DataTable } from "@/components/data-table/data-table";
+import { DataTable } from "@/components/data-table/DataTable";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Ban, Trash2, Mail, Calendar, Shield } from "lucide-react";
@@ -202,6 +202,7 @@ export default function AdminUsersPage() {
       <DataTable
         columns={tableColumns}
         data={data}
+        mode="server"
         totalRows={totalRows}
         page={page}
         pageSize={pageSize}

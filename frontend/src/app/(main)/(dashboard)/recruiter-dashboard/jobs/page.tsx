@@ -17,57 +17,18 @@ import {
   Plus,
   Users,
   Clock,
-  ChevronDown,
+  DollarSign,
+  MapPin,
 } from "lucide-react";
-import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
+import { DataTable } from "@/components/data-table/DataTable";
+import { ColumnDef } from "@tanstack/react-table";
 import { timeAgo } from "@/lib/utils";
-import Image from "next/image";
 import { JobStatus } from "@/types";
 import { Avatar } from "@/components/ui/Avatar";
 
-function CompanyLogo({ logo, name, size = "md" }: { logo?: string; name: string; size?: "sm" | "md" | "lg" }) {
-  const sizeClasses = {
-    sm: "w-8 h-8",
-    md: "w-12 h-12",
-    lg: "w-16 h-16",
-  };
-  const imageSize = {
-    sm: 32,
-    md: 48,
-    lg: 64,
-  };
-
-  if (logo && logo.startsWith("http")) {
-    return (
-      <div className={`${sizeClasses[size]} bg-gray-50 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden`}>
-        <Image
-          src={logo}
-          alt={name}
-          className="w-full h-full object-cover"
-          width={imageSize[size]}
-          height={imageSize[size]}
-        />
-      </div>
-    );
-  }
-
-  // Fallback to initials
-  const initials = name
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
-
-  return (
-    <div className={`${sizeClasses[size]} bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center flex-shrink-0`}>
-      <span className="text-white font-semibold text-sm">{initials}</span>
-    </div>
-  );
-}
 
 export default function JobsPage() {
   const dispatch = useAppDispatch();
@@ -112,6 +73,183 @@ export default function JobsPage() {
     setJobToDelete(null);
   }, []);
 
+  const columns: ColumnDef<any>[] = [
+    {
+      accessorKey: "title",
+      header: "Job Title",
+      cell: ({ row }) => (
+        <div className="flex items-center gap-3">
+          <Avatar src={row.original.company?.logo} name={row.original.company?.name || "Company"} size="sm" />
+          <div>
+            <p className="text-sm font-medium text-gray-900">{row.original.title}</p>
+            <p className="text-xs text-gray-500">{row.original.company?.name || "Company"}</p>
+          </div>
+        </div>
+      ),
+    },
+    {
+      accessorKey: "location",
+      header: "Location",
+      cell: ({ row }) => (
+        <div className="flex items-center gap-1 text-sm text-gray-700">
+          <MapPin className="w-4 h-4" />
+          {row.original.location}
+        </div>
+      ),
+    },
+    {
+      accessorKey: "type",
+      header: "Type",
+      cell: ({ row }) => (
+        <span className="text-sm text-gray-700">{row.original.type}</span>
+      ),
+    },
+    {
+      accessorKey: "level",
+      header: "Level",
+      cell: ({ row }) => (
+        <span className="text-sm text-gray-700">{row.original.level}</span>
+      ),
+    },
+    {
+      accessorKey: "status",
+      header: "Status",
+      cell: ({ row }) => (
+        <Badge
+          variant={
+            row.original.status === "active"
+              ? "success"
+              : row.original.status === "paused"
+                ? "warning"
+                : "default"
+          }
+          size="sm"
+        >
+          {row.original.status}
+        </Badge>
+      ),
+    },
+    {
+      accessorKey: "applicants",
+      header: "Applicants",
+      cell: ({ row }) => (
+        <div className="flex items-center gap-1 text-sm text-gray-700">
+          <Users className="w-4 h-4" />
+          {row.original.applicantsCount ?? 0}
+        </div>
+      ),
+    },
+    {
+      accessorKey: "postedAt",
+      header: "Posted",
+      cell: ({ row }) => (
+        <div className="flex items-center gap-1 text-sm text-gray-500">
+          <Clock className="w-4 h-4" />
+          {timeAgo(row.original.postedAt)}
+        </div>
+      ),
+    },
+    {
+      id: "actions",
+      header: "Actions",
+      cell: ({ row }) => {
+        const job = row.original;
+        return (
+          <div className="flex justify-center gap-1">
+            <Button
+              variant="ghost"
+              size="xs"
+              onClick={() => {
+                router.push(`/jobs/${job._id}`);
+              }}
+            >
+              <Eye className="w-3.5 h-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="xs"
+              onClick={() => {
+                router.push(`/recruiter-dashboard/jobs/${job._id}/edit`);
+              }}
+            >
+              <Edit3 className="w-3.5 h-3.5" />
+            </Button>
+            <div className="relative">
+              <Button
+                variant="ghost"
+                size="xs"
+                onClick={() => setStatusDropdownOpen(statusDropdownOpen === job._id ? null : job._id)}
+              >
+                <Power className="w-3.5 h-3.5" />
+              </Button>
+              {statusDropdownOpen === job._id && (
+                <div className="absolute right-0 mt-2 w-32 bg-white border border-gray-200 rounded-lg shadow-lg z-50 overflow-hidden">
+                  {(["draft", "active", "paused", "closed"] as JobStatus[]).map((status) => (
+                    <button
+                      key={status}
+                      onClick={() => handleStatusChange(job._id, status)}
+                      className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg whitespace-nowrap"
+                    >
+                      {status.charAt(0).toUpperCase() + status.slice(1)}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            <Button
+              variant="ghost"
+              size="xs"
+              className="text-red-500 hover:bg-red-50"
+              onClick={() => handleDelete(job._id)}
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </Button>
+          </div>
+        );
+      },
+    },
+  ];
+
+  const renderExpandedContent = (job: any) => {
+    return (
+      <div className="space-y-4 p-4">
+        <div>
+          <h4 className="text-sm font-semibold text-gray-900 mb-2">Description</h4>
+          <p className="text-sm text-gray-600">{job.description || "No description provided"}</p>
+        </div>
+        {job.requirements && (
+          <div>
+            <h4 className="text-sm font-semibold text-gray-900 mb-2">Requirements</h4>
+            <p className="text-sm text-gray-600">{job.requirements}</p>
+          </div>
+        )}
+        {job.salary && (
+          <div className="flex items-center gap-2">
+            <DollarSign className="w-4 h-4 text-gray-500" />
+            <span className="text-sm text-gray-700">
+              {typeof job.salary === 'object' 
+                ? `${job.salary.currency || '$'}${job.salary.min || 0} - ${job.salary.currency || '$'}${job.salary.max || 0}${job.salary.period ? `/${job.salary.period}` : ''}`
+                : job.salary}
+            </span>
+          </div>
+        )}
+        {job.skills && job.skills.length > 0 && (
+          <div>
+            <h4 className="text-sm font-semibold text-gray-900 mb-2">Skills</h4>
+            <div className="flex flex-wrap gap-2">
+              {job.skills.map((skill: string, index: number) => (
+                <Badge key={index} variant="outline" size="sm">
+                  {skill}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -133,124 +271,32 @@ export default function JobsPage() {
         </Button>
       </div>
 
-      {/* Empty state */}
-      {!isLoading && myJobs.length === 0 && (
-        <Card className="py-12 text-center">
-          <div className="text-gray-400 mb-3">
-            <Briefcase className="w-12 h-12 mx-auto" />
+      {/* DataTable */}
+      <DataTable
+        columns={columns}
+        data={myJobs}
+        mode="client"
+        initialPagination={{ pageIndex: 0, pageSize: 10 }}
+        searchable={true}
+        searchPlaceholder="Search jobs..."
+        expandable={true}
+        renderExpandedContent={renderExpandedContent}
+        isFetching={isLoading}
+        renderLoading={() => <div className="text-center py-8">Loading jobs...</div>}
+        renderEmpty={() => (
+          <div className="text-center py-8">
+            <div className="text-gray-400 mb-3">
+              <Briefcase className="w-12 h-12 mx-auto" />
+            </div>
+            <h3 className="text-base font-semibold text-gray-900 mb-1">
+              No jobs posted yet
+            </h3>
+            <p className="text-sm text-gray-500">
+              Post your first job to start receiving applications.
+            </p>
           </div>
-          <h3 className="text-base font-semibold text-gray-900 mb-1">
-            No jobs posted yet
-          </h3>
-          <p className="text-sm text-gray-500 mb-4">
-            Post your first job to start receiving applications.
-          </p>
-        </Card>
-      )}
-
-      {/* Jobs list */}
-      {myJobs.length > 0 && (
-        <div className="space-y-4">
-          {myJobs.map((job) => (
-            <Card key={job._id} hoverable>
-              <div className="flex items-start gap-4">
-                <Avatar src={job.company?.logo} name={job.company?.name || "Company"} size="md" shape="squre" />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <h3 className="text-sm font-semibold text-gray-900">
-                        {job.title}
-                      </h3>
-                      <p className="text-xs text-gray-500 mt-0.5">
-                        {job.location} · {job.type} · {job.level}
-                      </p>
-                    </div>
-                    <Badge
-                      variant={
-                        job.status === "active"
-                          ? "success"
-                          : job.status === "paused"
-                            ? "warning"
-                            : "default"
-                      }
-                      size="sm"
-                    >
-                      {job.status}
-                    </Badge>
-                  </div>
-
-                  <div className="flex flex-wrap gap-4 mt-3 text-xs text-gray-500">
-                    <span className="flex items-center gap-1">
-                      <Users className="w-3.5 h-3.5" />
-                      {job.applicantsCount ?? 0} applicants
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Eye className="w-3.5 h-3.5" />
-                      {job.viewsCount ?? 0} views
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Clock className="w-3.5 h-3.5" />
-                      Posted {timeAgo(job.postedAt)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-gray-100">
-                <Button
-                  variant="outline"
-                  size="xs"
-                  onClick={() => {
-                    router.push(`/jobs/${job._id}`);
-                  }}
-                >
-                  <Eye className="w-3.5 h-3.5" />
-                  View
-                </Button>
-                <Button variant="ghost" size="xs" onClick={() => {
-                  router.push(`/recruiter-dashboard/jobs/${job._id}/edit`);
-                }}>
-                  <Edit3 className="w-3.5 h-3.5" />
-                  Edit
-                </Button>
-                <div className="relative">
-                  <Button
-                    variant="ghost"
-                    size="xs"
-                    onClick={() => setStatusDropdownOpen(statusDropdownOpen === job._id ? null : job._id)}
-                    icon={<Power className="w-3.5 h-3.5" />}
-                    iconPosition="right"
-                  >
-                    Status
-                  </Button>
-                  {statusDropdownOpen === job._id && (
-                    <div className="absolute right-0 mt-2 w-32 bg-white border border-gray-200 rounded-lg shadow-lg z-50 overflow-hidden">
-                      {(["draft", "active", "paused", "closed"] as JobStatus[]).map((status) => (
-                        <button
-                          key={status}
-                          onClick={() => handleStatusChange(job._id, status)}
-                          className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg whitespace-nowrap"
-                        >
-                          {status.charAt(0).toUpperCase() + status.slice(1)}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                <Button
-                  variant="ghost"
-                  size="xs"
-                  className="ml-auto text-red-500 hover:bg-red-50"
-                  onClick={() => handleDelete(job._id)}
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                  Delete
-                </Button>
-              </div>
-            </Card>
-          ))}
-        </div>
-      )}
+        )}
+      />
 
       {/* Delete Confirmation Modal */}
       <Modal

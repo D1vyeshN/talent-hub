@@ -4,6 +4,7 @@ import { Toaster } from "react-hot-toast";
 import "./globals.css";
 import Providers from "./providers";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import SocketProvider from "@/components/providers/SocketProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -34,21 +35,23 @@ export default function RootLayout({
     >
       <body className="min-h-screen bg-gray-50 text-gray-900 ">
         <Providers>
-          <TooltipProvider>
-            {/* <Navbar /> */}
-            {children}
-            <Toaster
-              position="top-right"
-              toastOptions={{
-                duration: 4000,
-                style: {
-                  borderRadius: "12px",
-                  background: "#333",
-                  color: "#fff",
-                },
-              }}
-            />
-          </TooltipProvider>
+          <SocketProvider>
+            <TooltipProvider>
+              {/* <Navbar /> */}
+              {children}
+              <Toaster
+                position="top-right"
+                toastOptions={{
+                  duration: 4000,
+                  style: {
+                    borderRadius: "12px",
+                    background: "#333",
+                    color: "#fff",
+                  },
+                }}
+              />
+            </TooltipProvider>
+          </SocketProvider>
         </Providers>
       </body>
     </html>

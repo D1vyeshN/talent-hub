@@ -2,9 +2,6 @@
 
 import { Provider } from "react-redux";
 import { store, setup401Handler } from "@/store";
-import { useAppDispatch } from "@/store/hooks";
-import { useEffect } from "react";
-import { fetchCurrentUser } from "@/features/auth/store/authSlice";
 import AuthInitializer from "@/components/layout/AuthInitializer";
 
 export default function Providers({ children }: { children: React.ReactNode }) {

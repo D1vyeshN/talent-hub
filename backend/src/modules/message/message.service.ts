@@ -87,10 +87,10 @@ export const getConversationMessages = async (
   const skip = (page - 1) * pageSize;
   const [data, total] = await Promise.all([
     Message.find({ conversationId })
-      .sort({ sentAt: -1 })
+      .sort({ sentAt: 1 })
       .skip(skip)
-      .limit(pageSize)
-      .populate("senderId", "name avatar"),
+      .limit(pageSize),
+      // .populate("senderId", "name avatar"),
     Message.countDocuments({ conversationId }),
   ]);
 

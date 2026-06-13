@@ -1,7 +1,6 @@
 import {
   createSlice,
   createAsyncThunk,
-  type PayloadAction,
 } from "@reduxjs/toolkit";
 import { authService } from "../services/auth.service";
 import { getCookie, setCookie, deleteCookie } from "@/shared/lib/apiClient";
@@ -109,7 +108,7 @@ const authSlice = createSlice({
       state.isLoading = false;
       state.user = action.payload.user;
       state.isAuthenticated = true;
-      state.role = action.payload.user.role;
+      state.role = action.payload.user?.role || null;
       state.error = null;
     });
     builder.addCase(login.rejected, (state, action) => {
@@ -145,7 +144,7 @@ const authSlice = createSlice({
       state.isLoading = false;
       state.user = action.payload.user;
       state.isAuthenticated = true;
-      state.role = action.payload.user.role;
+      state.role = action.payload.user?.role || null;
       state.error = null;
     });
     builder.addCase(register.rejected, (state, action) => {
@@ -161,7 +160,7 @@ const authSlice = createSlice({
       state.isLoading = false;
       state.user = action.payload;
       state.isAuthenticated = true;
-      state.role = action.payload.role;
+      state.role = action.payload?.role || null;
       state.initialized = true;
       // state.error = null;
     });

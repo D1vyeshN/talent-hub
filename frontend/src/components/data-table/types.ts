@@ -1,16 +1,26 @@
-import { ColumnDef, RowSelectionState, ExpandedState } from "@tanstack/react-table";
+import { ColumnDef, RowSelectionState, ExpandedState, ColumnFiltersState, SortingState } from "@tanstack/react-table";
+
+export type DataTableMode = "client" | "server";
 
 export interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
-  totalRows: number;
-  page: number;
-  pageSize: number;
+  mode?: DataTableMode;
+  // Server-side props
+  totalRows?: number;
+  page?: number;
+  pageSize?: number;
   isFetching?: boolean;
-  onPageChange: (page: number) => void;
+  onPageChange?: (page: number) => void;
   onPageSizeChange?: (pageSize: number) => void;
   onSortChange?: (sort: { field: string; direction: "asc" | "desc" }) => void;
   onSearch?: (search: string) => void;
+  onFilterChange?: (filters: ColumnFiltersState) => void;
+  // Client-side props
+  initialSorting?: SortingState;
+  initialFilters?: ColumnFiltersState;
+  initialPagination?: { pageIndex: number; pageSize: number };
+  // Common props
   onRowSelectionChange?: (selectedRows: TData[]) => void;
   onExpandedChange?: (expanded: ExpandedState) => void;
   initialRowSelection?: RowSelectionState;
@@ -19,7 +29,22 @@ export interface DataTableProps<TData, TValue> {
   searchable?: boolean;
   selectable?: boolean;
   expandable?: boolean;
+  filterable?: boolean;
   renderExpandedContent?: (row: TData) => React.ReactNode;
+  globalFilterFn?: (row: any, columnId: string, value: string) => boolean;
+  // Custom render props
+  renderToolbar?: (props: ToolbarRenderProps) => React.ReactNode;
+  renderEmpty?: () => React.ReactNode;
+  renderLoading?: () => React.ReactNode;
+}
+
+export interface ToolbarRenderProps {
+  searchValue: string;
+  onSearchChange: (value: string) => void;
+  searchPlaceholder: string;
+  selectedCount: number;
+  onClearSelection: () => void;
+  onRefresh: () => void;
 }
 
 export interface PaginationProps {

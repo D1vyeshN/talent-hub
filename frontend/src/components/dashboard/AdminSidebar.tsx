@@ -40,13 +40,13 @@ export function AdminSidebar() {
       exact: true,
       section: "Main",
     },
-    {
-      label: "Mock Data",
-      icon: <Database className="w-5 h-5" />,
-      href: "/admin-dashboard/mock-data",
-      exact: true,
-      section: "Data Management",
-    },
+    // {
+    //   label: "Mock Data",
+    //   icon: <Database className="w-5 h-5" />,
+    //   href: "/admin-dashboard/mock-data",
+    //   exact: true,
+    //   section: "Data Management",
+    // },
     {
       label: "Users",
       icon: <Users className="w-5 h-5" />,
@@ -68,13 +68,13 @@ export function AdminSidebar() {
       exact: true,
       section: "Management",
     },
-    {
-      label: "Settings",
-      icon: <Settings className="w-5 h-5" />,
-      href: "/admin-dashboard/settings",
-      exact: true,
-      section: "Account",
-    },
+    // {
+    //   label: "Settings",
+    //   icon: <Settings className="w-5 h-5" />,
+    //   href: "/admin-dashboard/settings",
+    //   exact: true,
+    //   section: "Account",
+    // },
   ];
 
   const isActive = (href: string, exact?: boolean) => {

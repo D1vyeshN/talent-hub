@@ -36,7 +36,7 @@ export function RecruiterSidebar() {
   const router = useRouter();
   const pathname = usePathname();
   const { sidebarOpen } = useAppSelector((s) => s.ui);
-  const { user } = useAppSelector((s) => s.auth);
+  // const { user } = useAppSelector((s) => s.auth);
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const navItems: NavItem[] = [
@@ -110,13 +110,13 @@ export function RecruiterSidebar() {
       exact: true,
       section: "Account",
     },
-    {
-      label: "Reports",
-      icon: <Download className="w-5 h-5" />,
-      href: "/recruiter-dashboard/reports",
-      exact: true,
-      section: "Account",
-    },
+    // {
+    //   label: "Reports",
+    //   icon: <Download className="w-5 h-5" />,
+    //   href: "/recruiter-dashboard/reports",
+    //   exact: true,
+    //   section: "Account",
+    // },
   ];
 
   const isActive = (href: string, exact?: boolean) => {

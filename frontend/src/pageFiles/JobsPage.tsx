@@ -8,8 +8,9 @@ import { Badge } from "@/components/ui/Badge";
 import { JobCardSkeleton } from "@/components/ui/Skeleton";
 import { JOB_TYPES, JOB_LEVELS, JOB_CATEGORIES } from "@/constants";
 import { formatSalaryRange, timeAgo, getJobTypeBadgeColor, cn } from "@/lib/utils";
-import type { JobType, JobLevel, Job } from "@/types";
-import { jobsService } from "@/features/jobs/services/jobs.service";
+import type { JobType, JobLevel } from "@/types";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { fetchJobs, setFilters, clearFilters as clearJobFilters } from "@/features/jobs/jobSlice";
 import Image from "next/image";
 import { Avatar } from "@/components/ui/Avatar";
 
@@ -56,6 +57,8 @@ function CompanyLogo({ logo, name, size = "md" }: { logo?: string; name: string;
 
 export default function JobsPage() {
   const router = useRouter();
+  const dispatch = useAppDispatch();
+  const { jobs, total, page, pageSize, totalPages, isLoading, error } = useAppSelector((state) => state.job);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchLocation, setSearchLocation] = useState("");
   const [selectedTypes, setSelectedTypes] = useState<JobType[]>([]);
@@ -63,55 +66,38 @@ export default function JobsPage() {
   const [selectedCategory, setSelectedCategory] = useState("");
   const [isRemote, setIsRemote] = useState(false);
   const [savedJobs, setSavedJobs] = useState<string[]>([]);
-  const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [jobs, setJobs] = useState<Job[]>([]);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [sortBy, setSortBy] = useState("newest");
-  const [page, setPage] = useState(1);
-  const [pageSize] = useState(10);
-  const [total, setTotal] = useState(0);
-  const [totalPages, setTotalPages] = useState(0);
 
   useEffect(() => {
-    let isMounted = true;
-    const debounceTimer = setTimeout(async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        setPage(1); // Reset to page 1 when filters change
-        const response = await jobsService.getAll({
-          search: searchQuery || undefined,
-          location: searchLocation || undefined,
-          type: selectedTypes.length > 0 ? selectedTypes[0] : undefined,
-          level: selectedLevels.length > 0 ? selectedLevels[0] : undefined,
-          skills: selectedCategory || undefined,
-          isRemote: isRemote || undefined,
-          page: 1,
-          pageSize,
-        });
-        if (isMounted) {
-          setJobs(response.data);
-          setTotal(response.total);
-          setTotalPages(response.totalPages);
-        }
-      } catch (err: any) {
-        if (isMounted) {
-          setError(err.message || "Failed to load jobs");
-        }
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
-      }
+    const debounceTimer = setTimeout(() => {
+      dispatch(setFilters({
+        search: searchQuery || undefined,
+        location: searchLocation || undefined,
+        type: selectedTypes.length > 0 ? selectedTypes[0] : undefined,
+        level: selectedLevels.length > 0 ? selectedLevels[0] : undefined,
+        skills: selectedCategory || undefined,
+        isRemote: isRemote || undefined,
+        page: 1,
+        pageSize,
+      }));
+      dispatch(fetchJobs({
+        search: searchQuery || undefined,
+        location: searchLocation || undefined,
+        type: selectedTypes.length > 0 ? selectedTypes[0] : undefined,
+        level: selectedLevels.length > 0 ? selectedLevels[0] : undefined,
+        skills: selectedCategory || undefined,
+        isRemote: isRemote || undefined,
+        page: 1,
+        pageSize,
+      }));
     }, 500);
 
     return () => {
-      isMounted = false;
       clearTimeout(debounceTimer);
     };
-  }, [searchQuery, searchLocation, selectedTypes, selectedLevels, selectedCategory, isRemote, pageSize]);
+  }, [searchQuery, searchLocation, selectedTypes, selectedLevels, selectedCategory, isRemote, pageSize, dispatch]);
 
   const toggleJobType = (type: JobType) => {
     setSelectedTypes((prev) => prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]);
@@ -133,15 +119,16 @@ export default function JobsPage() {
     setSelectedLevels([]);
     setSelectedCategory("");
     setIsRemote(false);
+    dispatch(clearJobFilters());
   };
 
   const loadMore = async () => {
     if (page >= totalPages || loadingMore) return;
-    
+
     try {
       setLoadingMore(true);
       const nextPage = page + 1;
-      const response = await jobsService.getAll({
+      dispatch(fetchJobs({
         search: searchQuery || undefined,
         location: searchLocation || undefined,
         type: selectedTypes.length > 0 ? selectedTypes[0] : undefined,
@@ -150,13 +137,9 @@ export default function JobsPage() {
         isRemote: isRemote || undefined,
         page: nextPage,
         pageSize,
-      });
-      setJobs((prev) => [...prev, ...response.data]);
-      setPage(nextPage);
-      setTotal(response.total);
-      setTotalPages(response.totalPages);
+      }));
     } catch (err: any) {
-      setError(err.message || "Failed to load more jobs");
+      console.error("Failed to load more jobs:", err);
     } finally {
       setLoadingMore(false);
     }
@@ -322,9 +305,9 @@ export default function JobsPage() {
                 </div>
               </div>
 
-              {/* Category */}
+              {/* Category / Industry */}
               <div className="bg-white rounded-xl border border-gray-200 p-4">
-                <h4 className="text-sm font-semibold text-gray-800 mb-3">Category</h4>
+                <h4 className="text-sm font-semibold text-gray-800 mb-3">Industry</h4>
                 <div className="space-y-1.5 max-h-48 overflow-y-auto">
                   {JOB_CATEGORIES.map((cat) => (
                     <button
@@ -385,7 +368,7 @@ export default function JobsPage() {
             </div>
 
             {/* Jobs List */}
-            {loading ? (
+            {isLoading ? (
               <div className="space-y-4">
                 {Array.from({ length: 6 }).map((_, i) => <JobCardSkeleton key={i} />)}
               </div>
@@ -410,7 +393,7 @@ export default function JobsPage() {
                         {/* Logo */}
                         {/* <CompanyLogo logo={job.company?.logo} name={job.company?.name || "Company"} size="md" /> */}
 
-<Avatar src={job?.company?.logo} name={job?.company?.name}/> 
+                        <Avatar src={job?.company?.logo} name={job?.company?.name} shape="squre"/>
                         {/* Content */}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between gap-3">
@@ -501,11 +484,11 @@ export default function JobsPage() {
             )}
 
             {/* Load More */}
-            {!loading && jobs.length > 0 && page < totalPages && (
+            {!isLoading && jobs.length > 0 && page < totalPages && (
               <div className="mt-8 text-center">
-                <Button 
-                  variant="outline" 
-                  size="md" 
+                <Button
+                  variant="outline"
+                  size="md"
                   onClick={loadMore}
                   loading={loadingMore}
                 >
@@ -513,7 +496,7 @@ export default function JobsPage() {
                 </Button>
               </div>
             )}
-            {!loading && jobs.length > 0 && page >= totalPages && (
+            {!isLoading && jobs.length > 0 && page >= totalPages && (
               <div className="mt-8 text-center">
                 <p className="text-sm text-gray-500">
                   Showing all {jobs.length} jobs

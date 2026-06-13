@@ -41,7 +41,7 @@ function generateToken(userId: string, role: string, email?: string): string {
  */
 function toApiUser(user: any): UserType {
   const base: UserType = {
-    id: user._id.toString(),
+    _id: user._id.toString(),
     name: user.name,
     email: user.email,
     avatar: user.avatar,

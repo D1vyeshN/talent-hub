@@ -5,6 +5,8 @@ import recruiterReducer from "@/features/recruiter/recruiterSlice";
 import candidateReducer from "./slices/candidateSlice";
 import applicationReducer from "@/features/applications/store/applicationSlice";
 import notificationReducer from "@/features/notifications/store/notificationSlice";
+import jobReducer from "@/features/jobs/jobSlice";
+import messageReducer from "@/features/message/store/messageSlice";
 import { setUnauthorizedHandler } from "@/shared/lib/apiClient";
 
 export const store = configureStore({
@@ -15,6 +17,8 @@ export const store = configureStore({
     candidate: candidateReducer,
     application: applicationReducer,
     notification: notificationReducer,
+    job: jobReducer,
+    message: messageReducer,
   },
   devTools: true,
   middleware: (getDefaultMiddleware) =>

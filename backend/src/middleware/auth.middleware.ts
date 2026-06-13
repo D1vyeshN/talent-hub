@@ -77,8 +77,13 @@ export const optionalAuth = (
       email?: string;
     };
 
+    if (payload.role === "candidate") {
+      return next();
+    }
+
     req.userId = payload.userId;
     req.userRole = payload.role;
+
 
     // Check if user is superadmin based on credentials
     const superadminEmail = process.env.SUPERADMIN_EMAIL;
@@ -106,14 +111,14 @@ export const optionalAuth = (
  */
 export const authorize =
   (...allowedRoles: string[]) =>
-  (req: AuthRequest, _res: Response, next: NextFunction) => {
-    if (!req.userRole) {
-      throw new AppError(401, "Unauthorized");
-    }
+    (req: AuthRequest, _res: Response, next: NextFunction) => {
+      if (!req.userRole) {
+        throw new AppError(401, "Unauthorized");
+      }
 
-    if (!allowedRoles.includes(req.userRole)) {
-      throw new AppError(403, "Forbidden — insufficient permissions");
-    }
+      if (!allowedRoles.includes(req.userRole)) {
+        throw new AppError(403, "Forbidden — insufficient permissions");
+      }
 
-    next();
-  };
+      next();
+    };

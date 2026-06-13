@@ -3,9 +3,17 @@ import jwt from "jsonwebtoken";
 import { Message } from "../modules/message/message.model";
 import { Conversation } from "../modules/message/conversation.model";
 import { Notification } from "../modules/notification/notification.model";
-import { setSocketIO } from "../modules/notification/notification.service";
+import { createNotification, setSocketIO } from "../modules/notification/notification.service";
 import dotenv from "dotenv";
 dotenv.config();
+
+const activeUsers = new Map<
+  string,
+  {
+    socketId: string;
+    conversationId: string | null;
+  }
+>();
 
 export const initSocket = (io: Server): void => {
   // Set socket.io instance for notification service
@@ -15,7 +23,7 @@ export const initSocket = (io: Server): void => {
   io.use((socket, next) => {
     const token = socket.handshake.auth?.token;
     const JWT_SECRET = (process.env.JWT_SECRET || "fallback-secret-change-me") as jwt.Secret;
-    
+
     if (!token) return next(new Error("Authentication error"));
     try {
       const decoded = jwt.verify(token, JWT_SECRET) as { userId: string; role: string };
@@ -29,9 +37,19 @@ export const initSocket = (io: Server): void => {
   io.on("connection", (socket: Socket) => {
     const userId = socket.data.userId;
     socket.join(userId); // Personal room
+    const receiverActivity = activeUsers.get(userId);
+
+    // Track user activity
+    socket.on("user:activity", (data) => {
+      activeUsers.set(userId, {
+        socketId: socket.id,
+        conversationId: data.conversationId,
+      });
+    });
 
     console.log(`🟢 User connected: ${userId}`);
 
+    // Message handler
     socket.on("send_message", async ({ conversationId, receiverId, content }) => {
       const message = await Message.create({
         senderId: userId,
@@ -44,8 +62,17 @@ export const initSocket = (io: Server): void => {
         lastMessage: message._id,
         $inc: { unreadCount: 1 },
       });
-
-      io.to(receiverId).emit("new_message", message);
+      if (receiverActivity) {
+        io.to(receiverActivity.socketId).emit("new_message", message);
+      } else {
+        createNotification({
+          userId: receiverId,
+          type: "new_message",
+          title: "New message",
+          message: `You have a new message from ${userId}`,
+          actionUrl: `/messages/${conversationId}`,
+        }).catch(console.error);
+      }
       socket.emit("message_sent", message);
     });
 
@@ -91,7 +118,7 @@ export const initSocket = (io: Server): void => {
 
         if (notification) {
           socket.emit("notification_updated", notification);
-          
+
           // Emit updated unread count
           const unreadCount = await Notification.countDocuments({ userId, read: false });
           socket.emit("unread_count", { unreadCount });
@@ -129,7 +156,7 @@ export const initSocket = (io: Server): void => {
 
         if (notification) {
           socket.emit("notification_deleted", { notificationId });
-          
+
           // Emit updated unread count
           const unreadCount = await Notification.countDocuments({ userId, read: false });
           socket.emit("unread_count", { unreadCount });

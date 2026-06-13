@@ -5,12 +5,12 @@ export type UserRole = "candidate" | "recruiter" | "admin";
 export interface User {
   _id: string;
   name: string;
-  email: string;
+  email?: string;
   avatar?: string;
-  role: UserRole;
-  isVerified: boolean;
-  isBlocked: boolean;
-  createdAt: string;
+  role?: UserRole;
+  isVerified?: boolean;
+  isBlocked?: boolean;
+  createdAt?: string;
   company?: string;
   designation?: string;
 }
@@ -164,14 +164,20 @@ export interface Message {
   content: string;
   sentAt: string;
   read: boolean;
+  conversationId: string;
 }
 
 export interface Conversation {
   _id: string;
   participants: User[];
-  lastMessage: Message;
-  unreadCount: number;
-  jobContext?: string;
+  lastMessage?: Message;
+  unreadCount?: number;
+  jobContext?: {
+    _id: string;
+    title?: string;
+  } | null;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 // ─── Analytics ────────────────────────────────────────────────────────────────
