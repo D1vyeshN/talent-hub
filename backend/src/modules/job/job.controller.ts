@@ -54,7 +54,7 @@ export const createJob = asyncHandler(
 export const updateJob = asyncHandler(
   async (req: AuthRequest, res: Response) => {
     const input = updateJobSchema.parse(req.body) as UpdateJobPayload;
-    
+
     // Convert expiresAt string to Date if provided
     if (input.expiresAt) {
       (input as any).expiresAt = new Date(input.expiresAt);
@@ -102,5 +102,16 @@ export const toggleFeature = asyncHandler(
       },
     );
     res.json(new ApiResponse(200, updated, "Featured status toggled"));
+  },
+);
+
+
+// GET /api/v1/jobs/recruiter
+export const getRecruiterJobs = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
+    const { page, pageSize } = getPagination(req.query);
+    const authReq = req as AuthRequest;
+    const jobs = await JobService.getJobsByRecruiter(req.query, page, pageSize, authReq.userId!);
+    res.json(new ApiResponse(200, jobs, "Recruiter jobs fetched successfully"));
   },
 );

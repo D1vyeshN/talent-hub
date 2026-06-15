@@ -15,7 +15,7 @@ import {
   ColumnDef,
 } from "@tanstack/react-table";
 import { useState, useEffect, useMemo } from "react";
-import { ChevronDown, ChevronRight, ArrowUpDown, Loader2 } from "lucide-react";
+import { ChevronDown, ChevronRight, ArrowUpDown, Loader2, Search, X } from "lucide-react";
 import { DataTableProps, DataTableMode, ToolbarRenderProps } from "./types";
 import {
   Table,
@@ -53,6 +53,10 @@ export function DataTable<TData, TValue>({
   onSortChange,
   onSearch,
   onFilterChange,
+  // Server-side controlled props (optional)
+  searchValue: controlledSearchValue,
+  sorting: controlledSorting,
+  columnFilters: controlledColumnFilters,
   // Client-side props
   initialSorting = [],
   initialFilters = [],
@@ -74,13 +78,22 @@ export function DataTable<TData, TValue>({
   renderEmpty,
   renderLoading,
 }: DataTableProps<TData, TValue>) {
-  const [sorting, setSorting] = useState<SortingState>(initialSorting);
+  const [sorting, setSorting] = useState<SortingState>(
+    mode === "server" && controlledSorting !== undefined ? controlledSorting : initialSorting
+  );
   const [rowSelection, setRowSelection] = useState<RowSelectionState>(initialRowSelection);
   const [expanded, setExpanded] = useState<ExpandedState>(initialExpanded);
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>(initialFilters);
-  const [globalFilter, setGlobalFilter] = useState("");
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>(
+    mode === "server" && controlledColumnFilters !== undefined ? controlledColumnFilters : initialFilters
+  );
+  const [globalFilter, setGlobalFilter] = useState(
+    mode === "server" && controlledSearchValue !== undefined ? controlledSearchValue : ""
+  );
   const [pagination, setPagination] = useState(initialPagination);
-  const [debouncedSearchValue, setDebouncedSearchValue] = useState("");
+  const [debouncedSearchValue, setDebouncedSearchValue] = useState(
+    mode === "server" && controlledSearchValue !== undefined ? controlledSearchValue : ""
+  );
+
 
   // Debounce search value
   useEffect(() => {
@@ -89,6 +102,18 @@ export function DataTable<TData, TValue>({
     }, 300);
     return () => clearTimeout(timer);
   }, [globalFilter]);
+
+  // Sync controlled props in server mode only
+  useEffect(() => {
+    if (mode === "server") {
+      if (controlledSorting !== undefined) setSorting(controlledSorting);
+      if (controlledColumnFilters !== undefined) setColumnFilters(controlledColumnFilters);
+      if (controlledSearchValue !== undefined) {
+        setGlobalFilter(controlledSearchValue);
+        setDebouncedSearchValue(controlledSearchValue);
+      }
+    }
+  }, [controlledSorting, controlledColumnFilters, controlledSearchValue, mode]);
 
   // Trigger search when debounced value changes (server mode)
   useEffect(() => {
@@ -128,17 +153,34 @@ export function DataTable<TData, TValue>({
       pageCount: Math.ceil((totalRows || 0) / pageSize),
     }),
     onSortingChange: (updater) => {
-      const newSorting = typeof updater === "function" ? updater(sorting) : updater;
-      setSorting(newSorting);
-      if (mode === "server" && newSorting.length > 0 && onSortChange) {
-        onSortChange({
-          field: newSorting[0].id,
-          direction: newSorting[0].desc ? "desc" : "asc",
-        });
+      if (mode === "server") {
+        const newSorting = typeof updater === "function" ? updater(sorting) : updater;
+        if (onSortChange && newSorting.length > 0) {
+          onSortChange({
+            field: newSorting[0].id,
+            direction: newSorting[0].desc ? "desc" : "asc",
+          });
+        }
+      } else {
+        setSorting(updater);
       }
     },
-    onColumnFiltersChange: setColumnFilters,
-    onGlobalFilterChange: setGlobalFilter,
+    onColumnFiltersChange: (updater) => {
+      if (mode === "server") {
+        const newFilters = typeof updater === "function" ? updater(columnFilters) : updater;
+        if (onFilterChange) onFilterChange(newFilters);
+      } else {
+        setColumnFilters(updater);
+      }
+    },
+    onGlobalFilterChange: (updater) => {
+      if (mode === "server") {
+        const newValue = typeof updater === "function" ? updater(globalFilter) : updater;
+        if (onSearch) onSearch(newValue);
+      } else {
+        setGlobalFilter(updater);
+      }
+    },
     onPaginationChange: (updater) => {
       if (mode === "client") {
         const newPagination = typeof updater === "function" ? updater(pagination) : updater;
@@ -193,7 +235,8 @@ export function DataTable<TData, TValue>({
     setDebouncedSearchValue("");
     setColumnFilters([]);
     if (mode === "server" && onPageChange) {
-      onPageChange(1);
+      // onPageChange(1);
+      console.log(page, "data")
     } else if (mode === "client") {
       setPagination({ pageIndex: 0, pageSize: 10 });
     }
@@ -236,6 +279,8 @@ export function DataTable<TData, TValue>({
                   placeholder={searchPlaceholder}
                   value={globalFilter}
                   onChange={(e) => handleSearchChange(e.target.value)}
+                  leftIcon={<Search className="h-4 w-4 text-gray-400" />}
+                  rightIcon={globalFilter.length > 0 && <Button variant="ghost" size="xs" onClick={() => handleSearchChange("")}><X className="h-4 w-4 text-gray-400" /></Button>}
                 />
               </div>
               {Object.keys(rowSelection).length > 0 && (
@@ -295,9 +340,9 @@ export function DataTable<TData, TValue>({
                       {header.isPlaceholder
                         ? null
                         : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
                       {header.column.getIsSorted() === "asc" && (
                         <ArrowUpDown className="w-3 h-3 ml-1 inline" />
                       )}
@@ -309,7 +354,7 @@ export function DataTable<TData, TValue>({
                 </TableRow>
               ))}
             </TableHeader>
-            <TableBody>
+            <TableBody className="min-h-[50vh] max-h-[80vh] ">
               {renderLoading && isFetching ? (
                 <TableRow>
                   <TableCell
@@ -404,7 +449,7 @@ export function DataTable<TData, TValue>({
             of {currentTotalRows} results
           </div>
           <Pagination className="w-2/3 justify-end">
-            <PaginationContent>
+            <PaginationContent className="flex gap-2">
               <PaginationItem key="previous">
                 <PaginationPrevious
                   onClick={() => {
@@ -423,15 +468,16 @@ export function DataTable<TData, TValue>({
               </PaginationItem>
               {pageCount > 0 &&
                 Array.from({ length: pageCount }).map((_, i) => (
-                  <PaginationItem key={i}>
+                  <PaginationItem key={i} onClick={() => {
+                    if (mode === "client") {
+                      table.setPageIndex(i);
+                    } else if (onPageChange) {
+                      console.log(i + 1)
+                      onPageChange(i + 1);
+                    }
+                  }}>
                     <PaginationLink
-                      onClick={() => {
-                        if (mode === "client") {
-                          table.setPageIndex(i);
-                        } else if (onPageChange) {
-                          onPageChange(i + 1);
-                        }
-                      }}
+
                       isActive={currentPage === i + 1}
                       className="cursor-pointer"
                     >

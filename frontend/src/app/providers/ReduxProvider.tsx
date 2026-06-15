@@ -4,7 +4,7 @@ import { Provider } from "react-redux";
 import { store, setup401Handler } from "@/store";
 import AuthInitializer from "@/components/layout/AuthInitializer";
 
-export default function Providers({ children }: { children: React.ReactNode }) {
+export default function ReduxProvider({ children }: { children: React.ReactNode }) {
   // Wire 401 → logout once at app startup
   if (typeof window !== "undefined") {
     setup401Handler();

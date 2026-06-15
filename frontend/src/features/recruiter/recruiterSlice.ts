@@ -3,12 +3,13 @@ import {
   createAsyncThunk,
 } from "@reduxjs/toolkit";
 import { recruiterService } from "@/features/recruiter/recruiter.service";
-import { Application, ApplicationStatus, Candidate, Job, JobStatus } from "@/types";
+import { Application, ApplicationStatus, Candidate, Job, JobFilters, JobStatus } from "@/types";
 
 /* ─── State ──────────────────────────────────────────────────────────── */
 
 interface RecruiterState {
   jobs: Job[];
+  totalJobs: number;
   applications: Application[];
   candidates: Candidate[];
   stats: {
@@ -27,6 +28,7 @@ interface RecruiterState {
 
 const initialState: RecruiterState = {
   jobs: [],
+  totalJobs: 0,
   applications: [],
   candidates: [],
   stats: null,
@@ -51,12 +53,12 @@ export const fetchDashboard = createAsyncThunk(
 
 export const fetchJobs = createAsyncThunk(
   "recruiter/fetchJobs",
-  async (_void, { rejectWithValue }) => {
+  async ({ page = 1, pageSize = 1000, filters }: { page?: number; pageSize?: number; filters?: { status?: string; search?: string, sortBy?: string, sortOrder?: 'asc' | 'desc' } }, { rejectWithValue }) => {
     try {
-      const response = await recruiterService.getJobs({ page: 1, pageSize: 1000 });
+      const response = await recruiterService.getJobs({ page, pageSize, status: filters?.status, search: filters?.search, sortBy: filters?.sortBy, sortOrder: filters?.sortOrder });
       // Service returns paginated response { data, total, page, pageSize, totalPages }
       // Extract the data array for the slice
-      return response.data;
+      return { data: response.data, total: response.total };
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to load jobs";
       return rejectWithValue(message);
@@ -184,7 +186,8 @@ const recruiterSlice = createSlice({
       })
       .addCase(fetchJobs.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.jobs = action.payload;
+        state.jobs = action.payload.data;
+        state.totalJobs = action.payload.total;
       })
       .addCase(fetchJobs.rejected, (state, action) => {
         state.isLoading = false;

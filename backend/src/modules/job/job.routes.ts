@@ -6,8 +6,9 @@ import { authorizeRoles } from "../../middleware/role.middleware";
 const router = Router();
 
 // Public (with optional auth for recruiter context)
-router.get("/", optionalAuth, JobController.getJobs);
-router.get("/:id", optionalAuth, JobController.getJobById);
+router.get("/", JobController.getJobs);
+router.get("/recruiter", authenticate, authorizeRoles("recruiter"), JobController.getRecruiterJobs);
+router.get("/:id", JobController.getJobById);
 
 // Recruiter only
 router.post("/", authenticate, authorizeRoles("recruiter"), JobController.createJob);

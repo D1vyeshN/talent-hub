@@ -252,7 +252,7 @@ export default function HomePage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {featuredJobs.map((job) => (
               <div
-                key={job.id}
+                key={job._id}
                 onClick={() => redirect("job-detail")}
                 className="group bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-lg hover:border-blue-200 transition-all duration-200 cursor-pointer relative overflow-hidden"
               >

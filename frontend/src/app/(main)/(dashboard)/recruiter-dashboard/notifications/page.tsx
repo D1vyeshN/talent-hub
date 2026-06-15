@@ -8,7 +8,6 @@ import { Check, CheckCheck, Bell, BellOff, Trash2 } from "lucide-react";
 import type { NotificationType, Notification } from "@/types";
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useSelector, useDispatch } from "react-redux";
 import {
   fetchNotifications,
   fetchUnreadCount,
@@ -18,6 +17,7 @@ import {
   clearError,
 } from "@/features/notifications/store/notificationSlice";
 import type { RootState } from "@/store";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
 
 const notificationIcons: Record<NotificationType, React.ReactNode> = {
   application_update: <Check className="w-4 h-4 text-blue-600" />,
@@ -37,14 +37,14 @@ const notificationIconBg: Record<NotificationType, string> = {
 
 export default function NotificationsPage() {
   const router = useRouter();
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
 
   // Selectors
-  const notifications = useSelector((state: RootState) => state.notification.notifications);
-  const unreadCount = useSelector((state: RootState) => state.notification.unreadCount);
-  const isLoading = useSelector((state: RootState) => state.notification.isLoading);
-  const error = useSelector((state: RootState) => state.notification.error);
-  const pagination = useSelector((state: RootState) => state.notification.pagination);
+  const notifications = useAppSelector((state: RootState) => state.notification.notifications);
+  const unreadCount = useAppSelector((state: RootState) => state.notification.unreadCount);
+  const isLoading = useAppSelector((state: RootState) => state.notification.isLoading);
+  const error = useAppSelector((state: RootState) => state.notification.error);
+  const pagination = useAppSelector((state: RootState) => state.notification.pagination);
 
   const [page, setPage] = useState(pagination.page);
   const [totalPages, setTotalPages] = useState(pagination.totalPages);
@@ -62,10 +62,10 @@ export default function NotificationsPage() {
     return () => clearTimeout(timer);
   }, [fetchData]);
 
-  useEffect(() => {
-    setPage(pagination.page);
-    setTotalPages(pagination.totalPages);
-  }, [pagination.page, pagination.totalPages]);
+  // useEffect(() => {
+  //   setPage(pagination.page);
+  //   setTotalPages(pagination.totalPages);
+  // }, [pagination.page, pagination.totalPages]);
 
   const handleMarkAllRead = async () => {
     try {

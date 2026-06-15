@@ -4,6 +4,9 @@ import { Application } from "../application/application.model";
 import { Company } from "../company/company.model";
 import { Admin } from "./admin.model";
 import { ApiError } from "../../utils/ApiError";
+import { Notification } from "../notification/notification.model";
+import { Message } from "../message/message.model";
+import { Conversation } from "../message/conversation.model";
 
 // ─── Dashboard overview stats ─────────────────────────────────────────────────
 export const getDashboardStats = async () => {

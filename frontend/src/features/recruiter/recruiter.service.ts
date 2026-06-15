@@ -74,17 +74,17 @@ export const recruiterService = {
   getDashboard: () => apiClient.get<DashboardHome>("/api/recruiter/dashboard"),
 
   /** GET /api/job — get jobs (use query params for recruiter filtering) */
-  getJobs: (params?: { status?: string; search?: string; page?: number; pageSize?: number }): Promise<{ data: Job[]; total: number; page: number; pageSize: number; totalPages: number }> => {
+  getJobs: (params?: { status?: string; search?: string; page?: number; pageSize?: number; sortBy?: string; sortOrder?: 'asc' | 'desc' }): Promise<{ data: Job[]; total: number; page: number; pageSize: number; totalPages: number }> => {
     // Filter out undefined values to avoid sending "undefined" as string
     const filteredParams = Object.fromEntries(
       Object.entries(params || {}).filter(([_, value]) => value !== undefined)
     );
-    return apiClient.get<{ data: Job[]; total: number; page: number; pageSize: number; totalPages: number }>("/api/job", filteredParams as any);
+    return apiClient.get<{ data: Job[]; total: number; page: number; pageSize: number; totalPages: number }>("/api/job/recruiter", filteredParams as any);
   },
 
   /** PUT /api/job/:id — update job status (uses update endpoint with status field) */
   updateJobStatus: (id: string, status: Job["status"]) =>
-    apiClient.put<{data:Job; message:string; success:boolean;}>(`/api/job/${id}`, { status }),
+    apiClient.put<{ data: Job; message: string; success: boolean; }>(`/api/job/${id}`, { status }),
 
   /** DELETE /api/job/:id — delete job */
   deleteJob: (id: string) => apiClient.delete<void>(`/api/job/${id}`),

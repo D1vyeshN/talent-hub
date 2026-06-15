@@ -19,35 +19,73 @@ import {
   Clock,
   DollarSign,
   MapPin,
+  Search,
+  X,
 } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { DataTable } from "@/components/data-table/DataTable";
 import { ColumnDef } from "@tanstack/react-table";
-import { timeAgo } from "@/lib/utils";
+import { cn, timeAgo } from "@/lib/utils";
 import { JobStatus } from "@/types";
-import { Avatar } from "@/components/ui/Avatar";
+import { TooltipWrapper } from "@/components/shared/TooltipWrapper";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/Input";
 
+const filters = [
+  { id: "all", label: "All Jobs" },
+  { id: "draft", label: "Draft" },
+  { id: "active", label: "Active" },
+  { id: "published", label: "Published" },
+  { id: "closed", label: "Closed" },
+];
 
 export default function JobsPage() {
   const dispatch = useAppDispatch();
   const router = useRouter();
-  const { jobs: myJobs, isLoading } = useAppSelector(
+  const { jobs: myJobs, isLoading, totalJobs } = useAppSelector(
     (s) => s.recruiter
   );
-  const [statusDropdownOpen, setStatusDropdownOpen] = useState<string | null>(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [jobToDelete, setJobToDelete] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  // const [totalJobs, setTotalJobs] = useState(0);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [sortConfig, setSortConfig] = useState<{ field: string; direction: 'asc' | 'desc' } | null>(null);
 
   useEffect(() => {
-    dispatch(fetchJobs());
-  }, [dispatch]);
+    dispatch(fetchJobs({
+      page: currentPage,
+      pageSize,
+      filters: {
+        search: searchQuery.trim() !== "" ? searchQuery.trim() : undefined,
+        status: statusFilter === "all" ? undefined : statusFilter,
+        sortBy: sortConfig?.field,
+        sortOrder: sortConfig?.direction,
+      }
+    }));
+  }, [dispatch, currentPage, pageSize, searchQuery, sortConfig, statusFilter]);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handleSearch = useCallback((query: string) => {
+    setSearchQuery(query);
+    setCurrentPage(1); // Reset to first page
+  }, []);
+
+  const handleSortChange = (sort: { field: string; direction: 'asc' | 'desc' } | undefined) => {
+    setSortConfig(sort ?? null);
+    setCurrentPage(1); // Reset to first page when sort changes
+  };
 
   const handleStatusChange = useCallback(
     (jobId: string, status: JobStatus) => {
       dispatch(updateJobStatus({ jobId, status }));
-      setStatusDropdownOpen(null);
     },
     [dispatch]
   );
@@ -79,10 +117,8 @@ export default function JobsPage() {
       header: "Job Title",
       cell: ({ row }) => (
         <div className="flex items-center gap-3">
-          <Avatar src={row.original.company?.logo} name={row.original.company?.name || "Company"} size="sm" />
           <div>
             <p className="text-sm font-medium text-gray-900">{row.original.title}</p>
-            <p className="text-xs text-gray-500">{row.original.company?.name || "Company"}</p>
           </div>
         </div>
       ),
@@ -95,13 +131,6 @@ export default function JobsPage() {
           <MapPin className="w-4 h-4" />
           {row.original.location}
         </div>
-      ),
-    },
-    {
-      accessorKey: "type",
-      header: "Type",
-      cell: ({ row }) => (
-        <span className="text-sm text-gray-700">{row.original.type}</span>
       ),
     },
     {
@@ -133,78 +162,76 @@ export default function JobsPage() {
       accessorKey: "applicants",
       header: "Applicants",
       cell: ({ row }) => (
-        <div className="flex items-center gap-1 text-sm text-gray-700">
+        <div className="flex items-center justify-center gap-1 text-sm text-gray-700">
           <Users className="w-4 h-4" />
           {row.original.applicantsCount ?? 0}
         </div>
       ),
     },
     {
-      accessorKey: "postedAt",
-      header: "Posted",
-      cell: ({ row }) => (
-        <div className="flex items-center gap-1 text-sm text-gray-500">
-          <Clock className="w-4 h-4" />
-          {timeAgo(row.original.postedAt)}
-        </div>
-      ),
-    },
-    {
       id: "actions",
-      header: "Actions",
+      header: () => <div className="text-center">Actions</div>,
       cell: ({ row }) => {
         const job = row.original;
         return (
           <div className="flex justify-center gap-1">
-            <Button
-              variant="ghost"
-              size="xs"
-              onClick={() => {
-                router.push(`/jobs/${job._id}`);
-              }}
-            >
-              <Eye className="w-3.5 h-3.5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="xs"
-              onClick={() => {
-                router.push(`/recruiter-dashboard/jobs/${job._id}/edit`);
-              }}
-            >
-              <Edit3 className="w-3.5 h-3.5" />
-            </Button>
-            <div className="relative">
+            <TooltipWrapper message="View Job">
               <Button
                 variant="ghost"
                 size="xs"
-                onClick={() => setStatusDropdownOpen(statusDropdownOpen === job._id ? null : job._id)}
+                onClick={() => {
+                  router.push(`/jobs/${job._id}`);
+                }}
               >
-                <Power className="w-3.5 h-3.5" />
+                <Eye className="w-3.5 h-3.5" />
               </Button>
-              {statusDropdownOpen === job._id && (
-                <div className="absolute right-0 mt-2 w-32 bg-white border border-gray-200 rounded-lg shadow-lg z-50 overflow-hidden">
-                  {(["draft", "active", "paused", "closed"] as JobStatus[]).map((status) => (
-                    <button
-                      key={status}
-                      onClick={() => handleStatusChange(job._id, status)}
-                      className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg whitespace-nowrap"
+            </TooltipWrapper>
+            <TooltipWrapper message="Edit Job">
+              <Button
+                variant="ghost"
+                size="xs"
+                onClick={() => {
+                  router.push(`/recruiter-dashboard/jobs/${job._id}/edit`);
+                }}
+              >
+                <Edit3 className="w-3.5 h-3.5" />
+              </Button>
+            </TooltipWrapper>
+            <div className="relative">
+              <DropdownMenu>
+                <DropdownMenuTrigger>
+                  <TooltipWrapper message="Change Status">
+                    <Button
+                      variant="ghost"
+                      size="xs"
                     >
-                      {status.charAt(0).toUpperCase() + status.slice(1)}
-                    </button>
-                  ))}
-                </div>
-              )}
+                      <Power className="w-3.5 h-3.5" />
+                    </Button>
+                  </TooltipWrapper>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="bg-white">
+                  <DropdownMenuGroup>
+                    <DropdownMenuLabel>Job Status</DropdownMenuLabel>
+                    {(["draft", "active", "paused", "closed"] as JobStatus[]).map((status) => (
+                      <DropdownMenuItem key={status} className="cursor-pointer" onClick={() => handleStatusChange(job._id, status)}>
+                        {status.charAt(0).toUpperCase() + status.slice(1)}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
-            <Button
-              variant="ghost"
-              size="xs"
-              className="text-red-500 hover:bg-red-50"
-              onClick={() => handleDelete(job._id)}
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </Button>
-          </div>
+            <TooltipWrapper message="Delete Job">
+              <Button
+                variant="ghost"
+                size="xs"
+                className="text-red-500 hover:bg-red-50"
+                onClick={() => handleDelete(job._id)}
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </Button>
+            </TooltipWrapper>
+          </div >
         );
       },
     },
@@ -213,6 +240,19 @@ export default function JobsPage() {
   const renderExpandedContent = (job: any) => {
     return (
       <div className="space-y-4 p-4">
+        <div className="flex gap-5">
+          <div>
+            <h4 className="text-sm font-semibold text-gray-900 mb-2">Job Type</h4>
+            <p className="text-sm text-gray-600">{job.type || "No job type provided"}</p>
+          </div>
+          <div>
+            <h4 className="text-sm font-semibold text-gray-900 mb-2">Posted At</h4>
+            <div className="flex items-center gap-1 text-sm text-gray-500">
+              <Clock className="w-4 h-4" />
+              {timeAgo(job.postedAt)}
+            </div>
+          </div>
+        </div>
         <div>
           <h4 className="text-sm font-semibold text-gray-900 mb-2">Description</h4>
           <p className="text-sm text-gray-600">{job.description || "No description provided"}</p>
@@ -227,7 +267,7 @@ export default function JobsPage() {
           <div className="flex items-center gap-2">
             <DollarSign className="w-4 h-4 text-gray-500" />
             <span className="text-sm text-gray-700">
-              {typeof job.salary === 'object' 
+              {typeof job.salary === 'object'
                 ? `${job.salary.currency || '$'}${job.salary.min || 0} - ${job.salary.currency || '$'}${job.salary.max || 0}${job.salary.period ? `/${job.salary.period}` : ''}`
                 : job.salary}
             </span>
@@ -249,6 +289,37 @@ export default function JobsPage() {
     );
   };
 
+  const renderToolbar = (props: any) => {
+    return (
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="flex-1">
+          <Input
+            placeholder="Search by name or job title..."
+            value={props.searchValue}
+            onChange={(e) => props.onSearchChange(e.target.value)}
+            leftIcon={<Search className="h-4 w-4 text-gray-400" />}
+            rightIcon={props.searchValue.length > 0 && <Button variant="ghost" size="xs" onClick={() => props.onSearchChange("")}><X className="h-4 w-4 text-gray-400" /></Button>}
+          />
+        </div>
+        <div className="flex gap-2 flex-wrap">
+          {filters.map((f) => (
+            <button
+              key={f.id}
+              onClick={() => setStatusFilter(f.id)}
+              className={cn(
+                "px-3 py-2 text-xs font-medium rounded-lg transition-colors",
+                statusFilter === f.id
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200",
+              )}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-6">
@@ -258,6 +329,7 @@ export default function JobsPage() {
           <h1 className="text-2xl font-bold text-gray-900">My Jobs</h1>
           <p className="text-sm text-gray-500 mt-1">
             Manage your job postings • {myJobs.length} total
+
           </p>
         </div>
         <Button
@@ -275,10 +347,17 @@ export default function JobsPage() {
       <DataTable
         columns={columns}
         data={myJobs}
-        mode="client"
-        initialPagination={{ pageIndex: 0, pageSize: 10 }}
-        searchable={true}
-        searchPlaceholder="Search jobs..."
+        mode="server"
+        totalRows={totalJobs}
+        page={currentPage}
+        pageSize={pageSize}
+        onPageChange={handlePageChange}
+        onSortChange={handleSortChange}
+        onSearch={handleSearch}
+        // Pass existing state as controlled props
+        searchValue={searchQuery}
+        sorting={sortConfig ? [{ id: sortConfig.field, desc: sortConfig.direction === 'desc' }] : []}
+        columnFilters={statusFilter !== "all" ? [{ id: "status", value: statusFilter }] : []}
         expandable={true}
         renderExpandedContent={renderExpandedContent}
         isFetching={isLoading}
@@ -296,6 +375,7 @@ export default function JobsPage() {
             </p>
           </div>
         )}
+        renderToolbar={renderToolbar}
       />
 
       {/* Delete Confirmation Modal */}

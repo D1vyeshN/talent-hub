@@ -132,18 +132,28 @@ export const updateApplicationStatus = async (
  * This ensures recruiter only sees applications for their own company's jobs
  */
 export const getAllRecruiterApplications = async (
-  params: { page?: number; pageSize?: number } = {}
-): Promise<Application[]> => {
+  params: { 
+    page?: number; 
+    pageSize?: number; 
+    search?: string;
+    status?: ApplicationStatus;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+  } = {}
+): Promise<{ data: Application[]; total: number; page: number; pageSize: number; totalPages: number }> => {
   try {
     // 1. Get recruiter profile to get their companyId
     const recruiter = await recruiterService.getProfile();
     if (!recruiter.companyId) {
       console.warn("Recruiter has no company assigned");
-      return [];
+      return { data: [], total: 0, page: 1, pageSize: 10, totalPages: 0 };
     }
 
     // 2. Fetch applications filtered by companyId directly from backend
-    return await apiClient.get<Application[]>(`/api/application/company/${recruiter.companyId}`, params);
+    return await apiClient.get<{ data: Application[]; total: number; page: number; pageSize: number; totalPages: number }>(
+      `/api/application/company/${recruiter.companyId}`, 
+      params
+    );
   } catch (error: any) {
     console.error("Failed to fetch recruiter applications:", error);
     throw new Error(error.message || "Failed to load applications");

@@ -69,7 +69,7 @@ export const MOCK_JOBS: Job[] = [
     skills: ["React", "TypeScript", "GraphQL", "Next.js", "Tailwind CSS"],
     postedAt: "2024-01-15T10:00:00Z", expiresAt: "2024-02-15T10:00:00Z",
     status: "active", applicantsCount: 128, viewsCount: 2340,
-    isFeatured: true, isRemote: false, recruiter: "r1", category: "Technology",
+    isFeatured: true, isRemote: false, recruiter: { _id: "r1", name: "John Doe", email: "john.doe@example.com", role: "recruiter" }, category: "Technology",
   },
   {
     _id: "j2", title: "Full Stack Developer", company: MOCK_COMPANIES[2],
@@ -81,7 +81,7 @@ export const MOCK_JOBS: Job[] = [
     skills: ["Node.js", "React", "PostgreSQL", "Redis", "Docker"],
     postedAt: "2024-01-14T08:00:00Z", expiresAt: "2024-02-14T08:00:00Z",
     status: "active", applicantsCount: 89, viewsCount: 1560,
-    isFeatured: true, isRemote: false, recruiter: "r2", category: "Technology",
+    isFeatured: true, isRemote: false, recruiter: { _id: "r2", name: "Jane Smith", email: "jane.smith@example.com", role: "recruiter" }, category: "Technology",
   },
   {
     _id: "j3", title: "Product Designer (UI/UX)", company: MOCK_COMPANIES[5],
@@ -93,7 +93,7 @@ export const MOCK_JOBS: Job[] = [
     skills: ["Figma", "Prototyping", "Design Systems", "User Research", "Motion Design"],
     postedAt: "2024-01-13T09:00:00Z", expiresAt: "2024-02-13T09:00:00Z",
     status: "active", applicantsCount: 64, viewsCount: 1120,
-    isFeatured: false, isRemote: true, recruiter: "r3", category: "Design",
+    isFeatured: false, isRemote: true, recruiter: { _id: "r3", name: "Mike Johnson", email: "mike.johnson@example.com", role: "recruiter" }, category: "Design",
   },
   {
     _id: "j4", title: "Backend Engineer — Golang", company: MOCK_COMPANIES[4],
@@ -105,7 +105,7 @@ export const MOCK_JOBS: Job[] = [
     skills: ["Go", "Kubernetes", "PostgreSQL", "Kafka", "gRPC"],
     postedAt: "2024-01-12T11:00:00Z", expiresAt: "2024-02-12T11:00:00Z",
     status: "active", applicantsCount: 43, viewsCount: 870,
-    isFeatured: false, isRemote: false, recruiter: "r4", category: "Technology",
+    isFeatured: false, isRemote: false, recruiter: { _id: "r4", name: "Sarah Williams", email: "sarah.williams@example.com", role: "recruiter" }, category: "Technology",
   },
   {
     _id: "j5", title: "Data Scientist", company: MOCK_COMPANIES[3],
@@ -117,7 +117,7 @@ export const MOCK_JOBS: Job[] = [
     skills: ["Python", "TensorFlow", "SQL", "Spark", "Airflow"],
     postedAt: "2024-01-11T07:00:00Z", expiresAt: "2024-02-11T07:00:00Z",
     status: "active", applicantsCount: 156, viewsCount: 2100,
-    isFeatured: true, isRemote: false, recruiter: "r5", category: "Data Science",
+    isFeatured: true, isRemote: false, recruiter: { _id: "r5", name: "Emily Davis", email: "emily.davis@example.com", role: "recruiter" }, category: "Data Science",
   },
   {
     _id: "j6", title: "DevOps Engineer", company: MOCK_COMPANIES[6],
@@ -129,7 +129,7 @@ export const MOCK_JOBS: Job[] = [
     skills: ["AWS", "Kubernetes", "Terraform", "CI/CD", "Python"],
     postedAt: "2024-01-10T10:00:00Z", expiresAt: "2024-02-10T10:00:00Z",
     status: "active", applicantsCount: 38, viewsCount: 690,
-    isFeatured: false, isRemote: false, recruiter: "r1", category: "Engineering",
+    isFeatured: false, isRemote: false, recruiter: { _id: "r1", name: "John Doe", email: "john.doe@example.com", role: "recruiter" }, category: "Engineering",
   },
   {
     _id: "j7", title: "Product Manager", company: MOCK_COMPANIES[1],
@@ -141,7 +141,7 @@ export const MOCK_JOBS: Job[] = [
     skills: ["Product Strategy", "Roadmapping", "Agile", "Analytics", "Stakeholder Management"],
     postedAt: "2024-01-09T09:00:00Z", expiresAt: "2024-02-09T09:00:00Z",
     status: "active", applicantsCount: 72, viewsCount: 1340,
-    isFeatured: true, isRemote: false, recruiter: "r2", category: "Product",
+    isFeatured: true, isRemote: false, recruiter: { _id: "r2", name: "Jane Smith", email: "jane.smith@example.com", role: "recruiter" }, category: "Product",
   },
   {
     _id: "j8", title: "React Native Developer", company: MOCK_COMPANIES[7],
@@ -153,7 +153,7 @@ export const MOCK_JOBS: Job[] = [
     skills: ["React Native", "TypeScript", "Redux", "Firebase", "REST APIs"],
     postedAt: "2024-01-08T08:00:00Z", expiresAt: "2024-02-08T08:00:00Z",
     status: "active", applicantsCount: 91, viewsCount: 1780,
-    isFeatured: false, isRemote: true, recruiter: "r3", category: "Technology",
+    isFeatured: false, isRemote: true, recruiter: { _id: "r3", name: "Mike Johnson", email: "mike.johnson@example.com", role: "recruiter" }, category: "Technology",
   },
   {
     _id: "j9", title: "Marketing Manager — Growth", company: MOCK_COMPANIES[4],
@@ -165,7 +165,7 @@ export const MOCK_JOBS: Job[] = [
     skills: ["Growth Marketing", "Google Ads", "Meta Ads", "Analytics", "SEO"],
     postedAt: "2024-01-07T10:00:00Z", expiresAt: "2024-02-07T10:00:00Z",
     status: "active", applicantsCount: 47, viewsCount: 890,
-    isFeatured: false, isRemote: false, recruiter: "r4", category: "Marketing",
+    isFeatured: false, isRemote: false, recruiter: { _id: "r4", name: "Sarah Williams", email: "sarah.williams@example.com", role: "recruiter" }, category: "Marketing",
   },
   {
     _id: "j10", title: "Machine Learning Engineer", company: MOCK_COMPANIES[0],
@@ -177,7 +177,7 @@ export const MOCK_JOBS: Job[] = [
     skills: ["Python", "TensorFlow", "PyTorch", "MLOps", "Distributed Computing"],
     postedAt: "2024-01-06T09:00:00Z", expiresAt: "2024-02-06T09:00:00Z",
     status: "active", applicantsCount: 203, viewsCount: 4200,
-    isFeatured: true, isRemote: false, recruiter: "r5", category: "Data Science",
+    isFeatured: true, isRemote: false, recruiter: { _id: "r5", name: "Emily Davis", email: "emily.davis@example.com", role: "recruiter" }, category: "Data Science",
   },
   {
     _id: "j11", title: "Backend Engineer — Python", company: MOCK_COMPANIES[2],
@@ -189,7 +189,7 @@ export const MOCK_JOBS: Job[] = [
     skills: ["Python", "Django", "PostgreSQL", "REST APIs", "Git"],
     postedAt: "2024-01-05T08:00:00Z", expiresAt: "2024-02-05T08:00:00Z",
     status: "active", applicantsCount: 312, viewsCount: 5600,
-    isFeatured: false, isRemote: false, recruiter: "r1", category: "Technology",
+    isFeatured: false, isRemote: false, recruiter: { _id: "r1", name: "John Doe", email: "john.doe@example.com", role: "recruiter" }, category: "Technology",
   },
   {
     _id: "j12", title: "Content Strategist", company: MOCK_COMPANIES[5],
@@ -201,7 +201,7 @@ export const MOCK_JOBS: Job[] = [
     skills: ["Content Strategy", "SEO", "Copywriting", "Brand Voice", "Analytics"],
     postedAt: "2024-01-04T10:00:00Z", expiresAt: "2024-02-04T10:00:00Z",
     status: "active", applicantsCount: 58, viewsCount: 980,
-    isFeatured: false, isRemote: true, recruiter: "r2", category: "Content & Writing",
+    isFeatured: false, isRemote: true, recruiter: { _id: "r2", name: "Jane Smith", email: "jane.smith@example.com", role: "recruiter" }, category: "Content & Writing",
   },
 ];
 
@@ -237,38 +237,44 @@ export const MOCK_APPLICATIONS: Application[] = [
   {
     _id: "a1", jobId: "j2", job: MOCK_JOBS[1],
     candidateId: "u1", candidate: MOCK_CANDIDATE,
-    status: "interview", appliedAt: "2024-01-10T10:00:00Z", updatedAt: "2024-01-14T15:00:00Z",
+    status: "interview", createdAt: "2024-01-10T10:00:00Z", updatedAt: "2024-01-14T15:00:00Z",
     coverLetter: "I'm excited to apply for the Full Stack Developer position at Razorpay...",
     resumeUrl: "/resume-aryan.pdf",
+    companyId: "c3",
   },
   {
     _id: "a2", jobId: "j5", job: MOCK_JOBS[4],
     candidateId: "u1", candidate: MOCK_CANDIDATE,
-    status: "screening", appliedAt: "2024-01-08T09:00:00Z", updatedAt: "2024-01-11T12:00:00Z",
+    status: "screening", createdAt: "2024-01-08T09:00:00Z", updatedAt: "2024-01-11T12:00:00Z",
     coverLetter: "As a data enthusiast with 5 years of experience...",
     resumeUrl: "/resume-aryan.pdf",
+    companyId: "c2",
   },
   {
     _id: "a3", jobId: "j10", job: MOCK_JOBS[9],
     candidateId: "u1", candidate: MOCK_CANDIDATE,
-    status: "applied", appliedAt: "2024-01-06T11:00:00Z", updatedAt: "2024-01-06T11:00:00Z",
+    status: "applied", createdAt: "2024-01-06T11:00:00Z", updatedAt: "2024-01-06T11:00:00Z",
     coverLetter: "I would love to work on ML systems at Google...",
     resumeUrl: "/resume-aryan.pdf",
+    companyId: "c1",
   },
   {
     _id: "a4", jobId: "j1", job: MOCK_JOBS[0],
     candidateId: "u2", status: "offer",
-    appliedAt: "2024-01-05T08:00:00Z", updatedAt: "2024-01-13T16:00:00Z",
+    createdAt: "2024-01-05T08:00:00Z", updatedAt: "2024-01-13T16:00:00Z",
+    companyId: "c1",
   },
   {
     _id: "a5", jobId: "j1", job: MOCK_JOBS[0],
     candidateId: "u3", status: "rejected",
-    appliedAt: "2024-01-04T10:00:00Z", updatedAt: "2024-01-12T14:00:00Z",
+    createdAt: "2024-01-04T10:00:00Z", updatedAt: "2024-01-12T14:00:00Z",
+    companyId: "c1",
   },
   {
     _id: "a6", jobId: "j6", job: MOCK_JOBS[5],
     candidateId: "u4", status: "screening",
-    appliedAt: "2024-01-11T09:00:00Z", updatedAt: "2024-01-13T10:00:00Z",
+    createdAt: "2024-01-11T09:00:00Z", updatedAt: "2024-01-13T10:00:00Z",
+    companyId: "c4",
   },
 ];
 
@@ -305,11 +311,11 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
 // ─── Mock Conversations ────────────────────────────────────────────────────────
 
 export const MOCK_MESSAGES: Message[] = [
-  { _id: "m1", senderId: "r1", receiverId: "u1", content: "Hi Aryan! I came across your profile and think you'd be a great fit for our Senior Frontend Engineer role at Google.", sentAt: "2024-01-13T10:00:00Z", read: true },
-  { _id: "m2", senderId: "u1", receiverId: "r1", content: "Hi Priya! Thank you for reaching out. I'm definitely interested in learning more about the role.", sentAt: "2024-01-13T10:15:00Z", read: true },
-  { _id: "m3", senderId: "r1", receiverId: "u1", content: "Great! The role is within our Ads Infrastructure team. You'd be working on large-scale React applications serving billions of users.", sentAt: "2024-01-13T10:20:00Z", read: true },
-  { _id: "m4", senderId: "u1", receiverId: "r1", content: "That sounds incredibly exciting! Could you share more about the team structure and the tech stack you're working with?", sentAt: "2024-01-13T10:30:00Z", read: true },
-  { _id: "m5", senderId: "r1", receiverId: "u1", content: "Of course! The team uses React, TypeScript, GraphQL, and internal tooling. Team size is around 12 engineers. Would you be open to a 30-min intro call this week?", sentAt: "2024-01-13T11:00:00Z", read: false },
+  { _id: "m1", senderId: "r1", receiverId: "u1", content: "Hi Aryan! I came across your profile and think you'd be a great fit for our Senior Frontend Engineer role at Google.", sentAt: "2024-01-13T10:00:00Z", read: true , conversationId: "c1" },
+  { _id: "m2", senderId: "u1", receiverId: "r1", content: "Hi Priya! Thank you for reaching out. I'm definitely interested in learning more about the role.", sentAt: "2024-01-13T10:15:00Z", read: true , conversationId: "c1" },
+  { _id: "m3", senderId: "r1", receiverId: "u1", content: "Great! The role is within our Ads Infrastructure team. You'd be working on large-scale React applications serving billions of users.", sentAt: "2024-01-13T10:20:00Z", read: true , conversationId: "c1" },
+  { _id: "m4", senderId: "u1", receiverId: "r1", content: "That sounds incredibly exciting! Could you share more about the team structure and the tech stack you're working with?", sentAt: "2024-01-13T10:30:00Z", read: true , conversationId: "c1" },
+  { _id: "m5", senderId: "r1", receiverId: "u1", content: "Of course! The team uses React, TypeScript, GraphQL, and internal tooling. Team size is around 12 engineers. Would you be open to a 30-min intro call this week?", sentAt: "2024-01-13T11:00:00Z", read: false , conversationId: "c1" },
 ];
 
 // ─── Analytics Data ────────────────────────────────────────────────────────────

@@ -1,14 +1,12 @@
 "use client";
 
 import { RecruiterSidebar } from "@/components/dashboard/RecruiterSidebar";
-import { useAppSelector } from "@/store/hooks";
 
 export default function RecruiterDashboardLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const sidebarOpen = useAppSelector((s) => s.ui.sidebarOpen);
 
   return (
     <div className="h-[calc(100vh - 64px)] bg-gray-50 flex lg:gap-2 lg:mx-28">

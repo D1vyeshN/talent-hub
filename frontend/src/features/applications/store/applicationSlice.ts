@@ -93,10 +93,16 @@ export const fetchJobApplications = createAsyncThunk(
 
 export const fetchAllRecruiterApplications = createAsyncThunk(
   "application/fetchAllRecruiterApplications",
-  async (_, { rejectWithValue }) => {
+  async (params: { 
+    page?: number; 
+    pageSize?: number; 
+    search?: string;
+    status?: ApplicationStatus;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+  } = {}, { rejectWithValue }) => {
     try {
-      const response: any = await applicationService.getAllRecruiterApplications();
-      return response.data;
+      return await applicationService.getAllRecruiterApplications(params);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to load applications";
       return rejectWithValue(message);
@@ -224,7 +230,13 @@ const applicationSlice = createSlice({
       })
       .addCase(fetchAllRecruiterApplications.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.recruiterApplications = action.payload;
+        state.recruiterApplications = action.payload.data;
+        state.pagination = {
+          total: action.payload.total,
+          page: action.payload.page,
+          pageSize: action.payload.pageSize,
+          totalPages: action.payload.totalPages,
+        };
       })
       .addCase(fetchAllRecruiterApplications.rejected, (state, action) => {
         state.isLoading = false;

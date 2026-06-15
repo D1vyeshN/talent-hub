@@ -80,7 +80,7 @@ export const getJobs = async (
   }
 
   // Filter out undefined string values (from frontend sending "undefined" as string)
-  if (filters.query && filters.query !== "undefined") query.$text = { $search: filters.query };
+  if (filters.search && filters.search !== "undefined") query.$text = { $search: filters.search };
   if (filters.location && filters.location !== "undefined") query.location = new RegExp(filters.location, "i");
   if (filters.type && filters.type !== "undefined") query.type = filters.type;
   if (filters.level && filters.level !== "undefined") query.level = filters.level;
@@ -103,6 +103,52 @@ export const getJobs = async (
       .populate("company", "name logo location verified")
       .populate("recruiter", "name email avatar")
       .sort({ isFeatured: -1, postedAt: -1 })
+      .skip(skip)
+      .limit(pageSize),
+    Job.countDocuments(query),
+  ]);
+  return buildPaginatedResponse(data, total, page, pageSize);
+};
+
+function escapeRegex(text: string) {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+export const getJobsByRecruiter = async (filters: Partial<JobFilters>, page: number,
+  pageSize: number, recruiterId: string) => {
+  const query: Record<string, unknown> = { recruiter: recruiterId };
+  let sort: any = { postedAt: -1 };
+
+  if (filters.status && filters.status !== "undefined") {
+    query.status = filters.status;
+  }
+  if (filters.search && filters.search !== "undefined") {
+    const safeSearch = escapeRegex(filters.search.trim());
+    const searchRegex = new RegExp(safeSearch, "i");
+
+    query.$or = [
+      { title: searchRegex },
+      { description: searchRegex },
+      { requirements: searchRegex },
+      { skills: searchRegex },
+      { location: searchRegex },
+      { status: searchRegex },
+      { category: searchRegex },
+    ];
+  }
+  if (filters.sortBy && filters.sortBy !== "undefined") {
+    const sortField = filters.sortBy;
+    const sortDirection = filters.sortOrder === "desc" ? -1 : 1;
+     sort = {
+    [sortField]: sortDirection,
+  };
+  }
+
+  const skip = (page - 1) * pageSize;
+  const [data, total] = await Promise.all([
+    Job.find(query)
+      .populate("company", "name logo location verified")
+      .sort(sort)
       .skip(skip)
       .limit(pageSize),
     Job.countDocuments(query),

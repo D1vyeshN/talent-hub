@@ -54,7 +54,7 @@ export default function ApplicationDetailsModal({
             <div className="flex items-center gap-2">
               <span className="font-semibold">{config.label}</span>
               <span className="text-sm opacity-75">
-                Applied on {new Date(application.appliedAt).toLocaleDateString()}
+                Applied on {new Date(application?.createdAt || "").toLocaleDateString()}
               </span>
             </div>
             {userRole === "recruiter" && application.status === "applied" && (

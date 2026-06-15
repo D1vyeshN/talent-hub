@@ -121,7 +121,7 @@ export default function JobDetailPage() {
             {/* Job Header Card */}
             <div className="bg-white border border-gray-200 rounded-2xl p-6">
               <div className="flex items-start gap-5">
-                <Avatar src={job.company.logo} name={job.company.name} size="lg" shape="squre"/>
+                <Avatar src={job.company.logo} name={job.company.name || "Unknown Company"} size="lg" shape="squre"/>
                 <div className="flex-1">
                   <div className="flex items-start justify-between">
                     <div>
@@ -259,7 +259,7 @@ export default function JobDetailPage() {
                     className="flex items-center gap-4 p-4 rounded-xl border border-gray-100 hover:border-blue-200 hover:bg-blue-50/30 cursor-pointer transition-all"
                     onClick={() => router.push(`/jobs/${job._id}`)}
                   >
-                    <Avatar src={job.company.logo} name={job.company.name} size="sm" shape="squre" />
+                    <Avatar src={job.company.logo} name={job.company.name || "Unknown Company"} size="sm" shape="squre" />
                     <div className="flex-1">
                       <p className="text-sm font-semibold text-gray-900">{job.title}</p>
                       <p className="text-xs text-gray-500">{job.company.name} · {job.location}</p>
@@ -281,7 +281,7 @@ export default function JobDetailPage() {
               <h3 className="text-sm font-semibold text-gray-900 mb-4">About {job.company.name}</h3>
 
               <div className="flex items-center gap-3 mb-4">
-                <Avatar src={job.company.logo} name={job.company.name} size="md" shape="squre" />
+                <Avatar src={job.company.logo} name={job.company.name || "Unknown Company"} size="md" shape="squre" />
                 <div>
                   <p className="text-sm font-semibold text-gray-900">{job.company.name}</p>
                   <p className="text-xs text-gray-500">{job.company.industry}</p>

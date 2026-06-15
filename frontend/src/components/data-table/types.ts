@@ -13,9 +13,13 @@ export interface DataTableProps<TData, TValue> {
   isFetching?: boolean;
   onPageChange?: (page: number) => void;
   onPageSizeChange?: (pageSize: number) => void;
-  onSortChange?: (sort: { field: string; direction: "asc" | "desc" }) => void;
+  onSortChange?: (sort: { field: string; direction: "asc" | "desc" } | undefined) => void;
   onSearch?: (search: string) => void;
   onFilterChange?: (filters: ColumnFiltersState) => void;
+  // Server-side controlled props (optional - when provided, parent manages state)
+  searchValue?: string;
+  sorting?: SortingState;
+  columnFilters?: ColumnFiltersState;
   // Client-side props
   initialSorting?: SortingState;
   initialFilters?: ColumnFiltersState;

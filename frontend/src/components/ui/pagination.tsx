@@ -49,6 +49,7 @@ function PaginationLink({
 }: PaginationLinkProps) {
   return (
     <Button
+    size="xs"
       variant={isActive ? "outline" : "ghost"}
       className={cn(className)}
     >

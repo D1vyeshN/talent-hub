@@ -1,13 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   ColumnDef,
 } from "@tanstack/react-table";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
-import {
-  fetchJobs,
-} from "@/features/recruiter/recruiterSlice";
 import {
   fetchAllRecruiterApplications,
   updateApplicationStatus,
@@ -18,7 +15,7 @@ import { Button } from "@/components/ui/Button";
 import { Avatar } from "@/components/ui/Avatar";
 import { Input } from "@/components/ui/Input";
 import { DataTable } from "@/components/data-table/DataTable";
-import { Eye, CheckCircle, XCircle, Download, MessageSquare } from "lucide-react";
+import { Eye, CheckCircle, XCircle, Download, MessageSquare, Search, X } from "lucide-react";
 import type { Application, ApplicationStatus, Candidate, User } from "@/types";
 import { useRouter } from "next/navigation";
 import { newTempConversation } from "@/features/message/store/messageSlice";
@@ -26,17 +23,39 @@ import { newTempConversation } from "@/features/message/store/messageSlice";
 export default function ApplicationsPage() {
   const dispatch = useAppDispatch();
   const router = useRouter();
-  const { recruiterApplications, isLoading } = useAppSelector((s) => s.application);
+  const { recruiterApplications, isLoading, pagination } = useAppSelector((s) => s.application);
   const { conversations } = useAppSelector((s) => s.message);
+  
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(10);
+  const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [sortConfig, setSortConfig] = useState<{ field: string; direction: 'asc' | 'desc' } | null>(null);
 
   useEffect(() => {
-    dispatch(fetchJobs());
-  }, [dispatch]);
+    dispatch(fetchAllRecruiterApplications({
+      page: currentPage,
+      pageSize,
+      search: searchQuery.trim() !== "" ? searchQuery.trim() : undefined,
+      status: statusFilter === "all" ? undefined : statusFilter as ApplicationStatus,
+      sortBy: sortConfig?.field,
+      sortOrder: sortConfig?.direction,
+    }));
+  }, [dispatch, currentPage, pageSize, searchQuery, sortConfig, statusFilter]);
 
-  useEffect(() => {
-    dispatch(fetchAllRecruiterApplications());
-  }, [dispatch]);
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handleSearch = useCallback((query: string) => {
+    setSearchQuery(query);
+    setCurrentPage(1);
+  }, []);
+
+  const handleSortChange = (sort: { field: string; direction: 'asc' | 'desc' } | undefined) => {
+    setSortConfig(sort ?? null);
+    setCurrentPage(1);
+  };
 
   const downloadResume = async (data: Application) => {
 
@@ -265,6 +284,8 @@ export default function ApplicationsPage() {
             placeholder="Search by name or job title..."
             value={props.searchValue}
             onChange={(e) => props.onSearchChange(e.target.value)}
+            leftIcon={<Search className="h-4 w-4 text-gray-400" />}
+            rightIcon={props.searchValue.length > 0 && <Button variant="ghost" size="xs" onClick={() => props.onSearchChange("")}><X className="h-4 w-4 text-gray-400" /></Button>}
           />
         </div>
         <div className="flex gap-2 flex-wrap">
@@ -312,36 +333,17 @@ export default function ApplicationsPage() {
       <DataTable<Application, any>
         columns={columns}
         data={recruiterApplications || []}
-        mode="client"
-        initialSorting={[{ id: "createdAt", desc: true }]}
-        initialPagination={{ pageIndex: 0, pageSize: 10 }}
-        searchable={true}
-        searchPlaceholder="Search by name or job title..."
+        mode="server"
+        totalRows={pagination.total}
+        page={currentPage}
+        pageSize={pageSize}
+        onPageChange={handlePageChange}
+        onSortChange={handleSortChange}
+        onSearch={handleSearch}
+        searchValue={searchQuery}
+        sorting={sortConfig ? [{ id: sortConfig.field, desc: sortConfig.direction === 'desc' }] : []}
+        columnFilters={statusFilter !== "all" ? [{ id: "status", value: statusFilter }] : []}
         isFetching={isLoading}
-        globalFilterFn={(row, columnId, value) => {
-          const candidate = (row.original.candidate as Candidate) ?? {
-            name: "Unknown Candidate",
-          };
-
-          const searchValue = String(value).toLowerCase();
-
-          const candidateMatch =
-            candidate.name?.toLowerCase().includes(searchValue) ?? false;
-
-          const jobTitle = row.original.job?.title ?? "";
-          const jobMatch = jobTitle.toLowerCase().includes(searchValue);
-
-          return candidateMatch || jobMatch;
-        }}
-        onFilterChange={(filters) => {
-          const statusFilter = filters.find(f => f.id === "status")?.value as string;
-          if (statusFilter) {
-            setStatusFilter(statusFilter);
-          } else {
-            setStatusFilter("all");
-          }
-        }}
-        initialFilters={statusFilter === "all" ? [] : [{ id: "status", value: statusFilter }]}
         renderToolbar={renderToolbar}
         renderLoading={() => <div className="text-center py-8">Loading applications...</div>}
         renderEmpty={() => <div className="text-center py-8">No applications match your filters.</div>}

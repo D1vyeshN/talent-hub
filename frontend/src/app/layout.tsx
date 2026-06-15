@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "react-hot-toast";
 import "./globals.css";
-import Providers from "./providers";
+import ReduxProvider from "./providers/ReduxProvider";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import SocketProvider from "@/components/providers/SocketProvider";
+import SocketProvider from "@/app/providers/SocketProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -34,7 +34,7 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-screen bg-gray-50 text-gray-900 ">
-        <Providers>
+        <ReduxProvider>
           <SocketProvider>
             <TooltipProvider>
               {/* <Navbar /> */}
@@ -52,7 +52,7 @@ export default function RootLayout({
               />
             </TooltipProvider>
           </SocketProvider>
-        </Providers>
+        </ReduxProvider>
       </body>
     </html>
   );

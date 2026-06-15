@@ -45,6 +45,7 @@ export default function SocketProvider({ children }: { children: React.ReactNode
     }
 
     const socket = initializeSocket();
+    
 
     // Notification listeners
     socket.on("new_notification", (notification: Notification) => {

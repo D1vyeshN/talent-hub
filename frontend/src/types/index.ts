@@ -70,7 +70,7 @@ export interface Salary {
 export interface Job {
   _id: string;
   title: string;
-  company: Company;
+  company: Partial<Company>;
   location: string;
   type: JobType;
   level: JobLevel;
@@ -93,7 +93,7 @@ export interface Job {
 export interface Application {
   _id: string;
   jobId: string;
-  job?: Job;
+  job?: Partial<Job>;
   companyId: string;
   candidateId: string;
   candidate?: Candidate;
@@ -201,7 +201,7 @@ export interface StatCard {
 // ─── Filters ──────────────────────────────────────────────────────────────────
 
 export interface JobFilters {
-  query: string;
+  search: string;
   location: string;
   type: JobType | "";
   level: JobLevel | "";

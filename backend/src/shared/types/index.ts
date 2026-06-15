@@ -173,7 +173,7 @@ export interface StatCard {
 // ─── Filters ──────────────────────────────────────────────────────────────────
 
 export interface JobFilters {
-  query: string;
+  search: string;
   location: string;
   type: JobType | "" | "undefined";
   level: JobLevel | "" | "undefined";
@@ -183,6 +183,9 @@ export interface JobFilters {
   company: string;
   skills: string[];
   postedWithin: string;
+  status: string;
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
 }
 
 // ─── Pagination ───────────────────────────────────────────────────────────────

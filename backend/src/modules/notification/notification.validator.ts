@@ -6,7 +6,7 @@ import { Types } from "mongoose";
  */
 export const validateNotificationId = (req: Request, res: Response, next: NextFunction) => {
   const { id } = req.params;
-  if (!Types.ObjectId.isValid(id)) {
+  if (!Types.ObjectId.isValid(id as string)) {
     return res.status(400).json({ success: false, statusCode: 400, data: null, message: "Invalid notification ID" });
   }
   next();

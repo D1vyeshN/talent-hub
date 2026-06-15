@@ -45,8 +45,8 @@ export default function CandidateApplicationsPage() {
     const company = job.company || { name: "Unknown Company" };
     const matchesSearch =
       !searchQuery ||
-      job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      company.name.toLowerCase().includes(searchQuery.toLowerCase());
+      job?.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      company?.name?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === "all" || app.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -150,8 +150,8 @@ export default function CandidateApplicationsPage() {
                   {/* Company Logo */}
                   <div className="flex-shrink-0">
                     <Avatar
-                      src={job.company.logo}
-                      name={job.company.name}
+                      src={job?.company?.logo}
+                      name={job?.company?.name || "Unknown Company"}
                       size="lg"
                     />
                   </div>
@@ -164,7 +164,7 @@ export default function CandidateApplicationsPage() {
                           {job.title}
                         </h3>
                         <p className="text-sm text-gray-600 mt-1">
-                          {job.company.name}
+                          {job?.company?.name}
                         </p>
                       </div>
                       <span
@@ -181,7 +181,7 @@ export default function CandidateApplicationsPage() {
                     <div className="flex items-center gap-4 mt-3 text-xs text-gray-500">
                       <span className="flex items-center gap-1">
                         <Calendar className="w-3.5 h-3.5" />
-                        Applied {new Date(app.appliedAt).toLocaleDateString()}
+                        Applied {new Date(app?.createdAt || "").toLocaleDateString()}
                       </span>
                     </div>
 
@@ -197,7 +197,7 @@ export default function CandidateApplicationsPage() {
                     <Button
                       variant="outline"
                       size="xs"
-                      onClick={() => handleViewJob(job._id)}
+                      onClick={() => handleViewJob(job._id!)}
                     >
                       <ExternalLink className="w-3.5 h-3.5" />
                     </Button>

@@ -2,7 +2,7 @@ import { cn, getInitials } from "@/lib/utils";
 import Image from "next/image";
 
 interface AvatarProps {
-  name: string;
+  name?: string;
   src?: string;
   size?: "xs" | "sm" | "md" | "lg" | "xl";
   className?: string;
@@ -44,7 +44,7 @@ function getAvatarColor(name: string): string {
 }
 
 export function Avatar({
-  name, src, size = "md", className, showStatus = false, status = "offline", shape = "circle",
+  name = "Unknown", src, size = "md", className, showStatus = false, status = "offline", shape = "circle",
 }: AvatarProps) {
   const initials = getInitials(name);
   const colorClass = getAvatarColor(name);
