@@ -6,8 +6,8 @@ import {
   logout,
 } from "./auth.controller";
 import { registerSchema, loginSchema } from "./auth.validator";
-import { authenticate } from "@/middleware/auth.middleware";
-import { validate } from "@/middleware/validation.middleware";
+import { authenticate } from "../../middleware/auth.middleware";
+import { validate } from "../../middleware/validation.middleware";
 
 // ─── Router ───────────────────────────────────────────────────────────────────
 

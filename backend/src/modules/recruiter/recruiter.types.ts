@@ -1,5 +1,5 @@
 /** Internal DTOs for the recruiter feature. */
-import type { Salary, JobStatus } from "@/shared/types/index";
+import type { Salary, JobStatus } from "../../shared/types/index";
 
 // ─── Dashboard Home ──────────────────────────────────────────────────
 export interface DashboardStats {

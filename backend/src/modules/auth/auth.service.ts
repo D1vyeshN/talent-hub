@@ -1,10 +1,11 @@
 import { Types } from "mongoose";
 import jwt, { JwtPayload } from "jsonwebtoken";
-import { User, IUser } from "@/modules/users/user.model";
-import { Candidate } from "@/modules/candidate/candidate.model";
-import { Recruiter } from "@/modules/recruiter/recruiter.model";
-import { Admin } from "@/modules/admin/admin.model";
-import { ApiResponse } from "@/utils/ApiResponse";
+import { User, IUser } from "../../modules/users/user.model";
+import { Candidate } from "../../modules/candidate/candidate.model";
+import { Recruiter } from "../../modules/recruiter/recruiter.model";
+import { Admin } from "../../modules/admin/admin.model";
+import { ApiResponse } from "../../utils/ApiResponse";
+
 import {
   RegisterRequest,
   LoginRequest,
@@ -13,9 +14,9 @@ import {
   Candidate as CandidateType,
   Recruiter as RecruiterType,
   Admin as AdminType,
-} from "@/shared/types/user";
-import { AppError } from "@/middleware/error.middleware";
-import { userService } from "@/modules/users/user.service";
+} from "../../shared/types/user";
+import { AppError } from "../../middleware/error.middleware";
+import { userService } from "../../modules/users/user.service";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 

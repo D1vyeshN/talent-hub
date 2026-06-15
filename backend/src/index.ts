@@ -13,7 +13,7 @@ import mongoose from "mongoose";
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 8080;
+const PORT = Number(process.env.PORT) || 8080;
 
 // ─── Middleware Chain ────────────────────────────────────────────────────────
 
@@ -37,17 +37,17 @@ import { httpLoggerMiddleware } from "./middleware/httplogger.middleware";
 app.use(httpLoggerMiddleware);
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
-import authRoutes from "@/modules/auth/auth.routes";
-import usersRoutes from "@/modules/users/user.routes";
-import candidateRoutes from "@/modules/candidate/candidate.routes";
-import recruiterRoutes from "@/modules/recruiter/recruiter.routes";
-import companyRoutes from "@/modules/company/company.routes";
-import applicationRoutes from "@/modules/application/application.routes";
-import jobRoutes from "@/modules/job/job.routes";
-import messageRoutes from "@/modules/message/message.routes";
-import notificationRoutes from "@/modules/notification/notification.routes";
-import adminRoutes from "@/modules/admin/admin.routes";
-import uploadRoutes from "@/modules/upload/upload.routes";
+import authRoutes from "./modules/auth/auth.routes";
+import usersRoutes from "./modules/users/user.routes";
+import candidateRoutes from "./modules/candidate/candidate.routes";
+import recruiterRoutes from "./modules/recruiter/recruiter.routes";
+import companyRoutes from "./modules/company/company.routes";
+import applicationRoutes from "./modules/application/application.routes";
+import jobRoutes from "./modules/job/job.routes";
+import messageRoutes from "./modules/message/message.routes";
+import notificationRoutes from "./modules/notification/notification.routes";
+import adminRoutes from "./modules/admin/admin.routes";
+import uploadRoutes from "./modules/upload/upload.routes";
 import { initSocket } from "./socket/socket";
 
 app.use("/api/auth", authRoutes);
@@ -56,10 +56,10 @@ app.use("/api/candidate", candidateRoutes);
 app.use("/api/recruiter", recruiterRoutes);
 app.use("/api/company", companyRoutes);
 app.use("/api/application", applicationRoutes);
-app.use("/api/job",jobRoutes);
-app.use("/api/message",messageRoutes);
-app.use("/api/notification",notificationRoutes);
-app.use("/api/admin",adminRoutes);
+app.use("/api/job", jobRoutes);
+app.use("/api/message", messageRoutes);
+app.use("/api/notification", notificationRoutes);
+app.use("/api/admin", adminRoutes);
 app.use("/api/upload", uploadRoutes);
 
 
@@ -82,9 +82,9 @@ const startServer = async () => {
   });
 
   initSocket(io);
- 
-  app.listen(PORT, () => {
-    logger.info(`🚀 Server running on http://localhost:${PORT}`);
+
+  app.listen(PORT, "0.0.0.0", () => {
+    logger.info(`🚀 Server running on http://0.0.0.0:${PORT}`);
     logger.info(`📋 Environment: ${process.env.NODE_ENV || "development"}`);
     logger.http("Health check → GET /api/health");
   });

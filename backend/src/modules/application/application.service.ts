@@ -3,9 +3,8 @@ import { Job } from "../job/job.model";
 import { Candidate } from "../candidate/candidate.model";
 import { ApiError } from "../../utils/ApiError";
 import { buildPaginatedResponse } from "../../utils/pagination";
-import { Notification } from "../notification/notification.model";
 import mongoose from "mongoose";
-import { ApplicationStatus } from "@/shared/types";
+import { ApplicationStatus } from "../../shared/types";
 import { createNotification } from "../notification/notification.service";
 import { Company } from "../company/company.model";
 

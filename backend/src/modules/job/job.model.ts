@@ -1,5 +1,5 @@
 import mongoose, { Schema, Document } from "mongoose";
-import { JobType, JobLevel, JobStatus } from "@/shared/types/index";
+import { JobType, JobLevel, JobStatus } from "../../shared/types/index";
 
 export interface IJob extends Document {
   title: string;

@@ -1,8 +1,8 @@
-import { Request, Response, NextFunction } from "express";
-import { asyncHandler } from "@/utils/asyncHandler";
+import { Request, Response } from "express";
+import { asyncHandler } from "../../utils/asyncHandler";
 import { authService } from "./auth.service";
-import { ApiResponse } from "@/utils/ApiResponse";
-import { AuthRequest } from "@/middleware/auth.middleware";
+import { ApiResponse } from "../../utils/ApiResponse";
+import { AuthRequest } from "../../middleware/auth.middleware";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 

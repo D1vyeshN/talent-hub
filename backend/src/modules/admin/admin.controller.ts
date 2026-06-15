@@ -2,7 +2,6 @@ import { Request, Response } from "express";
 import * as AdminService from "./admin.service";
 import { ApiResponse } from "../../utils/ApiResponse";
 import { asyncHandler } from "../../utils/asyncHandler";
-import { AuthRequest } from "../../middleware/auth.middleware";
 
 // GET /api/v1/admin/dashboard
 export const getDashboard = asyncHandler(async (_req: Request, res: Response) => {

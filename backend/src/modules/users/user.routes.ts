@@ -1,12 +1,11 @@
 import { Router } from "express";
 
 import { blockUser, getUsers, unblockUser, updateMe } from "./user.controller";
-import { authenticate, authorize } from "@/middleware/auth.middleware";
+import { authenticate, authorize } from "../../middleware/auth.middleware";
 import { UserRole } from "./user.constants";
-import { validate } from "@/middleware/validation.middleware";
+import { validate } from "../../middleware/validation.middleware";
 import { updateUserSchema } from "./user.validation";
 
-// @ts-ignore controller exports namespaced controllers per route
 
 const router = Router();
 

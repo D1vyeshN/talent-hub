@@ -13,9 +13,6 @@
     "moduleResolution": "node",
     "ignoreDeprecations": "6.0",
     "baseUrl": ".",
-    "paths": {
-      "@/*": ["./src/*"]
-    },
   },
   "include": ["src/**/*", "src/types/**/*.d.ts"],
   "exclude": ["node_modules", "dist"]

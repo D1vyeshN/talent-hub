@@ -1,4 +1,4 @@
-import { AppError } from "@/middleware/error.middleware";
+import { AppError } from "../../middleware/error.middleware";
 import { User } from "./user.model";
 import type { CreateUserDto, UpdateUserDto, UserFilterDto, IUser } from "./user.types";
 

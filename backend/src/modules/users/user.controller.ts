@@ -1,9 +1,9 @@
 import { Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import { userService } from "./user.service";
-import { ApiResponse } from "@/utils/ApiResponse";
-import { AppError } from "@/middleware/error.middleware";
-import { AuthRequest } from "@/middleware/auth.middleware";
+import { ApiResponse } from "../../utils/ApiResponse";
+import { AppError } from "../../middleware/error.middleware";
+import { AuthRequest } from "../../middleware/auth.middleware";
 
 const JWT_SECRET = process.env.JWT_SECRET || "fallback-secret-change-me";
 
