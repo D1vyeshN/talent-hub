@@ -70,6 +70,22 @@ export default function JobsPage() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [sortBy, setSortBy] = useState("newest");
 
+  // Map frontend sort values to backend field names
+  const getSortMapping = (sortValue: string) => {
+    switch (sortValue) {
+      case "newest":
+        return { sortBy: "postedAt", sortOrder: "desc" as const };
+      case "salary":
+        return { sortBy: "salary.max", sortOrder: "desc" as const };
+      case "applicants":
+        return { sortBy: "applicantsCount", sortOrder: "desc" as const };
+      default:
+        return { sortBy: "postedAt", sortOrder: "desc" as const };
+    }
+  };
+
+  const sortMapping = getSortMapping(sortBy);
+
   useEffect(() => {
     const debounceTimer = setTimeout(() => {
       dispatch(setFilters({
@@ -77,27 +93,31 @@ export default function JobsPage() {
         location: searchLocation || undefined,
         type: selectedTypes.length > 0 ? selectedTypes[0] : undefined,
         level: selectedLevels.length > 0 ? selectedLevels[0] : undefined,
-        skills: selectedCategory || undefined,
+        category: selectedCategory || undefined,
         isRemote: isRemote || undefined,
         page: 1,
         pageSize,
+        sortBy: sortMapping.sortBy,
+        sortOrder: sortMapping.sortOrder,
       }));
       dispatch(fetchJobs({
         search: searchQuery || undefined,
         location: searchLocation || undefined,
         type: selectedTypes.length > 0 ? selectedTypes[0] : undefined,
         level: selectedLevels.length > 0 ? selectedLevels[0] : undefined,
-        skills: selectedCategory || undefined,
+        category: selectedCategory || undefined,
         isRemote: isRemote || undefined,
         page: 1,
         pageSize,
+        sortBy: sortMapping.sortBy,
+        sortOrder: sortMapping.sortOrder,
       }));
     }, 500);
 
     return () => {
       clearTimeout(debounceTimer);
     };
-  }, [searchQuery, searchLocation, selectedTypes, selectedLevels, selectedCategory, isRemote, pageSize, dispatch]);
+  }, [searchQuery, searchLocation, selectedTypes, selectedLevels, selectedCategory, isRemote, sortBy, pageSize, dispatch]);
 
   const toggleJobType = (type: JobType) => {
     setSelectedTypes((prev) => prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]);
@@ -133,10 +153,12 @@ export default function JobsPage() {
         location: searchLocation || undefined,
         type: selectedTypes.length > 0 ? selectedTypes[0] : undefined,
         level: selectedLevels.length > 0 ? selectedLevels[0] : undefined,
-        skills: selectedCategory || undefined,
+        category: selectedCategory || undefined,
         isRemote: isRemote || undefined,
         page: nextPage,
         pageSize,
+        sortBy: sortMapping.sortBy,
+        sortOrder: sortMapping.sortOrder,
       }));
     } catch (err: any) {
       console.error("Failed to load more jobs:", err);
@@ -145,19 +167,7 @@ export default function JobsPage() {
     }
   };
 
-  const filteredJobs = useMemo(() => {
-    let filteredJobs = jobs;
-
-    if (sortBy === "newest") {
-      filteredJobs = [...filteredJobs].sort((a, b) => new Date(b.postedAt).getTime() - new Date(a.postedAt).getTime());
-    } else if (sortBy === "salary") {
-      filteredJobs = [...filteredJobs].sort((a, b) => b.salary.max - a.salary.max);
-    } else if (sortBy === "applicants") {
-      filteredJobs = [...filteredJobs].sort((a, b) => b.applicantsCount - a.applicantsCount);
-    }
-
-    return filteredJobs;
-  }, [jobs, sortBy]);
+  const filteredJobs = jobs;
 
   const activeFilterCount = selectedTypes.length + selectedLevels.length + (selectedCategory ? 1 : 0) + (isRemote ? 1 : 0);
 
@@ -234,8 +244,8 @@ export default function JobsPage() {
             "hidden lg:block",
             filtersOpen && "fixed inset-0 z-50 bg-white overflow-y-auto p-6 lg:relative lg:bg-transparent lg:inset-auto lg:z-auto lg:p-0 lg:overflow-visible"
           )}>
-            <div className="sticky top-24 space-y-6">
-              <div className="flex items-center justify-between">
+            <div className="sticky top-20">
+              <div className="flex items-center justify-between mb-4">
                 <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
                   <SlidersHorizontal className="w-4 h-4" />
                   Filters
@@ -249,80 +259,81 @@ export default function JobsPage() {
                   </button>
                 )}
               </div>
-
-              {/* Remote Toggle */}
-              <div className="bg-white rounded-xl border border-gray-200 p-4">
-                <label className="flex items-center justify-between cursor-pointer">
-                  <span className="text-sm font-medium text-gray-700">Remote Only</span>
-                  <div
-                    onClick={() => setIsRemote(!isRemote)}
-                    className={cn(
-                      "w-11 h-6 rounded-full transition-colors relative cursor-pointer",
-                      isRemote ? "bg-blue-600" : "bg-gray-200"
-                    )}
-                  >
-                    <div className={cn(
-                      "absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-transform",
-                      isRemote ? "translate-x-6" : "translate-x-1"
-                    )} />
-                  </div>
-                </label>
-              </div>
-
-              {/* Job Type */}
-              <div className="bg-white rounded-xl border border-gray-200 p-4">
-                <h4 className="text-sm font-semibold text-gray-800 mb-3">Job Type</h4>
-                <div className="space-y-2">
-                  {JOB_TYPES.map((type) => (
-                    <label key={type.value} className="flex items-center gap-2.5 cursor-pointer group">
-                      <input
-                        type="checkbox"
-                        checked={selectedTypes.includes(type.value)}
-                        onChange={() => toggleJobType(type.value)}
-                        className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      />
-                      <span className="text-sm text-gray-600 group-hover:text-gray-900">{type.label}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              {/* Experience Level */}
-              <div className="bg-white rounded-xl border border-gray-200 p-4">
-                <h4 className="text-sm font-semibold text-gray-800 mb-3">Experience Level</h4>
-                <div className="space-y-2">
-                  {JOB_LEVELS.map((level) => (
-                    <label key={level.value} className="flex items-center gap-2.5 cursor-pointer group">
-                      <input
-                        type="checkbox"
-                        checked={selectedLevels.includes(level.value)}
-                        onChange={() => toggleJobLevel(level.value)}
-                        className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      />
-                      <span className="text-sm text-gray-600 group-hover:text-gray-900">{level.label}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              {/* Category / Industry */}
-              <div className="bg-white rounded-xl border border-gray-200 p-4">
-                <h4 className="text-sm font-semibold text-gray-800 mb-3">Industry</h4>
-                <div className="space-y-1.5 max-h-48 overflow-y-auto">
-                  {JOB_CATEGORIES.map((cat) => (
-                    <button
-                      key={cat}
-                      onClick={() => setSelectedCategory(selectedCategory === cat ? "" : cat)}
+              <div className="space-y-3 h-[80vh] overflow-auto">
+                {/* Remote Toggle */}
+                <div className="bg-white rounded-xl border border-gray-200 p-4">
+                  <label className="flex items-center justify-between cursor-pointer">
+                    <span className="text-sm font-medium text-gray-700">Remote Only</span>
+                    <div
+                      onClick={() => setIsRemote(!isRemote)}
                       className={cn(
-                        "w-full text-left text-sm px-2.5 py-1.5 rounded-lg transition-colors",
-                        selectedCategory === cat
-                          ? "bg-blue-50 text-blue-700 font-medium"
-                          : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                        "w-11 h-6 rounded-full transition-colors relative cursor-pointer",
+                        isRemote ? "bg-blue-600" : "bg-gray-200"
                       )}
                     >
-                      {cat}
-                    </button>
-                  ))}
+                      <div className={cn(
+                        "absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-transform",
+                        isRemote ? "translate-x-6" : "translate-x-1"
+                      )} />
+                    </div>
+                  </label>
+                </div>
+
+                {/* Job Type */}
+                <div className="bg-white rounded-xl border border-gray-200 p-4">
+                  <h4 className="text-sm font-semibold text-gray-800 mb-3">Job Type</h4>
+                  <div className="space-y-2">
+                    {JOB_TYPES.map((type) => (
+                      <label key={type.value} className="flex items-center gap-2.5 cursor-pointer group">
+                        <input
+                          type="checkbox"
+                          checked={selectedTypes.includes(type.value)}
+                          onChange={() => toggleJobType(type.value)}
+                          className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <span className="text-sm text-gray-600 group-hover:text-gray-900">{type.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Experience Level */}
+                <div className="bg-white rounded-xl border border-gray-200 p-4">
+                  <h4 className="text-sm font-semibold text-gray-800 mb-3">Experience Level</h4>
+                  <div className="space-y-2">
+                    {JOB_LEVELS.map((level) => (
+                      <label key={level.value} className="flex items-center gap-2.5 cursor-pointer group">
+                        <input
+                          type="checkbox"
+                          checked={selectedLevels.includes(level.value)}
+                          onChange={() => toggleJobLevel(level.value)}
+                          className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <span className="text-sm text-gray-600 group-hover:text-gray-900">{level.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Category / Industry */}
+                <div className="bg-white rounded-xl border border-gray-200 p-4">
+                  <h4 className="text-sm font-semibold text-gray-800 mb-3">Industry</h4>
+                  <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                    {JOB_CATEGORIES.map((cat) => (
+                      <button
+                        key={cat}
+                        onClick={() => setSelectedCategory(selectedCategory === cat ? "" : cat)}
+                        className={cn(
+                          "w-full text-left text-sm px-2.5 py-1.5 rounded-lg transition-colors",
+                          selectedCategory === cat
+                            ? "bg-blue-50 text-blue-700 font-medium"
+                            : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                        )}
+                      >
+                        {cat}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
@@ -393,7 +404,7 @@ export default function JobsPage() {
                         {/* Logo */}
                         {/* <CompanyLogo logo={job.company?.logo} name={job.company?.name || "Company"} size="md" /> */}
 
-                        <Avatar src={job?.company?.logo} name={job?.company?.name} shape="squre"/>
+                        <Avatar src={job?.company?.logo} name={job?.company?.name} shape="squre" />
                         {/* Content */}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between gap-3">

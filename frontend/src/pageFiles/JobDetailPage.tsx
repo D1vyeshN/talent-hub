@@ -203,9 +203,9 @@ export default function JobDetailPage() {
                   </div>
                 ) : (
                   <div className="flex gap-3">
-                    <Button variant="outline" size="md" onClick={() => router.push("/candidate-dashboard")}>
+                    {/* <Button variant="outline" size="md" onClick={() => router.push("/candidate-dashboard")}>
                       View Similar
-                    </Button>
+                    </Button> */}
                     <Button variant="primary" size="md" onClick={() => setApplyModalOpen(true)}>
                       Apply Now
                     </Button>
@@ -359,9 +359,9 @@ export default function JobDetailPage() {
                   </div>
                 </div>
               )}
-              <Button variant="outline" size="sm" fullWidth onClick={() => router.push("/messages")}>
+              {/* <Button variant="outline" size="sm" fullWidth onClick={() => router.push("/messages")}>
                 Send Message
-              </Button>
+              </Button> */}
             </div>
           </div>
         </div>

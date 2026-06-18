@@ -133,6 +133,7 @@ export interface Company {
   owner?: string;
   createdAt?: string;
   updatedAt?: string;
+  jobs?: Job[];
 }
 
 // ─── Notification ─────────────────────────────────────────────────────────────

@@ -57,10 +57,14 @@ export interface JobQueryParams {
   level?: string;
   status?: Job["status"];
   skills?: string;
+  category?: string;
   page?: number;
   pageSize?: number;
   isRemote?: boolean;
   companyId?: string;
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
+  isFeatured?: boolean;
 }
 
 export interface PaginatedJobsResponse {

@@ -11,8 +11,7 @@ import { createJobSchema, updateJobSchema, CreateJobPayload, UpdateJobPayload } 
 // GET /api/v1/jobs
 export const getJobs = asyncHandler(async (req: Request, res: Response) => {
   const { page, pageSize } = getPagination(req.query);
-  const authReq = req as AuthRequest;
-  const result = await JobService.getJobs(req.query, page, pageSize, authReq.userId);
+  const result = await JobService.getJobs(req.query, page, pageSize);
   res.json(new ApiResponse(200, result, "Jobs fetched successfully"));
 });
 

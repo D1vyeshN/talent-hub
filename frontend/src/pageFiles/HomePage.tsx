@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   ArrowRight,
   BarChart2,
@@ -20,10 +20,13 @@ import {
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
-import { MOCK_JOBS, MOCK_COMPANIES } from "@/lib/mockData";
 import { formatSalaryRange, timeAgo } from "@/lib/utils";
 import { JOB_CATEGORIES } from "@/constants";
 import { redirect } from "next/navigation";
+import { jobsService } from "@/features/jobs/services/jobs.service";
+import { companyService } from "@/features/company/services/company.service";
+import type { Job, Company } from "@/types";
+import { Avatar } from "@/components/ui/Avatar";
 
 const STATS = [
   {
@@ -109,9 +112,60 @@ const TESTIMONIALS = [
 export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchLocation, setSearchLocation] = useState("");
+  const [featuredJobs, setFeaturedJobs] = useState<Job[]>([]);
+  const [isLoadingFeatured, setIsLoadingFeatured] = useState(true);
+  const [featuredError, setFeaturedError] = useState<string | null>(null);
+  const [topCompanies, setTopCompanies] = useState<Company[]>([]);
+  const [isLoadingCompanies, setIsLoadingCompanies] = useState(true);
+  const [companiesError, setCompaniesError] = useState<string | null>(null);
 
-  const featuredJobs = MOCK_JOBS.filter((j) => j.isFeatured).slice(0, 4);
-  const topCompanies = MOCK_COMPANIES.slice(0, 6);
+  // Fetch featured jobs from backend
+  useEffect(() => {
+    const fetchFeaturedJobs = async () => {
+      try {
+        setIsLoadingFeatured(true);
+        setFeaturedError(null);
+        const response = await jobsService.getAll({
+          isFeatured: true,
+          page: 1,
+          pageSize: 4,
+          sortBy: "postedAt",
+          sortOrder: "desc",
+        });
+        setFeaturedJobs(response.data);
+      } catch (err: any) {
+        console.error("Failed to fetch featured jobs:", err);
+        setFeaturedError("Failed to load featured jobs");
+      } finally {
+        setIsLoadingFeatured(false);
+      }
+    };
+
+    fetchFeaturedJobs();
+  }, []);
+
+  // Fetch top companies from backend
+  useEffect(() => {
+    const fetchTopCompanies = async () => {
+      try {
+        setIsLoadingCompanies(true);
+        setCompaniesError(null);
+        const response = await companyService.getAll({
+          verified: true,
+          page: 1,
+          pageSize: 6,
+        });
+        setTopCompanies(response.data);
+      } catch (err: any) {
+        console.error("Failed to fetch top companies:", err);
+        setCompaniesError("Failed to load companies");
+      } finally {
+        setIsLoadingCompanies(false);
+      }
+    };
+
+    fetchTopCompanies();
+  }, []);
 
   const handleSearch = () => {
     redirect("jobs");
@@ -250,77 +304,77 @@ export default function HomePage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {featuredJobs.map((job) => (
-              <div
-                key={job._id}
-                onClick={() => redirect("job-detail")}
-                className="group bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-lg hover:border-blue-200 transition-all duration-200 cursor-pointer relative overflow-hidden"
-              >
-                {/* Featured Badge */}
-                <div className="absolute top-4 right-4">
-                  <Badge variant="info" className="text-xs">
-                    ⭐ Featured
-                  </Badge>
-                </div>
-
-                <div className="flex items-start gap-4">
-                  {/* Company Logo */}
-                  <div className="w-14 h-14 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl flex items-center justify-center text-2xl flex-shrink-0">
-                    {job.company.logo}
+            {featuredJobs && featuredJobs.length !== 0 && (
+              featuredJobs.map((job) => (
+                <div
+                  key={job._id}
+                  onClick={() => redirect(`jobs/${job._id}`)}
+                  className="group bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-lg hover:border-blue-200 transition-all duration-200 cursor-pointer relative overflow-hidden"
+                >
+                  {/* Featured Badge */}
+                  <div className="absolute top-4 right-4">
+                    <Badge variant="info" className="text-xs">
+                      ⭐ Featured
+                    </Badge>
                   </div>
 
-                  <div className="flex-1 pr-16">
-                    <h3 className="text-base font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
-                      {job.title}
-                    </h3>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className="text-sm text-gray-600 font-medium">
-                        {job.company.name}
-                      </span>
-                      {job.company.verified && (
-                        <CheckCircle className="w-3.5 h-3.5 text-blue-500" />
-                      )}
+                  <div className="flex items-start gap-4">
+                    {/* Company Logo */}
+                    <Avatar name={job.company.name} src={job.company.logo} shape="squre" size="lg"/>
+
+                    <div className="flex-1 pr-16">
+                      <h3 className="text-base font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+                        {job.title}
+                      </h3>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-sm text-gray-600 font-medium">
+                          {job.company.name}
+                        </span>
+                        {job.company.verified && (
+                          <CheckCircle className="w-3.5 h-3.5 text-blue-500" />
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <Badge variant="default" size="sm">
-                    <MapPin className="w-3 h-3" /> {job.location}
-                  </Badge>
-                  <Badge variant="info" size="sm">
-                    {job.type.replace("-", " ")}
-                  </Badge>
-                  <Badge variant="success" size="sm">
-                    {job.level}
-                  </Badge>
-                </div>
-
-                <div className="mt-4 flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-semibold text-gray-900">
-                      {formatSalaryRange(job.salary.min, job.salary.max)}
-                      <span className="text-xs text-gray-500 font-normal ml-1">
-                        / yr
-                      </span>
-                    </p>
-                    <p className="text-xs text-gray-400 mt-0.5">
-                      {timeAgo(job.postedAt)}
-                    </p>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <Badge variant="default" size="sm">
+                      <MapPin className="w-3 h-3" /> {job.location}
+                    </Badge>
+                    <Badge variant="info" size="sm">
+                      {job.type.replace("-", " ")}
+                    </Badge>
+                    <Badge variant="success" size="sm">
+                      {job.level}
+                    </Badge>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      redirect("job-detail");
-                    }}
-                  >
-                    Apply Now
-                  </Button>
+
+                  <div className="mt-4 flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900">
+                        {formatSalaryRange(job.salary.min, job.salary.max)}
+                        <span className="text-xs text-gray-500 font-normal ml-1">
+                          / yr
+                        </span>
+                      </p>
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        {timeAgo(job.postedAt)}
+                      </p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        redirect(`jobs/${job._id}`);
+                      }}
+                    >
+                      Apply Now
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
       </section>
@@ -359,9 +413,6 @@ export default function HomePage() {
                   <p className="text-sm font-medium text-gray-700 group-hover:text-blue-600">
                     {cat}
                   </p>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    {Math.floor(Math.random() * 500 + 50)} jobs
-                  </p>
                 </button>
               );
             })}
@@ -393,29 +444,45 @@ export default function HomePage() {
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-            {topCompanies.map((company) => (
-              <button
-                key={company._id}
-                onClick={() => redirect(`companies/${company._id}`)}
-                className="group bg-white border border-gray-200 rounded-xl p-5 text-center hover:border-blue-200 hover:shadow-md transition-all duration-200"
-              >
-                <div className="w-14 h-14 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl flex items-center justify-center text-3xl mx-auto mb-3 group-hover:scale-110 transition-transform">
-                  {company.logo}
-                </div>
-                <p className="text-sm font-semibold text-gray-800 group-hover:text-blue-600">
-                  {company.name}
-                </p>
-                <p className="text-xs text-gray-400 mt-1">
-                  {company.activeJobs} open roles
-                </p>
-                <div className="flex items-center justify-center gap-1 mt-1.5">
-                  <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
-                  <span className="text-xs text-gray-500">
-                    {company.rating}
-                  </span>
-                </div>
-              </button>
-            ))}
+            {isLoadingCompanies ? (
+              <div className="col-span-2 sm:col-span-3 lg:col-span-6 text-center py-12">
+                <div className="inline-block w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4" />
+                <p className="text-gray-500">Loading companies...</p>
+              </div>
+            ) : companiesError ? (
+              <div className="col-span-2 sm:col-span-3 lg:col-span-6 text-center py-12">
+                <p className="text-red-500 mb-4">{companiesError}</p>
+                <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
+                  Retry
+                </Button>
+              </div>
+            ) : topCompanies.length === 0 ? (
+              <div className="col-span-2 sm:col-span-3 lg:col-span-6 text-center py-12">
+                <p className="text-gray-500">No companies available at the moment.</p>
+              </div>
+            ) : (
+              topCompanies.map((company) => (
+                <button
+                  key={company._id}
+                  onClick={() => redirect(`companies/${company._id}`)}
+                  className="group bg-white border border-gray-200 rounded-xl p-5 text-center hover:border-blue-200 hover:shadow-md transition-all duration-200"
+                >
+                  <Avatar name={company.name} src={company.logo} shape="squre" size="lg" className="mx-auto mb-3"/>
+                  <p className="text-sm font-semibold text-gray-800 group-hover:text-blue-600">
+                    {company.name}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    {company.activeJobs || 0} open roles
+                  </p>
+                  <div className="flex items-center justify-center gap-1 mt-1.5">
+                    <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
+                    <span className="text-xs text-gray-500">
+                      {company.rating || "N/A"}
+                    </span>
+                  </div>
+                </button>
+              ))
+            )}
           </div>
         </div>
       </section>

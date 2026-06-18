@@ -4,7 +4,6 @@ import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Building2, CheckCircle, Globe, MapPin, Star, Users, Calendar, Briefcase } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
-import { MOCK_JOBS } from "@/lib/mockData";
 import { formatSalaryRange, timeAgo } from "@/lib/utils";
 import { redirect } from "next/navigation";
 import { companyService } from "@/features/company/services/company.service";
@@ -59,7 +58,7 @@ export default function CompanyProfilePage() {
     }
   }, [companyId]);
 
-  const companyJobs = MOCK_JOBS.filter((j) => j.company._id === company?._id);
+  const companyJobs = company?.jobs || [];
 
   const REVIEWS = [
     { author: "Software Engineer", rating: 5, title: "Incredible culture and growth", text: "Amazing place to work. The engineering culture is top notch, with emphasis on mentorship and innovation.", date: "Jan 2024" },
@@ -208,26 +207,32 @@ export default function CompanyProfilePage() {
                 <button className="text-xs text-blue-600" onClick={() => redirect("jobs")}>View all →</button>
               </CardHeader>
               <div className="space-y-3">
-                {companyJobs.map((job) => (
-                  <div
-                    key={job._id}
-                    className="group flex items-center gap-4 p-4 rounded-xl border border-gray-100 hover:border-blue-200 hover:bg-blue-50/30 cursor-pointer transition-all"
-                    onClick={() => redirect("job-detail")}
-                  >
-                    <div className="flex-1">
-                      <h3 className="text-sm font-semibold text-gray-900 group-hover:text-blue-600">{job.title}</h3>
-                      <div className="flex gap-3 text-xs text-gray-500 mt-1">
-                        <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{job.location}</span>
-                        <span>{job.type.replace("-", " ")}</span>
-                        <span>{job.level} level</span>
+                {companyJobs.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-sm text-gray-500">No open positions at the moment.</p>
+                  </div>
+                ) : (
+                  companyJobs.map((job) => (
+                    <div
+                      key={job._id}
+                      className="group flex items-center gap-4 p-4 rounded-xl border border-gray-100 hover:border-blue-200 hover:bg-blue-50/30 cursor-pointer transition-all"
+                      onClick={() => redirect(`jobs/${job._id}`)}
+                    >
+                      <div className="flex-1">
+                        <h3 className="text-sm font-semibold text-gray-900 group-hover:text-blue-600">{job.title}</h3>
+                        <div className="flex gap-3 text-xs text-gray-500 mt-1">
+                          <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{job.location}</span>
+                          <span>{job.type.replace("-", " ")}</span>
+                          <span>{job.level} level</span>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-semibold text-gray-900">{formatSalaryRange(job.salary.min, job.salary.max)}</p>
+                        <p className="text-xs text-gray-400">{timeAgo(job.postedAt)}</p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-sm font-semibold text-gray-900">{formatSalaryRange(job.salary.min, job.salary.max)}</p>
-                      <p className="text-xs text-gray-400">{timeAgo(job.postedAt)}</p>
-                    </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             </Card>
 

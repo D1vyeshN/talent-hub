@@ -1,5 +1,6 @@
 import { Company } from "./company.model";
 import { Recruiter } from "../recruiter/recruiter.model";
+import { Job } from "../job/job.model";
 import { ApiError } from "../../utils/ApiError";
 import { buildPaginatedResponse } from "../../utils/pagination";
 import { CreateCompanyInput, UpdateCompanyInput } from "./company.validation";
@@ -26,7 +27,21 @@ export const createCompany = async (
 export const getCompanyById = async (companyId: string) => {
   const company = await Company.findById(companyId);
   if (!company) throw new ApiError(404, "Company not found");
-  return company;
+
+  // Fetch jobs related to this company
+  const jobs = await Job.find({ 
+    company: companyId, 
+    status: "active" 
+  })
+    .populate("company", "name logo location verified")
+    .populate("recruiter", "name email avatar")
+    .sort({ postedAt: -1 });
+
+  // Add jobs to company object (as a plain object, not a mongoose document)
+  const companyObj = company.toObject();
+  (companyObj as any).jobs = jobs;
+
+  return companyObj;
 };
 
 // ─── Get all companies ────────────────────────────────────────────────────────

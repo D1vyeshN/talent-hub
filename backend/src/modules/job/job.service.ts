@@ -68,19 +68,28 @@ export const getJobById = async (jobId: string, viewerId?: string) => {
 export const getJobs = async (
   filters: Partial<JobFilters>,
   page: number,
-  pageSize: number,
-  recruiterId?: string
+  pageSize: number
 ) => {
-  // If recruiterId is provided, show all their jobs regardless of status
-  // Otherwise, only show active jobs for public access
-  const query: Record<string, unknown> = recruiterId ? {} : { status: "active" };
+  // Only show active jobs for public access
+  const query: Record<string, unknown> = { status: "active" };
+  let sort: any = { isFeatured: -1, postedAt: -1 };
 
-  if (recruiterId) {
-    query.recruiter = recruiterId;
+  // Advanced search with regex across multiple fields (same as getJobsByRecruiter)
+  if (filters.search && filters.search !== "undefined") {
+    const safeSearch = escapeRegex(filters.search.trim());
+    const searchRegex = new RegExp(safeSearch, "i");
+
+    query.$or = [
+      { title: searchRegex },
+      { description: searchRegex },
+      { requirements: searchRegex },
+      { skills: searchRegex },
+      { location: searchRegex },
+      { category: searchRegex },
+    ];
   }
 
   // Filter out undefined string values (from frontend sending "undefined" as string)
-  if (filters.search && filters.search !== "undefined") query.$text = { $search: filters.search };
   if (filters.location && filters.location !== "undefined") query.location = new RegExp(filters.location, "i");
   if (filters.type && filters.type !== "undefined") query.type = filters.type;
   if (filters.level && filters.level !== "undefined") query.level = filters.level;
@@ -97,12 +106,21 @@ export const getJobs = async (
     query.postedAt = { $gte: new Date(Date.now() - days * 86400000) };
   }
 
+  // Dynamic sort (same as getJobsByRecruiter)
+  if (filters.sortBy && filters.sortBy !== "undefined") {
+    const sortField = filters.sortBy;
+    const sortDirection = filters.sortOrder === "desc" ? -1 : 1;
+    sort = {
+      [sortField]: sortDirection,
+    };
+  }
+
   const skip = (page - 1) * pageSize;
   const [data, total] = await Promise.all([
     Job.find(query)
       .populate("company", "name logo location verified")
       .populate("recruiter", "name email avatar")
-      .sort({ isFeatured: -1, postedAt: -1 })
+      .sort(sort)
       .skip(skip)
       .limit(pageSize),
     Job.countDocuments(query),
