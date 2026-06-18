@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Briefcase,
   CheckCircle,
@@ -20,6 +21,7 @@ interface AuthPageProps {
 }
 
 export default function AuthPage({ mode }: AuthPageProps) {
+  const router = useRouter();
   const dispatch = useAppDispatch();
   const { isLoading, error, isAuthenticated } = useAppSelector((s) => s.auth);
 
@@ -27,32 +29,37 @@ export default function AuthPage({ mode }: AuthPageProps) {
   const [isLogin, setIsLogin] = useState(mode === "login");
   const [role, setRole] = useState<"candidate" | "recruiter">("candidate");
   const [showPassword, setShowPassword] = useState(false);
-  const [localError, setLocalError] = useState<string | null>(null);
-  const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const [showError, setShowError] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: "",
   });
 
-  // Sync Redux error → local state, auto-dismiss after 5 s
+  // Auto-dismiss error after 5 seconds
   useEffect(() => {
-    if (!error) {
-      setLocalError(null);
-      return;
+    if (error) {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(() => {
+        setShowError(false);
+      }, 5000);
+      // Set show error in a microtask to avoid synchronous setState
+      Promise.resolve().then(() => setShowError(true));
+    } else {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      Promise.resolve().then(() => setShowError(false));
     }
-    setLocalError(error);
-    if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => {
-      setLocalError(null);
-      timerRef.current = undefined;
-    }, 5000);
-
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
-      timerRef.current = undefined;
     };
   }, [error]);
+
+  // Clear error when mode changes
+  useEffect(() => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    Promise.resolve().then(() => setShowError(false));
+  }, [isLogin]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -121,12 +128,16 @@ export default function AuthPage({ mode }: AuthPageProps) {
       {/* ── Left Panel (Desktop) ─────────────────────────── */}
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-700 to-blue-900 flex-col justify-between p-12">
         {/* Logo */}
-        <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={() => router.push("/")}
+          className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
+        >
           <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
             <Briefcase className="w-6 h-6 text-white" />
           </div>
           <span className="text-2xl font-bold text-white">TalentHub</span>
-        </div>
+        </button>
 
         {/* Content */}
         <div>
@@ -172,12 +183,16 @@ export default function AuthPage({ mode }: AuthPageProps) {
       <div className="flex-1 flex items-center justify-center p-6 sm:p-12">
         <div className="w-full max-w-md">
           {/* Mobile Logo */}
-          <div className="lg:hidden flex items-center gap-2 mb-8">
+          <button
+            type="button"
+            onClick={() => router.push("/")}
+            className="lg:hidden flex items-center gap-2 mb-8 hover:opacity-80 transition-opacity"
+          >
             <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center">
               <Briefcase className="w-5 h-5 text-white" />
             </div>
             <span className="text-xl font-bold text-gray-900">TalentHub</span>
-          </div>
+          </button>
 
           {/* Header */}
           <div className="mb-8">
@@ -192,9 +207,9 @@ export default function AuthPage({ mode }: AuthPageProps) {
           </div>
 
           {/* Error Banner */}
-          {localError && (
+          {showError && error && (
             <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
-              {localError}
+              {error}
             </div>
           )}
 

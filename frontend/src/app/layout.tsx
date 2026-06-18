@@ -5,6 +5,7 @@ import "./globals.css";
 import ReduxProvider from "./providers/ReduxProvider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import SocketProvider from "@/app/providers/SocketProvider";
+import { BackendWarmUp } from "@/components/layout/BackendWakeUp";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -38,6 +39,7 @@ export default function RootLayout({
           <SocketProvider>
             <TooltipProvider>
               {/* <Navbar /> */}
+              <BackendWarmUp />
               {children}
               <Toaster
                 position="top-right"
