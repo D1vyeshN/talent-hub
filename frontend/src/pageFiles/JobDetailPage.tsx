@@ -1,8 +1,7 @@
 "use client"
 import { useState, useEffect, useMemo } from "react";
 import { useRouter, useParams } from "next/navigation";
-import Image from "next/image";
-import { ArrowLeft, Bookmark, BookmarkCheck, Briefcase, Building2, CheckCircle, Clock, DollarSign, ExternalLink, Globe, MapPin, Share2, Star, Users } from "lucide-react";
+import { ArrowLeft, Bookmark, BookmarkCheck, Briefcase, Building2, CheckCircle, Clock, DollarSign, ExternalLink, Globe, MapPin, Share2, Star, Users, Copy } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Avatar } from "@/components/ui/Avatar";
@@ -12,7 +11,7 @@ import type { Job } from "@/types";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { fetchJobById } from "@/features/jobs/jobSlice";
 import { applyToJob } from "@/features/applications/services/application.service";
-import { getCandidateProfile } from "@/features/candidate/services/candidate.service";
+import { getCandidateProfile, saveJob, unsaveJob } from "@/features/candidate/services/candidate.service";
 
 
 export default function JobDetailPage() {
@@ -21,6 +20,7 @@ export default function JobDetailPage() {
   const jobId = params.id as string;
   const dispatch = useAppDispatch();
   const { currentJob, isLoading, error } = useAppSelector((state) => state.job);
+  const { user } = useAppSelector((state) => state.auth);
   const recruiter = useMemo(() => currentJob?.recruiter || null, [currentJob]);
   const [saved, setSaved] = useState(false);
   const [applyModalOpen, setApplyModalOpen] = useState(false);
@@ -29,6 +29,7 @@ export default function JobDetailPage() {
   const [coverLetter, setCoverLetter] = useState("");
   const [applyError, setApplyError] = useState<string | null>(null);
   const [candidateResume, setCandidateResume] = useState<string>("");
+  const [shareCopied, setShareCopied] = useState(false);
 
   const job = currentJob as Job;
 
@@ -39,7 +40,7 @@ export default function JobDetailPage() {
   }, [jobId, dispatch]);
 
   useEffect(() => {
-    // Fetch candidate profile to get resume URL and check if already applied
+    // Fetch candidate profile to get resume URL and check if already applied/saved
     const fetchCandidateProfile = async () => {
       try {
         const candidate = await getCandidateProfile();
@@ -47,6 +48,10 @@ export default function JobDetailPage() {
         // Check if this job is already in candidate's applied jobs
         if (candidate.appliedJobs && candidate.appliedJobs.includes(jobId)) {
           setApplied(true);
+        }
+        // Check if this job is already saved
+        if (candidate.savedJobs && candidate.savedJobs.includes(jobId)) {
+          setSaved(true);
         }
       } catch (err) {
         // User might not be logged in or not a candidate
@@ -58,6 +63,10 @@ export default function JobDetailPage() {
   }, [jobId]);
 
   const handleApply = async (jobDetails: Job) => {
+    if (!user) {
+      router.push("/login");
+      return;
+    }
     setApplying(true);
     setApplyError(null);
     try {
@@ -71,6 +80,34 @@ export default function JobDetailPage() {
     } finally {
       setApplying(false);
     }
+  };
+
+  const handleSaveJob = async () => {
+    if (!user) {
+      router.push("/login");
+      return;
+    }
+    try {
+      if (saved) {
+        await unsaveJob(jobId);
+        setSaved(false);
+      } else {
+        await saveJob(jobId);
+        setSaved(true);
+      }
+    } catch (err) {
+      console.error("Failed to save/unsave job:", err);
+    }
+  };
+
+  const handleShareJob = () => {
+    const jobUrl = window.location.href;
+    navigator.clipboard.writeText(jobUrl).then(() => {
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 2000);
+    }).catch((err) => {
+      console.error("Failed to copy URL:", err);
+    });
   };
 
   if (isLoading) {
@@ -137,7 +174,7 @@ export default function JobDetailPage() {
                     </div>
                     <div className="flex items-center gap-2">
                       <button
-                        onClick={() => setSaved(!saved)}
+                        onClick={handleSaveJob}
                         className={cn(
                           "p-2.5 rounded-xl border transition-all",
                           saved
@@ -149,10 +186,16 @@ export default function JobDetailPage() {
                         {saved ? <BookmarkCheck className="w-5 h-5" /> : <Bookmark className="w-5 h-5" />}
                       </button>
                       <button
-                        className="p-2.5 rounded-xl border border-gray-200 text-gray-400 hover:text-gray-600 hover:border-gray-300 transition-all"
+                        onClick={handleShareJob}
+                        className={cn(
+                          "p-2.5 rounded-xl border transition-all",
+                          shareCopied
+                            ? "bg-green-50 border-green-200 text-green-600"
+                            : "border-gray-200 text-gray-400 hover:text-gray-600 hover:border-gray-300"
+                        )}
                         aria-label="Share"
                       >
-                        <Share2 className="w-5 h-5" />
+                        {shareCopied ? <Copy className="w-5 h-5" /> : <Share2 className="w-5 h-5" />}
                       </button>
                     </div>
                   </div>
@@ -206,8 +249,8 @@ export default function JobDetailPage() {
                     {/* <Button variant="outline" size="md" onClick={() => router.push("/candidate-dashboard")}>
                       View Similar
                     </Button> */}
-                    <Button variant="primary" size="md" onClick={() => setApplyModalOpen(true)}>
-                      Apply Now
+                    <Button variant="primary" size="md" onClick={() => user ? setApplyModalOpen(true) : router.push("/login")}>
+                      {user ? "Apply Now" : "Login to Apply"}
                     </Button>
                   </div>
                 )}

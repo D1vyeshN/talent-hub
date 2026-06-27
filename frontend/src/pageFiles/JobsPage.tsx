@@ -11,6 +11,7 @@ import { formatSalaryRange, timeAgo, getJobTypeBadgeColor, cn } from "@/lib/util
 import type { JobType, JobLevel } from "@/types";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { fetchJobs, setFilters, clearFilters as clearJobFilters } from "@/features/jobs/jobSlice";
+import { getCandidateProfile, saveJob, unsaveJob } from "@/features/candidate/services/candidate.service";
 import Image from "next/image";
 import { Avatar } from "@/components/ui/Avatar";
 
@@ -59,6 +60,7 @@ export default function JobsPage() {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const { jobs, total, page, pageSize, totalPages, isLoading, error } = useAppSelector((state) => state.job);
+  const { user } = useAppSelector((state) => state.auth);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchLocation, setSearchLocation] = useState("");
   const [selectedTypes, setSelectedTypes] = useState<JobType[]>([]);
@@ -85,6 +87,21 @@ export default function JobsPage() {
   };
 
   const sortMapping = getSortMapping(sortBy);
+
+  useEffect(() => {
+    // Load saved jobs from candidate profile
+    const loadSavedJobs = async () => {
+      try {
+        const candidate = await getCandidateProfile();
+        setSavedJobs(candidate.savedJobs || []);
+      } catch (err) {
+        // User might not be logged in or not a candidate
+        console.log("Could not fetch candidate profile:", err);
+      }
+    };
+
+    loadSavedJobs();
+  }, []);
 
   useEffect(() => {
     const debounceTimer = setTimeout(() => {
@@ -127,9 +144,23 @@ export default function JobsPage() {
     setSelectedLevels((prev) => prev.includes(level) ? prev.filter((l) => l !== level) : [...prev, level]);
   };
 
-  const toggleSave = (jobId: string, e: React.MouseEvent) => {
+  const toggleSave = async (jobId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    setSavedJobs((prev) => prev.includes(jobId) ? prev.filter((id) => id !== jobId) : [...prev, jobId]);
+    if (!user) {
+      router.push("/login");
+      return;
+    }
+    try {
+      if (savedJobs.includes(jobId)) {
+        await unsaveJob(jobId);
+        setSavedJobs((prev) => prev.filter((id) => id !== jobId));
+      } else {
+        await saveJob(jobId);
+        setSavedJobs((prev) => [...prev, jobId]);
+      }
+    } catch (err) {
+      console.error("Failed to save/unsave job:", err);
+    }
   };
 
   const clearFilters = () => {
@@ -483,9 +514,16 @@ export default function JobsPage() {
                         <Button
                           variant="primary"
                           size="sm"
-                          onClick={(e) => { e.stopPropagation(); router.push(`/jobs/${job._id}`); }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            // if (user) {
+                            router.push(`/jobs/${job._id}`);
+                            // } else {
+                            //   router.push("/login");
+                            // }
+                          }}
                         >
-                          Apply Now
+                          Check Details
                         </Button>
                       </div>
                     </div>
