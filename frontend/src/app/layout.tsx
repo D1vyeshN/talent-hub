@@ -39,7 +39,6 @@ export default function RootLayout({
           <SocketProvider>
             <TooltipProvider>
               {/* <Navbar /> */}
-              <BackendWarmUp />
               {children}
               <Toaster
                 position="top-right"
